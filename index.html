@@ -120,7 +120,21 @@
 
           <div class="flex gap-2">
               <button onclick="hideJob()" class="flex-1 py-3 bg-red-50 text-red-600 font-bold rounded-xl border border-red-200 hover:bg-red-100 transition-colors">ข้ามงานนี้</button>
-              <button onclick="acceptJob()" class="flex-[2] py-3 bg-green-500 text-white font-bold rounded-xl shadow-md hover:bg-green-600 transition-colors">รับงานเลย!</button>
+              <button onclick="promptAcceptJob()" class="flex-[2] py-3 bg-green-500 text-white font-bold rounded-xl shadow-md hover:bg-green-600 transition-colors">รับงานเลย!</button>
+          </div>
+      </div>
+  </div>
+
+  <div id="confirmAcceptModal" class="hidden fixed inset-0 z-[110] bg-black/50 flex items-center justify-center p-4">
+      <div class="bg-white rounded-2xl p-6 w-full max-w-sm text-center shadow-xl">
+          <div class="w-16 h-16 bg-green-100 text-green-500 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl">
+              <i class="fas fa-car-side"></i>
+          </div>
+          <h3 class="text-xl font-bold text-gray-800 mb-2">ยืนยันรับงานนี้?</h3>
+          <p class="text-sm text-gray-500 mb-6">คุณต้องการรับงานนี้และเดินทางไปรับผู้โดยสารใช่หรือไม่?</p>
+          <div class="flex gap-3">
+              <button onclick="closeConfirmAcceptModal()" class="flex-1 py-3 bg-gray-100 text-gray-700 font-bold rounded-xl hover:bg-gray-200">ยกเลิก</button>
+              <button onclick="executeAcceptJob()" class="flex-[2] py-3 bg-green-500 text-white font-bold rounded-xl shadow-md hover:bg-green-600">ยืนยันรับงาน</button>
           </div>
       </div>
   </div>
@@ -521,9 +535,19 @@
         renderJobList(); 
     }
 
-    function acceptJob() {
+    // 🌟 ระบบยืนยันการรับงาน
+    function promptAcceptJob() {
+        document.getElementById('confirmAcceptModal').classList.remove('hidden');
+    }
+
+    function closeConfirmAcceptModal() {
+        document.getElementById('confirmAcceptModal').classList.add('hidden');
+    }
+
+    function executeAcceptJob() {
         if(!selectedJobId || !allBookings[selectedJobId]) {
             showAlert("ข้อผิดพลาด", "ขออภัย งานนี้ถูกคนขับท่านอื่นรับไปแล้ว หรือถูกยกเลิก", "error");
+            closeConfirmAcceptModal();
             closeJobDetail();
             return;
         }
@@ -531,6 +555,7 @@
         activeJobId = selectedJobId;
         localStorage.setItem('activeJobId', activeJobId);
 
+        closeConfirmAcceptModal();
         closeJobDetail(); 
         
         db.ref('bookings/' + activeJobId).update({ 
@@ -582,7 +607,6 @@
         }
     }
 
-    // 🌟 1. ดักจับปุ่ม Action หลัก เพื่อเด้งป๊อปอัปตามสถานะ
     function handleMainActionClick() {
         if(!activeJobId || !activeJobData) return;
         let s = activeJobData.status;
@@ -598,12 +622,10 @@
         }
     }
 
-    // 🌟 2. ฟังก์ชันสำหรับปิดป๊อปอัปต่างๆ
     function closeArriveModal() { document.getElementById('arriveModal').classList.add('hidden'); }
     function closeBoardedModal() { document.getElementById('boardedModal').classList.add('hidden'); }
     function closeFinishModal() { document.getElementById('finishJobModal').classList.add('hidden'); }
 
-    // 🌟 3. ฟังก์ชันกดยืนยันการมาถึงจุดรับ
     function executeArrive() {
         closeArriveModal();
         db.ref('bookings/' + activeJobId).update({ status: "มาถึงจุดรับแล้ว" }).then(() => {
@@ -614,7 +636,6 @@
         });
     }
 
-    // 🌟 4. ฟังก์ชันกดยืนยันผู้โดยสารขึ้นรถ
     function executeStartTrip() {
         closeBoardedModal();
         db.ref('bookings/' + activeJobId).update({ 
@@ -629,7 +650,6 @@
         });
     }
 
-    // 🌟 5. ฟังก์ชันกดยืนยันจบงาน
     function executeFinishJob() {
         closeFinishModal();
         isFinishingJob = true; 
