@@ -96,9 +96,9 @@
   </div>
 
   <script>
-    // 🌟 ฐานข้อมูลต้องเหมือนผู้โดยสารเป๊ะๆ
+    // 🌟 แก้ไข API Key ของ Firebase ให้ถูกต้อง (ไม่ใช่ Key ของ Google Maps)
     firebase.initializeApp({
-      apiKey: "AIzaSyDsZ_tbFhH6fUXRz3I6C-tMshNwwrSevd4",
+      apiKey: "AIzaSyBNtaYaX1OW-86_9EGiVN9EpgPzWOX_twQ",
       authDomain: "myride-chiangrai.firebaseapp.com",
       databaseURL: "https://myride-chiangrai-default-rtdb.asia-southeast1.firebasedatabase.app",
       projectId: "myride-chiangrai",
@@ -188,10 +188,9 @@
 
     // 🌟 ระบบดักจับงานจากผู้โดยสาร
     db.ref('bookings').on('value', snap => {
-        if(!isOnline) return; // ถ้าออฟไลน์อยู่ไม่ต้องสนใจงาน
+        if(!isOnline) return; 
         const bookings = snap.val();
         if(!bookings) {
-            // ไม่มีงานเลย
             if(activeJobId) resetToIdle();
             return;
         }
@@ -290,14 +289,14 @@
         let s = activeJobData.status;
         
         if(s.includes("กำลังเดินทางไปหา")) {
-            db.ref('bookings/' + activeJobId).update({ status: "มาถึงจุดรับ" });
+            db.ref('bookings/' + activeJobId).update({ status: "มาถึงจุดรับแล้ว" });
         } 
         else if(s.includes("มาถึงจุดรับ")) {
             db.ref('bookings/' + activeJobId).update({ status: "เริ่มออกเดินทาง ไปยังจุดส่ง" });
         } 
         else if(s.includes("ออกเดินทาง") || s.includes("ไปยังจุดส่ง")) {
             if(confirm("ยืนยันการจบงานและรับเงินใช่หรือไม่?")) {
-                db.ref('bookings/' + activeJobId).update({ status: "ถึงที่หมาย" });
+                db.ref('bookings/' + activeJobId).update({ status: "ถึงที่หมายเรียบร้อยแล้ว" });
                 alert("จบงานสำเร็จ! รอรับงานถัดไป");
                 resetToIdle();
             }
