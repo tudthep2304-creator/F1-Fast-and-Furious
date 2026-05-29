@@ -183,7 +183,7 @@
     let watchId = null;
     let isFirstGps = true; 
     let lastRouteUpdate = 0; 
-    let isTrackingMode = true; // 🌟 สถานะ Tracking Mode
+    let isTrackingMode = true; 
     
     let activeJobId = null;
     let activeJobData = null;
@@ -219,7 +219,6 @@
         if (window.alertCloseCallback) window.alertCloseCallback();
     }
 
-    // 🌟 ระบบ Tracking: กดแล้วเข้าสู่โหมดติดตามรถ (แผนที่วิ่งตาม)
     function centerToDriver() {
         isTrackingMode = true;
         document.getElementById('btnCrosshair').classList.replace('text-gray-400', 'text-blue-600');
@@ -230,7 +229,6 @@
         }
     }
 
-    // 🌟 ระบบ Overview: กดดูภาพรวม จะปิดโหมดติดตามอัตโนมัติ
     function fitRouteBounds() {
         isTrackingMode = false;
         document.getElementById('btnCrosshair').classList.replace('text-blue-600', 'text-gray-400');
@@ -256,7 +254,6 @@
         padding: { bottom: 320 } 
       });
 
-      // 🌟 ถ้าคนขับใช้นิ้วเลื่อนแผนที่ ให้ปิดโหมดติดตามทันที
       map.addListener('dragstart', () => {
           isTrackingMode = false;
           document.getElementById('btnCrosshair').classList.replace('text-blue-600', 'text-gray-400');
@@ -307,7 +304,6 @@
                     let posObj = {lat: driverLat, lng: driverLng};
                     if(markerDriver) markerDriver.setPosition(posObj);
                     
-                    // 🌟 ถ้า Tracking Mode เปิดอยู่ ให้แผนที่วิ่งตามรถ!
                     if(isTrackingMode && map) {
                         map.panTo(posObj);
                     }
@@ -485,7 +481,7 @@
 
         if (!activeJobId) {
             clearMapRoutes();
-            centerToDriver(); // กลับสู่โหมดติดตามปกติ
+            centerToDriver(); 
         }
     }
 
@@ -652,21 +648,26 @@
         document.getElementById('btnOverview').classList.add('hidden'); 
         document.getElementById('etaDisplay').classList.add('hidden'); 
         clearMapRoutes(); 
-        centerToDriver(); // เปิดโหมด Tracking กลับมาเมื่อเคลียร์งาน
+        centerToDriver(); 
         renderJobList(); 
     }
 
+    // 🌟 อัปเดตเส้นทางสีฟ้าแบบ Real-time พร้อมดักจับแจ้งเตือน 2 กม. อัตโนมัติ!
     function updateRoute(forceZoom = false) {
         if(!activeJobData || !directionsService) return;
         let origin = {lat: driverLat, lng: driverLng};
         let dest;
+        let isGoingToPickup = false;
+        let isGoingToDropoff = false;
 
         if(activeJobData.status.includes("กำลังเดินทางไปหา") || activeJobData.status.includes("รับงานแล้ว") || activeJobData.status.includes("มาถึงจุดรับ")) {
             dest = {lat: activeJobData.pLat, lng: activeJobData.pLng};
             markerPick.setPosition(dest); markerPick.setMap(map); markerDrop.setMap(null);
+            isGoingToPickup = true;
         } else {
             dest = {lat: activeJobData.dLat, lng: activeJobData.dLng};
             markerDrop.setPosition(dest); markerDrop.setMap(map); markerPick.setMap(null);
+            isGoingToDropoff = true;
         }
 
         directionsService.route({origin: origin, destination: dest, travelMode: 'DRIVING'}, (res, stat) => {
@@ -675,11 +676,31 @@
                 currentRouteBounds = res.routes[0].bounds; 
                 
                 let leg = res.routes[0].legs[0];
+                let distMeters = leg.distance.value; 
+                let distKm = distMeters / 1000;
+                
                 let etaEl = document.getElementById('etaDisplay');
                 etaEl.innerText = `ระยะทาง ${leg.distance.text} • ${leg.duration.text}`;
                 etaEl.classList.remove('hidden');
+
+                // 🌟 ระบบยิงแจ้งเตือนอัตโนมัติเมื่อใกล้ถึง (ระยะ <= 2 กม.)
+                if(isGoingToPickup && distKm <= 2.0 && activeJobData.notifiedPick !== true) {
+                    activeJobData.notifiedPick = true; 
+                    db.ref('bookings/' + activeJobId).update({ notifiedPick: true });
+                    if(APPS_SCRIPT_URL) {
+                        let msg = `⚡ คนขับใกล้ถึงจุดรับแล้วครับ! (ระยะห่างอีกประมาณ ${distKm.toFixed(1)} กม.)`;
+                        fetch(`${APPS_SCRIPT_URL}?action=notify&type=status_update&userId=${activeJobId}&msg=${encodeURIComponent(msg)}`, {mode: 'no-cors'});
+                    }
+                } 
+                else if(isGoingToDropoff && distKm <= 2.0 && activeJobData.notifiedDrop !== true) {
+                    activeJobData.notifiedDrop = true; 
+                    db.ref('bookings/' + activeJobId).update({ notifiedDrop: true });
+                    if(APPS_SCRIPT_URL) {
+                        let msg = `⚡ ใกล้ถึงจุดหมายปลายทางแล้วครับ! (ระยะห่างอีกประมาณ ${distKm.toFixed(1)} กม.)`;
+                        fetch(`${APPS_SCRIPT_URL}?action=notify&type=status_update&userId=${activeJobId}&msg=${encodeURIComponent(msg)}`, {mode: 'no-cors'});
+                    }
+                }
                 
-                // 🌟 ปิดโหมดติดตามชั่วคราวเมื่อต้องการซูมดูภาพรวม
                 if (forceZoom) {
                     isTrackingMode = false;
                     document.getElementById('btnCrosshair').classList.replace('text-blue-600', 'text-gray-400');
