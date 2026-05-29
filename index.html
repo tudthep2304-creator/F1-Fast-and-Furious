@@ -10,18 +10,20 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;700&display=swap');
-    body { font-family: 'Kanit', sans-serif; background-color: #f3f4f6; }
-    .map-container { position: fixed; inset: 0; width: 100vw; height: 100vh; z-index: 0; background: #e5e7eb; }
+    body { font-family: 'Kanit', sans-serif; background-color: #111827; }
+    .map-container { position: fixed; inset: 0; width: 100vw; height: 100vh; z-index: 0; background: #1f2937; }
     
+    /* 🌟 UI แผงควบคุมดีไซน์ธีมสีดำเข้ม */
     .ui-panel { 
         position: fixed; 
         bottom: 0; 
         left: 0; 
         right: 0; 
-        background: white; 
+        background: #1f2937; /* สีเทาเข้ม */
         border-top-left-radius: 24px; 
         border-top-right-radius: 24px; 
-        box-shadow: 0 -10px 25px rgba(0,0,0,0.15); 
+        box-shadow: 0 -10px 30px rgba(0,0,0,0.5); 
+        border-top: 2px solid #22c55e; /* เส้นขอบบนสีเขียว */
         z-index: 10; 
         display: flex; 
         flex-direction: column; 
@@ -30,7 +32,7 @@
         overflow-y: hidden;
         transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         transform: translateY(0);
-        pointer-events: auto; /* ให้คลิกที่การ์ดได้ */
+        pointer-events: auto;
     }
 
     .panel-collapsed {
@@ -39,144 +41,149 @@
 
     .job-scroll { overflow-y: auto; }
     .job-scroll::-webkit-scrollbar { width: 4px; }
-    .job-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+    .job-scroll::-webkit-scrollbar-thumb { background: #16a34a; border-radius: 4px; }
   </style>
 </head>
-<body class="h-screen w-screen m-0 overflow-hidden">
+<body class="h-screen w-screen m-0 overflow-hidden bg-gray-900">
 
   <audio id="jobAlertSound" src="https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3" preload="auto" loop></audio>
 
   <div id="map" class="map-container"></div>
 
-  <div class="fixed top-0 w-full h-16 bg-[#2B3A6F] flex items-center justify-center px-4 z-20 text-white shadow-md pointer-events-auto">
-    <h1 class="text-lg font-bold"><i class="fas fa-car-side mr-2"></i> แอปคนขับ F1</h1>
+  <div class="fixed top-0 w-full h-16 bg-[#111827] flex items-center justify-center px-4 z-20 text-white shadow-md border-b border-green-500/30">
+    <h1 class="text-lg font-bold text-green-400"><i class="fas fa-car-side mr-2"></i> F1 DRIVER PRO</h1>
   </div>
 
-  <div class="fixed top-20 right-4 z-30 flex flex-col gap-3 pointer-events-auto">
-      <button onclick="centerToDriver()" id="btnCrosshair" class="bg-white w-12 h-12 flex items-center justify-center rounded-full shadow-lg text-blue-600 border border-gray-200 active:bg-gray-100 transition">
+  <div class="fixed top-20 right-4 z-30 flex flex-col gap-3">
+      <button onclick="centerToDriver()" id="btnCrosshair" class="bg-gray-800 w-12 h-12 flex items-center justify-center rounded-full shadow-lg text-green-400 border border-green-500/30 active:bg-gray-700 transition">
           <i class="fas fa-crosshairs text-xl"></i>
       </button>
-      <button onclick="fitRouteBounds()" id="btnOverview" class="hidden bg-white w-12 h-12 flex items-center justify-center rounded-full shadow-lg text-green-600 border border-gray-200 active:bg-gray-100 transition">
+      <button onclick="fitRouteBounds()" id="btnOverview" class="hidden bg-gray-800 w-12 h-12 flex items-center justify-center rounded-full shadow-lg text-emerald-400 border border-green-500/30 active:bg-gray-700 transition">
           <i class="fas fa-route text-xl"></i>
       </button>
   </div>
 
-  <div id="idlePanel" class="ui-panel">
+  <div id="idlePanel" class="ui-panel text-gray-100">
     <div class="cursor-pointer" onclick="togglePanel('idlePanel')">
         <div class="w-full flex justify-center pb-3">
-            <div class="w-12 h-1.5 bg-gray-300 rounded-full"></div>
+            <div class="w-12 h-1.5 bg-gray-600 rounded-full"></div>
         </div>
-        <div class="flex justify-between items-center mb-4">
+        <div class="flex justify-between items-center mb-3">
           <div>
-            <h2 class="font-bold text-lg text-gray-800">โหมดรับงาน</h2>
+            <h2 class="font-bold text-lg text-gray-100">โหมดรับงาน</h2>
             <p class="text-sm font-bold text-red-500" id="statusText">🔴 ออฟไลน์</p>
           </div>
           <label class="relative inline-flex items-center cursor-pointer" onclick="event.stopPropagation()">
             <input type="checkbox" id="onlineToggle" class="sr-only peer" onchange="toggleOnline()">
-            <div class="w-14 h-7 bg-gray-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-green-500"></div>
+            <div class="w-14 h-7 bg-gray-600 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-gray-800 after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-gray-200 after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-green-500"></div>
           </label>
         </div>
     </div>
     
-    <div class="bg-gray-50 p-2.5 rounded-xl text-center border border-gray-100 mb-3 space-y-1">
-        <p class="text-gray-500 text-[11px]" id="gpsStatus">รอเปิดระบบเพื่ออัปเดต GPS...</p>
-        <p class="text-[10px] text-orange-500 hidden" id="wakeLockStatus"><i class="fas fa-sun"></i> ระบบป้องกันหน้าจอดับทำงานแล้ว</p>
+    <div class="bg-gray-900/60 p-2.5 rounded-xl border border-gray-700 mb-3 flex justify-between items-center">
+        <div class="text-left">
+            <p class="text-gray-400 text-[11px]" id="gpsStatus">รอเปิดระบบเพื่ออัปเดต GPS...</p>
+            <p class="text-[10px] text-green-400 hidden" id="wakeLockText"><i class="fas fa-sun"></i> หน้าจอจะเปิดค้างไว้ตลอดเวลา</p>
+        </div>
+        <button onclick="toggleWakeLockManual()" id="btnWakeLockToggle" class="bg-gray-800 text-gray-400 border border-gray-700 px-2.5 py-1 rounded-lg text-[10px] font-bold flex items-center gap-1 transition">
+            <i class="fas fa-lock"></i> กันจอดับ: ปิด
+        </button>
     </div>
 
-    <h3 class="text-sm font-bold text-gray-700 mb-2 flex items-center gap-2"><i class="fas fa-list-ul"></i> รายการงานที่รอรับ</h3>
-    <div id="jobListContainer" class="job-scroll space-y-2 flex-1 max-h-[35vh] bg-gray-100 p-2 rounded-xl border border-gray-200">
-        <p class="text-center text-gray-400 text-sm py-4">กรุณาเปิดออนไลน์เพื่อดูงาน</p>
+    <h3 class="text-sm font-bold text-gray-400 mb-2 flex items-center gap-2"><i class="fas fa-list-ul"></i> รายการงานที่รอรับ</h3>
+    <div id="jobListContainer" class="job-scroll space-y-2 flex-1 max-h-[35vh] bg-gray-900/40 p-2 rounded-xl border border-gray-800">
+        <p class="text-center text-gray-500 text-sm py-4">กรุณาเปิดออนไลน์เพื่อดูงาน</p>
     </div>
   </div>
 
-  <div id="activeJobPanel" class="ui-panel hidden">
-    <div class="cursor-pointer border-b border-gray-100 pb-2 mb-3" onclick="togglePanel('activeJobPanel')">
+  <div id="activeJobPanel" class="ui-panel hidden text-gray-100">
+    <div class="cursor-pointer border-b border-gray-700 pb-2 mb-3" onclick="togglePanel('activeJobPanel')">
         <div class="w-full flex justify-center pb-3">
-            <div class="w-12 h-1.5 bg-gray-300 rounded-full"></div>
+            <div class="w-12 h-1.5 bg-gray-600 rounded-full"></div>
         </div>
         <div class="flex justify-between items-center">
           <div>
-              <h2 class="font-black text-[#2B3A6F] text-base" id="jobStatusHeader">กำลังเดินทางไปหา</h2>
-              <p class="text-[11px] text-blue-600 font-bold hidden mt-0.5" id="etaDisplay">ระยะทาง -- กม. • -- นาที</p>
+              <h2 class="font-black text-green-400 text-base" id="jobStatusHeader">กำลังเดินทางไปหา</h2>
+              <p class="text-[11px] text-emerald-400 font-bold hidden mt-0.5" id="etaDisplay">ระยะทาง -- กม. • -- นาที</p>
           </div>
-          <span class="bg-green-100 text-green-700 px-3 py-1.5 rounded-xl font-bold text-sm" id="jobPrice">฿0</span>
+          <span class="bg-green-950/80 text-green-400 border border-green-500/30 px-3 py-1.5 rounded-xl font-bold text-sm" id="jobPrice">฿0</span>
         </div>
     </div>
     
     <div class="job-scroll flex-1">
-        <div class="bg-blue-50/50 p-3 rounded-xl mb-3 flex justify-between items-center border border-blue-100">
+        <div class="bg-gray-900/60 p-3 rounded-xl mb-3 flex justify-between items-center border border-gray-700">
             <div class="flex-1 truncate pr-2">
-                <p class="text-[11px] text-gray-500 font-medium">ผู้โดยสาร</p>
-                <p class="font-bold text-gray-800 text-sm truncate" id="passengerName">...</p>
+                <p class="text-[11px] text-gray-400 font-medium">ผู้โดยสาร</p>
+                <p class="font-bold text-gray-100 text-sm truncate" id="passengerName">...</p>
             </div>
-            <a href="#" id="btnCallPassenger" class="bg-green-500 text-white px-4 py-2 rounded-xl font-bold text-sm shadow-sm flex gap-2 items-center shrink-0 hover:bg-green-600 transition">
+            <a href="#" id="btnCallPassenger" class="bg-green-600 text-white px-4 py-2 rounded-xl font-bold text-sm shadow-sm flex gap-2 items-center shrink-0 hover:bg-green-700 transition">
                 <i class="fas fa-phone-alt"></i> โทร
             </a>
         </div>
 
-        <div class="mb-4 bg-gray-50 p-3 rounded-xl border border-gray-100 relative">
-            <div class="absolute left-[1.35rem] top-6 bottom-6 w-0.5 border-l-2 border-dashed border-gray-300"></div>
+        <div class="mb-4 bg-gray-900/40 p-3 rounded-xl border border-gray-800 relative">
+            <div class="absolute left-[1.35rem] top-6 bottom-6 w-0.5 border-l-2 border-dashed border-gray-700"></div>
             <div class="flex items-start gap-3 mb-3 relative z-10">
                 <div class="mt-1"><i class="fas fa-circle text-[10px] text-green-500"></i></div>
-                <p class="text-xs text-gray-600 truncate font-medium flex-1" id="jobPick">...</p>
+                <p class="text-xs text-gray-300 truncate font-medium flex-1" id="jobPick">...</p>
             </div>
             <div class="flex items-start gap-3 relative z-10">
                 <div class="mt-1"><i class="fas fa-square text-[10px] text-blue-500"></i></div>
-                <p class="text-xs text-gray-600 truncate font-medium flex-1" id="jobDrop">...</p>
+                <p class="text-xs text-gray-300 truncate font-medium flex-1" id="jobDrop">...</p>
             </div>
         </div>
 
         <div class="flex gap-2 mb-2">
-            <button id="btnAction" onclick="handleMainActionClick()" class="flex-[2] bg-[#2B3A6F] text-white py-3 rounded-xl font-bold text-base shadow-md transition-colors active:bg-blue-800">
+            <button id="btnAction" onclick="handleMainActionClick()" class="flex-[2] bg-green-600 text-white py-3 rounded-xl font-bold text-base shadow-md hover:bg-green-700 transition">
                 มาถึงจุดรับ
             </button>
-            <button onclick="openDriverNavMap()" class="flex-1 bg-blue-50 text-blue-600 py-3 rounded-xl font-bold border border-blue-200 text-sm flex items-center justify-center gap-1 hover:bg-blue-100 transition">
+            <button onclick="openDriverNavMap()" class="flex-1 bg-gray-800 text-green-400 py-3 rounded-xl font-bold border border-green-500/30 text-sm flex items-center justify-center gap-1 hover:bg-gray-700 transition">
                 <i class="fas fa-location-arrow"></i> นำทาง
             </button>
         </div>
-        <button onclick="promptCancelJob()" class="w-full bg-red-50 text-red-600 py-2.5 rounded-xl font-bold border border-red-200 text-sm mt-1 hover:bg-red-100 transition">ยกเลิกงานนี้</button>
+        <button onclick="promptCancelJob()" class="w-full bg-red-950/40 text-red-400 py-2.5 rounded-xl font-bold border border-red-900/50 text-sm mt-1 hover:bg-red-950/80 transition">ยกเลิกงานนี้</button>
     </div>
   </div>
 
   <div id="jobDetailModal" class="hidden fixed inset-0 z-[100] pointer-events-none flex flex-col justify-end transition-transform">
-      <div class="bg-white rounded-t-[24px] p-5 w-full mx-auto shadow-[0_-10px_40px_rgba(0,0,0,0.15)] pointer-events-auto transform transition-all scale-100 pb-8">
+      <div class="bg-[#1f2937] rounded-t-[24px] p-5 w-full mx-auto shadow-[0_-10px_40px_rgba(0,0,0,0.6)] pointer-events-auto border-t-2 border-green-500 pb-8 text-gray-100">
           
           <div class="flex justify-between items-center mb-4">
               <div>
-                  <h3 class="text-lg font-black text-[#2B3A6F] leading-tight">รายละเอียดงาน</h3>
-                  <p class="text-[11px] text-gray-500 font-medium mt-0.5" id="detailTotalEta">ระยะทางรวม: กำลังคำนวณ...</p>
+                  <h3 class="text-lg font-black text-green-400 leading-tight">รายละเอียดงาน</h3>
+                  <p class="text-[11px] text-gray-400 font-medium mt-0.5" id="detailTotalEta">ระยะทางรวม: กำลังคำนวณ...</p>
               </div>
               <div class="flex items-center gap-2 shrink-0">
-                  <span class="font-black text-green-600 text-lg bg-green-50 px-2.5 py-1 rounded-xl border border-green-100" id="detailPrice">฿0</span>
-                  <button onclick="closeJobDetail()" class="text-gray-400 hover:text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-full w-8 h-8 flex items-center justify-center transition-colors">
+                  <span class="font-black text-green-400 text-lg bg-green-950/80 px-2.5 py-1 rounded-xl border border-green-500/30" id="detailPrice">฿0</span>
+                  <button onclick="closeJobDetail()" class="text-gray-400 hover:text-gray-200 bg-gray-800 rounded-full w-8 h-8 flex items-center justify-center transition-colors">
                       <i class="fas fa-times"></i>
                   </button>
               </div>
           </div>
           
-          <div class="bg-blue-50/50 p-3 rounded-xl mb-4 flex justify-between items-center border border-blue-100">
+          <div class="bg-gray-900/60 p-3 rounded-xl mb-4 flex justify-between items-center border border-gray-700">
               <div class="flex items-center gap-3 overflow-hidden pr-2">
-                  <div class="w-10 h-10 rounded-full bg-[#2B3A6F] text-white flex items-center justify-center shrink-0 shadow-sm">
+                  <div class="w-10 h-10 rounded-full bg-green-600 text-white flex items-center justify-center shrink-0 shadow-sm">
                       <i class="fas fa-user"></i>
                   </div>
                   <div class="flex-1 truncate">
-                      <p class="text-[11px] text-gray-500 font-medium">ผู้โดยสาร</p>
-                      <p class="font-bold text-gray-800 text-sm truncate" id="detailName">...</p>
+                      <p class="text-[11px] text-gray-400 font-medium">ผู้โดยสาร</p>
+                      <p class="font-bold text-gray-200 text-sm truncate" id="detailName">...</p>
                   </div>
               </div>
-              <a href="#" id="btnCallDetail" class="bg-green-500 text-white px-4 py-2 rounded-xl font-bold text-sm shadow-sm flex gap-2 items-center shrink-0 hover:bg-green-600 transition">
+              <a href="#" id="btnCallDetail" class="bg-green-600 text-white px-4 py-2 rounded-xl font-bold text-sm shadow-sm flex gap-2 items-center shrink-0 hover:bg-green-700 transition">
                   <i class="fas fa-phone-alt"></i> โทร
               </a>
           </div>
 
-          <div class="mb-5 bg-gray-50 p-4 rounded-2xl border border-gray-100 relative">
-              <div class="absolute left-[1.5rem] top-8 bottom-8 w-0.5 border-l-2 border-dashed border-gray-300"></div>
+          <div class="mb-5 bg-gray-900/40 p-4 rounded-2xl border border-gray-800 relative">
+              <div class="absolute left-[1.5rem] top-8 bottom-8 w-0.5 border-l-2 border-dashed border-gray-700"></div>
               
               <div class="flex items-start gap-4 mb-4 relative z-10">
                   <div class="mt-1.5"><i class="fas fa-circle text-[10px] text-green-500"></i></div>
                   <div class="flex-1 overflow-hidden">
-                      <p class="text-[13px] text-gray-800 truncate font-medium leading-tight" id="detailPick">...</p>
-                      <p class="text-[11px] font-bold text-green-600 mt-1 bg-green-50/70 inline-block px-1.5 py-0.5 rounded" id="detailEtaToPick">
+                      <p class="text-[13px] text-gray-200 truncate font-medium leading-tight" id="detailPick">...</p>
+                      <p class="text-[11px] font-bold text-green-400 mt-1 bg-green-950/50 inline-block px-1.5 py-0.5 rounded" id="detailEtaToPick">
                           <i class="fas fa-car-side"></i> ห่างจากคุณ: กำลังคำนวณ...
                       </p>
                   </div>
@@ -185,8 +192,8 @@
               <div class="flex items-start gap-4 relative z-10">
                   <div class="mt-1.5"><i class="fas fa-square text-[10px] text-blue-500"></i></div>
                   <div class="flex-1 overflow-hidden">
-                      <p class="text-[13px] text-gray-800 truncate font-medium leading-tight" id="detailDrop">...</p>
-                      <p class="text-[11px] font-bold text-blue-600 mt-1 bg-blue-50/70 inline-block px-1.5 py-0.5 rounded" id="detailEtaToDrop">
+                      <p class="text-[13px] text-gray-200 truncate font-medium leading-tight" id="detailDrop">...</p>
+                      <p class="text-[11px] font-bold text-blue-400 mt-1 bg-blue-950/50 inline-block px-1.5 py-0.5 rounded" id="detailEtaToDrop">
                           <i class="fas fa-road"></i> ระยะทางไปส่ง: กำลังคำนวณ...
                       </p>
                   </div>
@@ -194,86 +201,86 @@
           </div>
 
           <div class="flex gap-2.5">
-              <button onclick="promptRejectPendingJob()" class="flex-1 py-3.5 bg-red-50 text-red-600 font-bold rounded-xl border border-red-200 hover:bg-red-100 transition-colors text-sm">ยกเลิกงานนี้</button>
-              <button onclick="promptAcceptJob()" class="flex-[2] py-3.5 bg-green-500 text-white font-bold rounded-xl shadow-md hover:bg-green-600 transition-colors text-sm flex justify-center items-center gap-1.5">
+              <button onclick="promptRejectPendingJob()" class="flex-1 py-3.5 bg-red-950/40 text-red-400 font-bold rounded-xl border border-red-900/50 hover:bg-red-950/80 transition text-sm">ยกเลิกงานนี้</button>
+              <button onclick="promptAcceptJob()" class="flex-[2] py-3.5 bg-green-600 text-white font-bold rounded-xl shadow-md hover:bg-green-700 transition text-sm flex justify-center items-center gap-1.5">
                   <i class="fas fa-bolt"></i> รับงานเลย!
               </button>
           </div>
       </div>
   </div>
 
-  <div id="pendingCancelModal" class="hidden fixed inset-0 z-[110] bg-black/50 flex items-center justify-center p-4 pointer-events-auto">
-      <div class="bg-white rounded-3xl p-6 w-full max-w-sm text-center shadow-xl">
-          <div class="w-16 h-16 bg-red-100 text-red-500 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl"><i class="fas fa-times-circle"></i></div>
-          <h3 class="text-xl font-bold text-gray-800 mb-2">ยืนยันปฏิเสธงานนี้?</h3>
-          <p class="text-sm text-gray-500 mb-6">หากยืนยัน ระบบจะยกเลิกการเรียกรถและแจ้งเตือนผู้โดยสารว่าไม่มีรถว่างทันที</p>
+  <div id="pendingCancelModal" class="hidden fixed inset-0 z-[110] bg-black/70 flex items-center justify-center p-4 pointer-events-auto">
+      <div class="bg-gray-800 rounded-3xl p-6 w-full max-w-sm text-center shadow-xl text-gray-100 border border-gray-700">
+          <div class="w-16 h-16 bg-red-950 text-red-400 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl"><i class="fas fa-times-circle"></i></div>
+          <h3 class="text-xl font-bold mb-2">ยืนยันปฏิเสธงานนี้?</h3>
+          <p class="text-sm text-gray-400 mb-6">หากยืนยัน ระบบจะยกเลิกการเรียกรถและแจ้งเตือนผู้โดยสารว่าไม่มีรถว่างทันที</p>
           <div class="flex gap-3">
-              <button onclick="closePendingCancelModal()" class="flex-1 py-3 bg-gray-100 text-gray-700 font-bold rounded-xl hover:bg-gray-200">ปิด</button>
-              <button onclick="executeRejectPendingJob()" class="flex-1 py-3 bg-red-500 text-white font-bold rounded-xl shadow-md hover:bg-red-600">ยืนยันยกเลิก</button>
+              <button onclick="closePendingCancelModal()" class="flex-1 py-3 bg-gray-700 text-gray-200 font-bold rounded-xl hover:bg-gray-600">ปิด</button>
+              <button onclick="executeRejectPendingJob()" class="flex-1 py-3 bg-red-600 text-white font-bold rounded-xl shadow-md hover:bg-red-700">ยืนยันยกเลิก</button>
           </div>
       </div>
   </div>
-  <div id="confirmAcceptModal" class="hidden fixed inset-0 z-[110] bg-black/50 flex items-center justify-center p-4 pointer-events-auto">
-      <div class="bg-white rounded-3xl p-6 w-full max-w-sm text-center shadow-xl">
-          <div class="w-16 h-16 bg-green-100 text-green-500 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl"><i class="fas fa-car-side"></i></div>
-          <h3 class="text-xl font-bold text-gray-800 mb-2">ยืนยันรับงานนี้?</h3>
-          <p class="text-sm text-gray-500 mb-6">คุณต้องการรับงานนี้และเดินทางไปรับผู้โดยสารใช่หรือไม่?</p>
+  <div id="confirmAcceptModal" class="hidden fixed inset-0 z-[110] bg-black/70 flex items-center justify-center p-4 pointer-events-auto">
+      <div class="bg-gray-800 rounded-3xl p-6 w-full max-w-sm text-center shadow-xl text-gray-100 border border-gray-700">
+          <div class="w-16 h-16 bg-green-950 text-green-400 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl"><i class="fas fa-car-side"></i></div>
+          <h3 class="text-xl font-bold mb-2">ยืนยันรับงานนี้?</h3>
+          <p class="text-sm text-gray-400 mb-6">คุณต้องการรับงานนี้และเดินทางไปรับผู้โดยสารใช่หรือไม่?</p>
           <div class="flex gap-3">
-              <button onclick="closeConfirmAcceptModal()" class="flex-1 py-3 bg-gray-100 text-gray-700 font-bold rounded-xl hover:bg-gray-200">ยกเลิก</button>
-              <button onclick="executeAcceptJob()" class="flex-[2] py-3 bg-green-500 text-white font-bold rounded-xl shadow-md hover:bg-green-600">ยืนยันรับงาน</button>
+              <button onclick="closeConfirmAcceptModal()" class="flex-1 py-3 bg-gray-700 text-gray-200 font-bold rounded-xl hover:bg-gray-600">ยกเลิก</button>
+              <button onclick="executeAcceptJob()" class="flex-[2] py-3 bg-green-600 text-white font-bold rounded-xl shadow-md hover:bg-green-700">ยืนยันรับงาน</button>
           </div>
       </div>
   </div>
-  <div id="arriveModal" class="hidden fixed inset-0 z-[110] bg-black/50 flex items-center justify-center p-4 pointer-events-auto">
-      <div class="bg-white rounded-3xl p-6 w-full max-w-sm text-center shadow-xl">
-          <div class="w-16 h-16 bg-blue-100 text-[#2B3A6F] rounded-full flex items-center justify-center mx-auto mb-4 text-3xl"><i class="fas fa-map-marker-alt"></i></div>
-          <h3 class="text-xl font-bold text-gray-800 mb-2">ยืนยันมาถึงจุดรับ?</h3>
-          <p class="text-sm text-gray-500 mb-6">คุณได้เดินทางมาถึงจุดรับผู้โดยสารเรียบร้อยแล้วใช่หรือไม่?</p>
+  <div id="arriveModal" class="hidden fixed inset-0 z-[110] bg-black/70 flex items-center justify-center p-4 pointer-events-auto">
+      <div class="bg-gray-800 rounded-3xl p-6 w-full max-w-sm text-center shadow-xl text-gray-100 border border-gray-700">
+          <div class="w-16 h-16 bg-green-950/50 text-green-400 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl"><i class="fas fa-map-marker-alt"></i></div>
+          <h3 class="text-xl font-bold mb-2">ยืนยันมาถึงจุดรับ?</h3>
+          <p class="text-sm text-gray-400 mb-6">คุณได้เดินทางมาถึงจุดรับผู้โดยสารเรียบร้อยแล้วใช่หรือไม่?</p>
           <div class="flex gap-3">
-              <button onclick="closeArriveModal()" class="flex-1 py-3 bg-gray-100 text-gray-700 font-bold rounded-xl hover:bg-gray-200">ยังไม่ถึง</button>
-              <button onclick="executeArrive()" class="flex-[2] py-3 bg-[#2B3A6F] text-white font-bold rounded-xl shadow-md hover:bg-blue-800">มาถึงแล้ว</button>
+              <button onclick="closeArriveModal()" class="flex-1 py-3 bg-gray-700 text-gray-200 font-bold rounded-xl hover:bg-gray-600">ยังไม่ถึง</button>
+              <button onclick="executeArrive()" class="flex-[2] py-3 bg-green-600 text-white font-bold rounded-xl shadow-md hover:bg-green-700">มาถึงแล้ว</button>
           </div>
       </div>
   </div>
-  <div id="boardedModal" class="hidden fixed inset-0 z-[110] bg-black/50 flex items-center justify-center p-4 pointer-events-auto">
-      <div class="bg-white rounded-3xl p-6 w-full max-w-sm text-center shadow-xl">
-          <div class="w-16 h-16 bg-yellow-100 text-yellow-500 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl"><i class="fas fa-user-check"></i></div>
-          <h3 class="text-xl font-bold text-gray-800 mb-2">ผู้โดยสารขึ้นรถแล้ว?</h3>
-          <p class="text-sm text-gray-500 mb-6">ผู้โดยสารขึ้นรถเรียบร้อย และพร้อมออกเดินทางใช่หรือไม่?</p>
+  <div id="boardedModal" class="hidden fixed inset-0 z-[110] bg-black/70 flex items-center justify-center p-4 pointer-events-auto">
+      <div class="bg-gray-800 rounded-3xl p-6 w-full max-w-sm text-center shadow-xl text-gray-100 border border-gray-700">
+          <div class="w-16 h-16 bg-yellow-950 text-yellow-500 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl"><i class="fas fa-user-check"></i></div>
+          <h3 class="text-xl font-bold mb-2">ผู้โดยสารขึ้นรถแล้ว?</h3>
+          <p class="text-sm text-gray-400 mb-6">ผู้โดยสารขึ้นรถเรียบร้อย และพร้อมออกเดินทางใช่หรือไม่?</p>
           <div class="flex gap-3">
-              <button onclick="closeBoardedModal()" class="flex-1 py-3 bg-gray-100 text-gray-700 font-bold rounded-xl hover:bg-gray-200">ยังไม่ขึ้น</button>
-              <button onclick="executeStartTrip()" class="flex-[2] py-3 bg-yellow-500 text-white font-bold rounded-xl shadow-md hover:bg-yellow-600">ขึ้นรถแล้ว</button>
+              <button onclick="closeBoardedModal()" class="flex-1 py-3 bg-gray-700 text-gray-200 font-bold rounded-xl hover:bg-gray-600">ยังไม่ขึ้น</button>
+              <button onclick="executeStartTrip()" class="flex-[2] py-3 bg-green-600 text-white font-bold rounded-xl shadow-md hover:bg-green-700">ขึ้นรถแล้ว</button>
           </div>
       </div>
   </div>
-  <div id="finishJobModal" class="hidden fixed inset-0 z-[110] bg-black/50 flex items-center justify-center p-4 pointer-events-auto">
-      <div class="bg-white rounded-3xl p-6 w-full max-w-sm text-center shadow-xl">
-          <div class="w-16 h-16 bg-green-100 text-green-500 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl"><i class="fas fa-check-circle"></i></div>
-          <h3 class="text-xl font-bold text-gray-800 mb-2">ยืนยันจบงานและรับเงิน?</h3>
-          <p class="text-sm text-gray-500 mb-6">คุณได้ส่งผู้โดยสารถึงจุดหมายปลายทางอย่างปลอดภัยแล้วใช่หรือไม่?</p>
+  <div id="finishJobModal" class="hidden fixed inset-0 z-[110] bg-black/70 flex items-center justify-center p-4 pointer-events-auto">
+      <div class="bg-gray-800 rounded-3xl p-6 w-full max-w-sm text-center shadow-xl text-gray-100 border border-gray-700">
+          <div class="w-16 h-16 bg-green-950 text-green-400 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl"><i class="fas fa-check-circle"></i></div>
+          <h3 class="text-xl font-bold mb-2">ยืนยันจบงานและรับเงิน?</h3>
+          <p class="text-sm text-gray-400 mb-6">คุณได้ส่งผู้โดยสารถึงจุดหมายปลายทางอย่างปลอดภัยแล้วใช่หรือไม่?</p>
           <div class="flex gap-3">
-              <button onclick="closeFinishModal()" class="flex-1 py-3 bg-gray-100 text-gray-700 font-bold rounded-xl hover:bg-gray-200">ยังไม่จบ</button>
-              <button onclick="executeFinishJob()" class="flex-[2] py-3 bg-green-500 text-white font-bold rounded-xl shadow-md hover:bg-green-600">ยืนยันจบงาน!</button>
+              <button onclick="closeFinishModal()" class="flex-1 py-3 bg-gray-700 text-gray-200 font-bold rounded-xl hover:bg-gray-600">ยังไม่จบ</button>
+              <button onclick="executeFinishJob()" class="flex-[2] py-3 bg-green-600 text-white font-bold rounded-xl shadow-md hover:bg-green-700">ยืนยันจบงาน!</button>
           </div>
       </div>
   </div>
-  <div id="driverCancelModal" class="hidden fixed inset-0 z-[110] bg-black/50 flex items-center justify-center p-4 pointer-events-auto">
-      <div class="bg-white rounded-3xl p-6 w-full max-w-sm text-center shadow-xl">
-          <div class="w-16 h-16 bg-red-100 text-red-500 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl"><i class="fas fa-exclamation-triangle"></i></div>
-          <h3 class="text-xl font-bold text-gray-800 mb-2">ยืนยันยกเลิกงานนี้?</h3>
-          <p class="text-sm text-gray-500 mb-6">หากยกเลิก ผู้โดยสารจะถูกแจ้งเตือนว่าคุณไม่สามารถไปรับได้ และงานจะถูกลบออก</p>
+  <div id="driverCancelModal" class="hidden fixed inset-0 z-[110] bg-black/70 flex items-center justify-center p-4 pointer-events-auto">
+      <div class="bg-gray-800 rounded-3xl p-6 w-full max-w-sm text-center shadow-xl text-gray-100 border border-gray-700">
+          <div class="w-16 h-16 bg-red-950 text-red-400 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl"><i class="fas fa-exclamation-triangle"></i></div>
+          <h3 class="text-xl font-bold mb-2">ยืนยันยกเลิกงานนี้?</h3>
+          <p class="text-sm text-gray-400 mb-6">หากยกเลิก ผู้โดยสารจะถูกแจ้งเตือนว่าคุณไม่สามารถไปรับได้ และงานจะถูกลบออก</p>
           <div class="flex gap-3">
               <button onclick="closeDriverCancelModal()" class="flex-1 py-3 bg-gray-100 text-gray-700 font-bold rounded-xl hover:bg-gray-200">ปิด</button>
-              <button onclick="executeCancelJob()" class="flex-[2] py-3 bg-red-500 text-white font-bold rounded-xl shadow-md hover:bg-red-600">ยืนยันยกเลิก</button>
+              <button onclick="executeCancelJob()" class="flex-[2] py-3 bg-red-600 text-white font-bold rounded-xl shadow-md hover:bg-red-700">ยืนยันยกเลิก</button>
           </div>
       </div>
   </div>
-  <div id="alertModal" class="hidden fixed inset-0 z-[120] bg-black/50 flex items-center justify-center p-4 pointer-events-auto">
-      <div class="bg-white rounded-3xl p-6 w-full max-w-sm text-center shadow-xl">
+  <div id="alertModal" class="hidden fixed inset-0 z-[120] bg-black/70 flex items-center justify-center p-4 pointer-events-auto">
+      <div class="bg-gray-800 rounded-3xl p-6 w-full max-w-sm text-center shadow-xl text-gray-100 border border-gray-700">
           <div id="alertIcon" class="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl"></div>
-          <h3 id="alertTitle" class="text-xl font-bold text-gray-800 mb-2">...</h3>
-          <p id="alertMessage" class="text-sm text-gray-500 mb-6 whitespace-pre-line">...</p>
-          <button onclick="closeAlertModal()" class="w-full py-3 bg-[#2B3A6F] text-white font-bold rounded-xl shadow-md">ตกลง</button>
+          <h3 id="alertTitle" class="text-xl font-bold mb-2">...</h3>
+          <p id="alertMessage" class="text-sm text-gray-400 mb-6 whitespace-pre-line">...</p>
+          <button onclick="closeAlertModal()" class="w-full py-3 bg-green-600 text-white font-bold rounded-xl shadow-md">ตกลง</button>
       </div>
   </div>
 
@@ -303,16 +310,15 @@
     let lastRouteUpdate = 0; 
     let isTrackingMode = true; 
     let wakeLock = null; 
+    let isWakeLockManualActive = false; // 🌟 สถานะสวิตช์กันจอดับแบบกำหนดเอง
     
     let activeJobId = null;
     let activeJobData = null;
     let selectedJobId = null; 
     let allBookings = null;
     let hiddenJobs = {}; 
-    let isFinishingJob = false;
     let currentRouteBounds = null; 
 
-    // 🌟 ระบบป้องกันการส่งข้อมูลซ้ำ
     let isProcessingAction = false;
     let lastNotifiedMsg = ""; 
 
@@ -327,7 +333,7 @@
             if (panel.classList.contains('panel-collapsed')) {
                 map.setOptions({ padding: { top: 80, bottom: 120, left: 0, right: 0 } });
             } else {
-                map.setOptions({ padding: { top: 80, bottom: 380, left: 0, right: 0 } });
+                map.setOptions({ padding: { top: 80, bottom: 400, left: 0, right: 0 } });
             }
         }
     }
@@ -335,7 +341,38 @@
     function expandPanel(panelId) {
         const panel = document.getElementById(panelId);
         if (panel) panel.classList.remove('panel-collapsed');
-        if (map) map.setOptions({ padding: { top: 80, bottom: 380, left: 0, right: 0 } });
+        if (map) map.setOptions({ padding: { top: 80, bottom: 400, left: 0, right: 0 } });
+    }
+
+    // 🌟 ระบบควบคุมโหมดกันหน้าจอดับ (Wake Lock) ด้วยมือ
+    async function toggleWakeLockManual() {
+        const btn = document.getElementById('btnWakeLockToggle');
+        const txt = document.getElementById('wakeLockText');
+        
+        if (!isWakeLockManualActive) {
+            // สั่งเปิดระบบ
+            try {
+                if ('wakeLock' in navigator) {
+                    wakeLock = await navigator.wakeLock.request('screen');
+                    isWakeLockManualActive = true;
+                    btn.innerHTML = `<i class="fas fa-unlock"></i> กันจอดับ: เปิดอยู่`;
+                    btn.className = "bg-green-900 text-green-400 border border-green-500 px-2.5 py-1 rounded-lg text-[10px] font-bold flex items-center gap-1 transition";
+                    txt.classList.remove('hidden');
+                } else {
+                    alert("มือถือเครื่องนี้ไม่รองรับระบบกันหน้าจอดับผ่านเว็บครับ");
+                }
+            } catch (err) { console.log(err); }
+        } else {
+            // สั่งปิดระบบ
+            if (wakeLock !== null) {
+                await wakeLock.release();
+                wakeLock = null;
+            }
+            isWakeLockManualActive = false;
+            btn.innerHTML = `<i class="fas fa-lock"></i> กันจอดับ: ปิด`;
+            btn.className = "bg-gray-800 text-gray-400 border border-gray-700 px-2.5 py-1 rounded-lg text-[10px] font-bold flex items-center gap-1 transition";
+            txt.classList.add('hidden');
+        }
     }
 
     function sendLineNotify(userId, msg, type = 'status_update') {
@@ -361,20 +398,6 @@
     document.addEventListener('touchstart', stopAlarm);
     document.addEventListener('click', stopAlarm);
 
-    async function requestWakeLock() {
-        try {
-            if ('wakeLock' in navigator) {
-                wakeLock = await navigator.wakeLock.request('screen');
-                document.getElementById('wakeLockStatus').classList.remove('hidden');
-                wakeLock.addEventListener('release', () => { document.getElementById('wakeLockStatus').classList.add('hidden'); });
-            }
-        } catch (err) { console.log('Wake Lock Error:', err); }
-    }
-
-    function releaseWakeLock() {
-        if (wakeLock !== null) { wakeLock.release().then(() => { wakeLock = null; }); }
-    }
-
     window.onload = () => {
         let savedOnlineState = localStorage.getItem('isDriverOnline');
         if (savedOnlineState === 'true') {
@@ -385,7 +408,9 @@
 
     document.addEventListener("visibilitychange", () => {
         if (document.visibilityState === "visible" && isOnline) {
-            requestWakeLock();
+            if (isWakeLockManualActive && 'wakeLock' in navigator) {
+                navigator.wakeLock.request('screen').then(lock => { wakeLock = lock; });
+            }
             if(navigator.geolocation) {
                 navigator.geolocation.getCurrentPosition((pos) => {
                     driverLat = pos.coords.latitude;
@@ -398,42 +423,7 @@
         }
     });
 
-    function showAlert(title, message, type = 'info', callback = null) {
-        document.getElementById('alertTitle').innerText = title;
-        document.getElementById('alertMessage').innerText = message;
-        let iconHtml = ''; let iconBg = ''; let iconColor = '';
-        if (type === 'error') { iconHtml = '<i class="fas fa-times"></i>'; iconBg = 'bg-red-100'; iconColor = 'text-red-500'; } 
-        else if (type === 'success') { iconHtml = '<i class="fas fa-check"></i>'; iconBg = 'bg-green-100'; iconColor = 'text-green-500'; } 
-        else { iconHtml = '<i class="fas fa-info"></i>'; iconBg = 'bg-blue-100'; iconColor = 'text-blue-500'; }
-        const iconDiv = document.getElementById('alertIcon');
-        iconDiv.innerHTML = iconHtml; iconDiv.className = `w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl ${iconBg} ${iconColor}`;
-        document.getElementById('alertModal').classList.remove('hidden');
-        window.alertCloseCallback = typeof callback === 'function' ? callback : null;
-    }
-    function closeAlertModal() {
-        document.getElementById('alertModal').classList.add('hidden');
-        if (window.alertCloseCallback) window.alertCloseCallback();
-    }
-
-    function centerToDriver() {
-        isTrackingMode = true;
-        document.getElementById('btnCrosshair').classList.replace('text-gray-400', 'text-blue-600');
-        if(map && driverLat && driverLng) {
-            map.panTo({lat: driverLat, lng: driverLng});
-            map.setZoom(16);
-        }
-    }
-
-    function fitRouteBounds() {
-        isTrackingMode = false;
-        document.getElementById('btnCrosshair').classList.replace('text-blue-600', 'text-gray-400');
-        if (map && currentRouteBounds) {
-            map.fitBounds(currentRouteBounds, { top: 80, right: 50, bottom: 400, left: 50 });
-        } else {
-            centerToDriver();
-        }
-    }
-
+    // 🌟 ปรับแผนที่ให้เข้ากับโหมดมืด (Dark-styled satellite)
     function initMap() {
       if (typeof google === 'undefined' || typeof google.maps === 'undefined') return;
       map = new google.maps.Map(document.getElementById('map'), { 
@@ -447,7 +437,7 @@
       });
 
       map.addListener('dragstart', () => {
-          isTrackingMode = false; document.getElementById('btnCrosshair').classList.replace('text-blue-600', 'text-gray-400');
+          isTrackingMode = false; document.getElementById('btnCrosshair').classList.replace('text-blue-600', 'text-green-400');
       });
       directionsService = new google.maps.DirectionsService();
       
@@ -503,11 +493,13 @@
 
         if(isOnline) {
             statusEl.innerText = "🟢 ออนไลน์ (พร้อมรับงาน)";
-            statusEl.className = "text-sm font-bold text-green-600";
+            statusEl.className = "text-sm font-bold text-green-400";
             gpsEl.innerText = "กำลังค้นหาพิกัด GPS ของคุณ...";
             isFirstGps = true; 
             
-            requestWakeLock(); 
+            // สั่งเปิดกันจอดับอัตโนมัติเมื่อออนไลน์เพื่อความสะดวก
+            if(!isWakeLockManualActive) toggleWakeLockManual();
+
             db.ref('driver').update({ status: "ออนไลน์" });
 
             let snd = document.getElementById('jobAlertSound');
@@ -548,7 +540,9 @@
             statusEl.className = "text-sm font-bold text-red-500";
             gpsEl.innerText = "ระบบถูกปิดชั่วคราว";
             
-            releaseWakeLock(); 
+            // สั่งปิดกันจอดับเมื่อออฟไลน์เพื่อประหยัดแบต
+            if(isWakeLockManualActive) toggleWakeLockManual();
+
             db.ref('driver').update({ status: "ออฟไลน์" });
             if(watchId) navigator.geolocation.clearWatch(watchId);
             stopAlarm(); 
@@ -606,9 +600,9 @@
 
     function renderJobList() {
         const listContainer = document.getElementById('jobListContainer');
-        if (!isOnline) { listContainer.innerHTML = '<p class="text-center text-gray-400 text-sm py-4">กรุณาเปิดออนไลน์เพื่อดูงาน</p>'; return; }
+        if (!isOnline) { listContainer.innerHTML = '<p class="text-center text-gray-500 text-sm py-4">กรุณาเปิดออนไลน์เพื่อดูงาน</p>'; return; }
         if (activeJobId) return; 
-        if (!allBookings) { listContainer.innerHTML = '<p class="text-center text-gray-400 text-sm py-4">ยังไม่มีงานในขณะนี้...</p>'; return; }
+        if (!allBookings) { listContainer.innerHTML = '<p class="text-center text-gray-500 text-sm py-4">ยังไม่มีงานในขณะนี้...</p>'; return; }
 
         let html = ''; let jobCount = 0;
         let currentPendingJobs = []; 
@@ -625,15 +619,15 @@
                     hasNewJob = true;
                 }
 
-                html += `<div onclick="openJobDetail('${key}')" class="bg-white p-3 rounded-xl shadow-sm border border-gray-200 cursor-pointer active:bg-blue-50 hover:bg-gray-50 transition-colors">
-                    <div class="flex justify-between items-center mb-1"><span class="font-bold text-sm text-[#2B3A6F]"><i class="fas fa-user-circle"></i> ${b.name || 'ลูกค้า'}</span><span class="font-black text-green-600 bg-green-50 px-2 py-0.5 rounded-lg">฿${b.price}</span></div>
-                    <p class="text-[11px] text-gray-500 truncate"><span class="text-blue-500 font-bold">รับ:</span> ${b.pName}</p>
-                    <p class="text-[11px] text-gray-500 truncate"><span class="text-red-500 font-bold">ส่ง:</span> ${b.dName}</p>
+                html += `<div onclick="openJobDetail('${key}')" class="bg-gray-800 p-3 rounded-xl shadow-sm border border-gray-700 cursor-pointer active:bg-gray-700 hover:bg-gray-700/60 transition-colors">
+                    <div class="flex justify-between items-center mb-1"><span class="font-bold text-sm text-green-400"><i class="fas fa-user-circle"></i> ${b.name || 'ลูกค้า'}</span><span class="font-black text-green-400 bg-green-950/50 px-2 py-0.5 rounded-lg border border-green-500/20">฿${b.price}</span></div>
+                    <p class="text-[11px] text-gray-400 truncate"><span class="text-blue-400 font-bold">รับ:</span> ${b.pName}</p>
+                    <p class="text-[11px] text-gray-400 truncate"><span class="text-red-400 font-bold">ส่ง:</span> ${b.dName}</p>
                 </div>`;
             }
         }
 
-        if (jobCount === 0) html = '<p class="text-center text-gray-400 text-sm py-4">ยังไม่มีงานในขณะนี้...</p>';
+        if (jobCount === 0) html = '<p class="text-center text-gray-500 text-sm py-4">ยังไม่มีงานในขณะนี้...</p>';
         listContainer.innerHTML = html;
 
         if (hasNewJob && isOnline) {
@@ -773,16 +767,16 @@
         let s = activeJobData.status;
         if(s.includes("กำลังเดินทางไปหา") || s.includes("รับงานแล้ว")) {
             statusText.innerText = "กำลังเดินทางไปรับ"; 
-            etaEl.className = "text-[11px] text-green-600 font-bold mt-0.5 inline-block";
-            btnAction.innerText = "มาถึงจุดรับ"; btnAction.className = "flex-[2] bg-[#2B3A6F] text-white py-2.5 rounded-xl font-bold text-sm shadow-md";
+            etaEl.className = "text-[11px] text-green-400 font-bold mt-0.5 inline-block";
+            btnAction.innerText = "มาถึงจุดรับ"; btnAction.className = "w-full bg-green-600 text-white py-2.5 rounded-xl font-bold text-sm shadow-md hover:bg-green-700 transition";
         } else if(s.includes("มาถึงจุดรับ") || s.includes("ถึงจุดรับแล้ว")) {
             statusText.innerText = "รอผู้โดยสารขึ้นรถ"; 
             etaEl.classList.add('hidden');
-            btnAction.innerText = "ผู้โดยสารขึ้นรถ"; btnAction.className = "flex-[2] bg-yellow-500 text-white py-2.5 rounded-xl font-bold text-sm shadow-md";
+            btnAction.innerText = "ผู้โดยสารขึ้นรถ"; btnAction.className = "w-full bg-yellow-500 text-gray-900 py-2.5 rounded-xl font-bold text-sm shadow-md hover:bg-yellow-600 transition";
         } else if(s.includes("ออกเดินทาง") || s.includes("ไปยังจุดส่ง")) {
             statusText.innerText = "กำลังเดินทางไปจุดส่ง"; 
-            etaEl.className = "text-[11px] text-blue-600 font-bold mt-0.5 inline-block";
-            btnAction.innerText = "ถึงที่หมาย (จบงาน)"; btnAction.className = "flex-[2] bg-green-500 text-white py-2.5 rounded-xl font-bold text-sm shadow-md";
+            etaEl.className = "text-[11px] text-blue-400 font-bold mt-0.5 inline-block";
+            btnAction.innerText = "ถึงที่หมาย (จบงาน)"; btnAction.className = "w-full bg-emerald-600 text-white py-2.5 rounded-xl font-bold text-sm shadow-md hover:bg-emerald-700 transition";
         }
     }
 
@@ -894,7 +888,7 @@
                 }
                 
                 if (forceZoom) {
-                    isTrackingMode = false; document.getElementById('btnCrosshair').classList.replace('text-blue-600', 'text-gray-400');
+                    isTrackingMode = false; document.getElementById('btnCrosshair').classList.replace('text-blue-600', 'text-green-400');
                     setTimeout(() => { map.fitBounds(currentRouteBounds, { top: 80, right: 50, bottom: 380, left: 50 }); }, 200);
                 }
             }
