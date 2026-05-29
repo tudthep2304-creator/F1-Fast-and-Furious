@@ -46,8 +46,9 @@
       </label>
     </div>
     
-    <div class="bg-gray-50 p-2.5 rounded-xl text-center border border-gray-100 mb-3">
+    <div class="bg-gray-50 p-2.5 rounded-xl text-center border border-gray-100 mb-3 space-y-1">
         <p class="text-gray-500 text-[11px]" id="gpsStatus">รอเปิดระบบเพื่ออัปเดต GPS...</p>
+        <p class="text-[10px] text-orange-500 hidden" id="wakeLockStatus"><i class="fas fa-sun"></i> ระบบป้องกันหน้าจอดับทำงานแล้ว (โปรดเปิดแอปค้างไว้)</p>
     </div>
 
     <h3 class="text-sm font-bold text-gray-700 mb-2 flex items-center gap-2"><i class="fas fa-list-ul"></i> รายการงานที่รอรับ</h3>
@@ -127,9 +128,7 @@
 
   <div id="confirmAcceptModal" class="hidden fixed inset-0 z-[110] bg-black/50 flex items-center justify-center p-4">
       <div class="bg-white rounded-2xl p-6 w-full max-w-sm text-center shadow-xl">
-          <div class="w-16 h-16 bg-green-100 text-green-500 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl">
-              <i class="fas fa-car-side"></i>
-          </div>
+          <div class="w-16 h-16 bg-green-100 text-green-500 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl"><i class="fas fa-car-side"></i></div>
           <h3 class="text-xl font-bold text-gray-800 mb-2">ยืนยันรับงานนี้?</h3>
           <p class="text-sm text-gray-500 mb-6">คุณต้องการรับงานนี้และเดินทางไปรับผู้โดยสารใช่หรือไม่?</p>
           <div class="flex gap-3">
@@ -138,12 +137,9 @@
           </div>
       </div>
   </div>
-
   <div id="arriveModal" class="hidden fixed inset-0 z-[110] bg-black/50 flex items-center justify-center p-4">
       <div class="bg-white rounded-2xl p-6 w-full max-w-sm text-center shadow-xl">
-          <div class="w-16 h-16 bg-blue-100 text-[#2B3A6F] rounded-full flex items-center justify-center mx-auto mb-4 text-3xl">
-              <i class="fas fa-map-marker-alt"></i>
-          </div>
+          <div class="w-16 h-16 bg-blue-100 text-[#2B3A6F] rounded-full flex items-center justify-center mx-auto mb-4 text-3xl"><i class="fas fa-map-marker-alt"></i></div>
           <h3 class="text-xl font-bold text-gray-800 mb-2">ยืนยันมาถึงจุดรับ?</h3>
           <p class="text-sm text-gray-500 mb-6">คุณได้เดินทางมาถึงจุดรับผู้โดยสารเรียบร้อยแล้วใช่หรือไม่?</p>
           <div class="flex gap-3">
@@ -152,12 +148,9 @@
           </div>
       </div>
   </div>
-
   <div id="boardedModal" class="hidden fixed inset-0 z-[110] bg-black/50 flex items-center justify-center p-4">
       <div class="bg-white rounded-2xl p-6 w-full max-w-sm text-center shadow-xl">
-          <div class="w-16 h-16 bg-yellow-100 text-yellow-500 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl">
-              <i class="fas fa-user-check"></i>
-          </div>
+          <div class="w-16 h-16 bg-yellow-100 text-yellow-500 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl"><i class="fas fa-user-check"></i></div>
           <h3 class="text-xl font-bold text-gray-800 mb-2">ผู้โดยสารขึ้นรถแล้ว?</h3>
           <p class="text-sm text-gray-500 mb-6">ผู้โดยสารขึ้นรถเรียบร้อย และพร้อมออกเดินทางใช่หรือไม่?</p>
           <div class="flex gap-3">
@@ -166,12 +159,9 @@
           </div>
       </div>
   </div>
-
   <div id="finishJobModal" class="hidden fixed inset-0 z-[110] bg-black/50 flex items-center justify-center p-4">
       <div class="bg-white rounded-2xl p-6 w-full max-w-sm text-center shadow-xl">
-          <div class="w-16 h-16 bg-green-100 text-green-500 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl">
-              <i class="fas fa-check-circle"></i>
-          </div>
+          <div class="w-16 h-16 bg-green-100 text-green-500 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl"><i class="fas fa-check-circle"></i></div>
           <h3 class="text-xl font-bold text-gray-800 mb-2">ยืนยันจบงานและรับเงิน?</h3>
           <p class="text-sm text-gray-500 mb-6">คุณได้ส่งผู้โดยสารถึงจุดหมายปลายทางอย่างปลอดภัยแล้วใช่หรือไม่?</p>
           <div class="flex gap-3">
@@ -180,12 +170,9 @@
           </div>
       </div>
   </div>
-
   <div id="driverCancelModal" class="hidden fixed inset-0 z-[110] bg-black/50 flex items-center justify-center p-4">
       <div class="bg-white rounded-2xl p-6 w-full max-w-sm text-center shadow-xl">
-          <div class="w-16 h-16 bg-red-100 text-red-500 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl">
-              <i class="fas fa-exclamation-triangle"></i>
-          </div>
+          <div class="w-16 h-16 bg-red-100 text-red-500 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl"><i class="fas fa-exclamation-triangle"></i></div>
           <h3 class="text-xl font-bold text-gray-800 mb-2">ยืนยันยกเลิกงานนี้?</h3>
           <p class="text-sm text-gray-500 mb-6">หากยกเลิก ผู้โดยสารจะถูกแจ้งเตือนว่าคุณไม่สามารถไปรับได้ และงานจะถูกลบออก</p>
           <div class="flex gap-3">
@@ -194,7 +181,6 @@
           </div>
       </div>
   </div>
-
   <div id="alertModal" class="hidden fixed inset-0 z-[120] bg-black/50 flex items-center justify-center p-4">
       <div class="bg-white rounded-2xl p-6 w-full max-w-sm text-center shadow-xl">
           <div id="alertIcon" class="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl"></div>
@@ -226,6 +212,7 @@
     let isFirstGps = true; 
     let lastRouteUpdate = 0; 
     let isTrackingMode = true; 
+    let wakeLock = null; // 🌟 ตัวแปรเก็บสถานะการเปิดหน้าจอ
     
     let activeJobId = null;
     let activeJobData = null;
@@ -233,29 +220,70 @@
     let allBookings = null;
     let hiddenJobs = {}; 
     let isFinishingJob = false;
-    
     let currentRouteBounds = null; 
+
+    // 🌟 ระบบป้องกันหน้าจอดับ (Wake Lock API)
+    async function requestWakeLock() {
+        try {
+            if ('wakeLock' in navigator) {
+                wakeLock = await navigator.wakeLock.request('screen');
+                document.getElementById('wakeLockStatus').classList.remove('hidden');
+                
+                wakeLock.addEventListener('release', () => {
+                    document.getElementById('wakeLockStatus').classList.add('hidden');
+                });
+            }
+        } catch (err) {
+            console.log('Wake Lock Error:', err);
+        }
+    }
+
+    function releaseWakeLock() {
+        if (wakeLock !== null) {
+            wakeLock.release().then(() => { wakeLock = null; });
+        }
+    }
+
+    // 🌟 กู้สถานะออนไลน์จากความจำตอนโหลดหน้าเว็บ
+    window.onload = () => {
+        let savedOnlineState = localStorage.getItem('isDriverOnline');
+        if (savedOnlineState === 'true') {
+            document.getElementById('onlineToggle').checked = true;
+            toggleOnline();
+        }
+    };
+
+    // 🌟 กู้ GPS ทันทีที่สลับกลับเข้ามาในแอป (แก้ปัญหา Backgrounding)
+    document.addEventListener("visibilitychange", () => {
+        if (document.visibilityState === "visible" && isOnline) {
+            // ขอ Wake Lock ใหม่เพราะมักจะหลุดตอนพับจอ
+            requestWakeLock();
+            
+            // ดึงพิกัดปัจจุบันด่วน 1 รอบ
+            if(navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition((pos) => {
+                    driverLat = pos.coords.latitude;
+                    driverLng = pos.coords.longitude;
+                    db.ref('driver').update({ lat: driverLat, lng: driverLng });
+                    if(markerDriver) markerDriver.setPosition({lat: driverLat, lng: driverLng});
+                    if(activeJobId) updateRoute(false);
+                }, null, { enableHighAccuracy: true });
+            }
+        }
+    });
 
     function showAlert(title, message, type = 'info', callback = null) {
         document.getElementById('alertTitle').innerText = title;
         document.getElementById('alertMessage').innerText = message;
-        
         let iconHtml = ''; let iconBg = ''; let iconColor = '';
-        if (type === 'error') {
-            iconHtml = '<i class="fas fa-times"></i>'; iconBg = 'bg-red-100'; iconColor = 'text-red-500';
-        } else if (type === 'success') {
-            iconHtml = '<i class="fas fa-check"></i>'; iconBg = 'bg-green-100'; iconColor = 'text-green-500';
-        } else {
-            iconHtml = '<i class="fas fa-info"></i>'; iconBg = 'bg-blue-100'; iconColor = 'text-blue-500';
-        }
-        
+        if (type === 'error') { iconHtml = '<i class="fas fa-times"></i>'; iconBg = 'bg-red-100'; iconColor = 'text-red-500'; } 
+        else if (type === 'success') { iconHtml = '<i class="fas fa-check"></i>'; iconBg = 'bg-green-100'; iconColor = 'text-green-500'; } 
+        else { iconHtml = '<i class="fas fa-info"></i>'; iconBg = 'bg-blue-100'; iconColor = 'text-blue-500'; }
         const iconDiv = document.getElementById('alertIcon');
-        iconDiv.innerHTML = iconHtml;
-        iconDiv.className = `w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl ${iconBg} ${iconColor}`;
+        iconDiv.innerHTML = iconHtml; iconDiv.className = `w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl ${iconBg} ${iconColor}`;
         document.getElementById('alertModal').classList.remove('hidden');
         window.alertCloseCallback = typeof callback === 'function' ? callback : null;
     }
-
     function closeAlertModal() {
         document.getElementById('alertModal').classList.add('hidden');
         if (window.alertCloseCallback) window.alertCloseCallback();
@@ -264,7 +292,6 @@
     function centerToDriver() {
         isTrackingMode = true;
         document.getElementById('btnCrosshair').classList.replace('text-gray-400', 'text-blue-600');
-        
         if(map && driverLat && driverLng) {
             map.panTo({lat: driverLat, lng: driverLng});
             map.setZoom(16);
@@ -274,7 +301,6 @@
     function fitRouteBounds() {
         isTrackingMode = false;
         document.getElementById('btnCrosshair').classList.replace('text-blue-600', 'text-gray-400');
-        
         if (map && currentRouteBounds) {
             const mapPadding = { top: 80, right: 50, bottom: 320, left: 50 }; 
             map.fitBounds(currentRouteBounds, mapPadding);
@@ -285,44 +311,18 @@
 
     function initMap() {
       if (typeof google === 'undefined' || typeof google.maps === 'undefined') return;
-      
       map = new google.maps.Map(document.getElementById('map'), { 
-        zoom: 16, 
-        center: {lat: driverLat, lng: driverLng}, 
-        mapTypeId: 'hybrid', 
-        disableDefaultUI: true, 
-        gestureHandling: 'greedy',
-        zoomControl: true,
-        padding: { bottom: 320 } 
+        zoom: 16, center: {lat: driverLat, lng: driverLng}, mapTypeId: 'hybrid', disableDefaultUI: true, gestureHandling: 'greedy', zoomControl: true, padding: { bottom: 320 } 
       });
-
       map.addListener('dragstart', () => {
           isTrackingMode = false;
           document.getElementById('btnCrosshair').classList.replace('text-blue-600', 'text-gray-400');
       });
-
       directionsService = new google.maps.DirectionsService();
-      
-      directionsRenderer = new google.maps.DirectionsRenderer({ 
-          map: map, 
-          suppressMarkers: true, 
-          preserveViewport: true, 
-          polylineOptions: {strokeColor:'#4285F4', strokeWeight:6} 
-      });
-      
+      directionsRenderer = new google.maps.DirectionsRenderer({ map: map, suppressMarkers: true, preserveViewport: true, polylineOptions: {strokeColor:'#4285F4', strokeWeight:6} });
       markerPick = new google.maps.Marker({map: null, icon: "https://maps.google.com/mapfiles/ms/icons/green-dot.png", zIndex: 2});
       markerDrop = new google.maps.Marker({map: null, icon: "https://maps.google.com/mapfiles/ms/icons/red-dot.png", zIndex: 2});
-      
-      markerDriver = new google.maps.Marker({
-          map: map, 
-          position: {lat: driverLat, lng: driverLng},
-          icon: {
-              url: "https://img.icons8.com/color/48/car-top-view.png",
-              scaledSize: new google.maps.Size(44, 44),
-              anchor: new google.maps.Point(22, 22)
-          }, 
-          zIndex: 9999
-      });
+      markerDriver = new google.maps.Marker({map: map, position: {lat: driverLat, lng: driverLng}, icon: {url: "https://img.icons8.com/color/48/car-top-view.png", scaledSize: new google.maps.Size(44, 44), anchor: new google.maps.Point(22, 22)}, zIndex: 9999});
     }
 
     function toggleOnline() {
@@ -330,12 +330,16 @@
         const statusEl = document.getElementById('statusText');
         const gpsEl = document.getElementById('gpsStatus');
 
+        // 🌟 จำสถานะลงเครื่อง
+        localStorage.setItem('isDriverOnline', isOnline);
+
         if(isOnline) {
             statusEl.innerText = "🟢 ออนไลน์ (พร้อมรับงาน)";
             statusEl.className = "text-sm font-bold text-green-600";
             gpsEl.innerText = "กำลังค้นหาพิกัด GPS ของคุณ...";
             isFirstGps = true; 
             
+            requestWakeLock(); // ขอไม่ให้จอดับ
             db.ref('driver').update({ status: "ออนไลน์" });
 
             if (navigator.geolocation) {
@@ -345,10 +349,7 @@
                     
                     let posObj = {lat: driverLat, lng: driverLng};
                     if(markerDriver) markerDriver.setPosition(posObj);
-                    
-                    if(isTrackingMode && map) {
-                        map.panTo(posObj);
-                    }
+                    if(isTrackingMode && map) map.panTo(posObj);
                     
                     if(isFirstGps) {
                         if(!activeJobId && !selectedJobId && isTrackingMode) map.setZoom(16);
@@ -373,6 +374,7 @@
             statusEl.className = "text-sm font-bold text-red-500";
             gpsEl.innerText = "ระบบถูกปิดชั่วคราว";
             
+            releaseWakeLock(); // ปล่อยให้จอดับได้
             db.ref('driver').update({ status: "ออฟไลน์" });
             if(watchId) navigator.geolocation.clearWatch(watchId);
         }
@@ -381,7 +383,6 @@
 
     db.ref('bookings').on('value', snap => {
         allBookings = snap.val();
-        
         let savedJobId = localStorage.getItem('activeJobId');
         let foundActiveJob = false;
 
@@ -401,10 +402,8 @@
         if (foundActiveJob) {
             document.getElementById('idlePanel').classList.add('hidden');
             document.getElementById('activeJobPanel').classList.remove('hidden');
-            
             if (!isOnline) {
                 document.getElementById('onlineToggle').checked = true;
-                isOnline = true; 
                 toggleOnline(); 
             }
             updateActiveJobUI();
@@ -415,211 +414,124 @@
             } else if (activeJobId && !savedJobId && !isFinishingJob) {
                 showAlert("งานถูกยกเลิก", "ผู้โดยสารได้ทำการยกเลิกงานนี้แล้วครับ", "error", () => { resetToIdle(); });
             }
-            
-            if (activeJobId && !foundActiveJob && !isFinishingJob) {
-                resetToIdle();
-            }
+            if (activeJobId && !foundActiveJob && !isFinishingJob) resetToIdle();
         }
-
         renderJobList(); 
     });
 
     function checkActiveJobStatus() {
         if (!activeJobId || isFinishingJob) return; 
-        
         if (!allBookings || !allBookings[activeJobId]) {
-            showAlert("งานถูกยกเลิก", "ผู้โดยสารได้ทำการยกเลิกงานนี้แล้วครับ", "error", () => {
-                resetToIdle();
-            });
+            showAlert("งานถูกยกเลิก", "ผู้โดยสารได้ทำการยกเลิกงานนี้แล้วครับ", "error", () => { resetToIdle(); });
             return;
         }
-
         activeJobData = allBookings[activeJobId];
         updateActiveJobUI();
     }
 
     function renderJobList() {
         const listContainer = document.getElementById('jobListContainer');
-        
-        if (!isOnline) {
-            listContainer.innerHTML = '<p class="text-center text-gray-400 text-sm py-4">กรุณาเปิดออนไลน์เพื่อดูงาน</p>';
-            return;
-        }
-
+        if (!isOnline) { listContainer.innerHTML = '<p class="text-center text-gray-400 text-sm py-4">กรุณาเปิดออนไลน์เพื่อดูงาน</p>'; return; }
         if (activeJobId) return; 
+        if (!allBookings) { listContainer.innerHTML = '<p class="text-center text-gray-400 text-sm py-4">ยังไม่มีงานในขณะนี้...</p>'; return; }
 
-        if (!allBookings) {
-            listContainer.innerHTML = '<p class="text-center text-gray-400 text-sm py-4">ยังไม่มีงานในขณะนี้...</p>';
-            return;
-        }
-
-        let html = '';
-        let jobCount = 0;
-
+        let html = ''; let jobCount = 0;
         for (let key in allBookings) {
             let b = allBookings[key];
             let isHidden = hiddenJobs[key] && hiddenJobs[key] === b.timestamp;
-
             if (b.status === "รอผู้ขับขี่ตอบรับ" && !isHidden) {
                 jobCount++;
-                html += `
-                <div onclick="openJobDetail('${key}')" class="bg-white p-3 rounded-lg shadow-sm border border-gray-200 cursor-pointer active:bg-blue-50 hover:bg-gray-50 transition-colors">
-                    <div class="flex justify-between items-center mb-1">
-                        <span class="font-bold text-sm text-[#2B3A6F]"><i class="fas fa-user-circle"></i> ${b.name || 'ลูกค้า'}</span>
-                        <span class="font-black text-green-600 bg-green-50 px-2 py-0.5 rounded">฿${b.price}</span>
-                    </div>
+                html += `<div onclick="openJobDetail('${key}')" class="bg-white p-3 rounded-lg shadow-sm border border-gray-200 cursor-pointer active:bg-blue-50 hover:bg-gray-50 transition-colors">
+                    <div class="flex justify-between items-center mb-1"><span class="font-bold text-sm text-[#2B3A6F]"><i class="fas fa-user-circle"></i> ${b.name || 'ลูกค้า'}</span><span class="font-black text-green-600 bg-green-50 px-2 py-0.5 rounded">฿${b.price}</span></div>
                     <p class="text-xs text-gray-500 truncate"><span class="text-blue-500 font-bold">รับ:</span> ${b.pName}</p>
                     <p class="text-xs text-gray-500 truncate"><span class="text-red-500 font-bold">ส่ง:</span> ${b.dName}</p>
-                </div>
-                `;
+                </div>`;
             }
         }
-
-        if (jobCount === 0) {
-            html = '<p class="text-center text-gray-400 text-sm py-4">ยังไม่มีงานในขณะนี้...</p>';
-        }
-
+        if (jobCount === 0) html = '<p class="text-center text-gray-400 text-sm py-4">ยังไม่มีงานในขณะนี้...</p>';
         listContainer.innerHTML = html;
     }
 
     function openJobDetail(jobId) {
-        selectedJobId = jobId;
-        let job = allBookings[jobId];
-        
+        selectedJobId = jobId; let job = allBookings[jobId];
         document.getElementById('detailName').innerText = job.name || "ลูกค้า";
         document.getElementById('detailPick').innerText = job.pName;
         document.getElementById('detailDrop').innerText = job.dName;
         document.getElementById('detailPrice').innerText = "฿" + job.price;
-        
         document.getElementById('jobDetailModal').classList.remove('hidden');
 
-        let origin = {lat: job.pLat, lng: job.pLng};
-        let dest = {lat: job.dLat, lng: job.dLng};
-        
-        markerPick.setPosition(origin); markerPick.setMap(map);
-        markerDrop.setPosition(dest); markerDrop.setMap(map);
-
+        let origin = {lat: job.pLat, lng: job.pLng}; let dest = {lat: job.dLat, lng: job.dLng};
+        markerPick.setPosition(origin); markerPick.setMap(map); markerDrop.setPosition(dest); markerDrop.setMap(map);
         directionsService.route({origin: origin, destination: dest, travelMode: 'DRIVING'}, (res, stat) => {
             if(stat === 'OK') {
                 directionsRenderer.setDirections(res);
-                setTimeout(() => {
-                    const mapPadding = { top: 80, right: 50, bottom: 420, left: 50 }; 
-                    map.fitBounds(res.routes[0].bounds, mapPadding);
-                }, 100);
+                setTimeout(() => { map.fitBounds(res.routes[0].bounds, { top: 80, right: 50, bottom: 420, left: 50 }); }, 100);
             }
         });
     }
 
     function clearMapRoutes() {
         if(directionsRenderer) directionsRenderer.setDirections({routes: []});
-        if(markerPick) markerPick.setMap(null);
-        if(markerDrop) markerDrop.setMap(null);
+        if(markerPick) markerPick.setMap(null); if(markerDrop) markerDrop.setMap(null);
         currentRouteBounds = null;
     }
 
     function closeJobDetail() {
-        document.getElementById('jobDetailModal').classList.add('hidden');
-        selectedJobId = null;
-
-        if (!activeJobId) {
-            clearMapRoutes();
-            centerToDriver(); 
-        }
+        document.getElementById('jobDetailModal').classList.add('hidden'); selectedJobId = null;
+        if (!activeJobId) { clearMapRoutes(); centerToDriver(); }
     }
 
     function hideJob() {
         if(!selectedJobId) return;
-        let job = allBookings[selectedJobId];
-        hiddenJobs[selectedJobId] = job.timestamp; 
-        closeJobDetail();
-        renderJobList(); 
+        hiddenJobs[selectedJobId] = allBookings[selectedJobId].timestamp; 
+        closeJobDetail(); renderJobList(); 
     }
 
-    // 🌟 ระบบยืนยันการรับงาน
-    function promptAcceptJob() {
-        document.getElementById('confirmAcceptModal').classList.remove('hidden');
-    }
-
-    function closeConfirmAcceptModal() {
-        document.getElementById('confirmAcceptModal').classList.add('hidden');
-    }
+    function promptAcceptJob() { document.getElementById('confirmAcceptModal').classList.remove('hidden'); }
+    function closeConfirmAcceptModal() { document.getElementById('confirmAcceptModal').classList.add('hidden'); }
 
     function executeAcceptJob() {
         if(!selectedJobId || !allBookings[selectedJobId]) {
             showAlert("ข้อผิดพลาด", "ขออภัย งานนี้ถูกคนขับท่านอื่นรับไปแล้ว หรือถูกยกเลิก", "error");
-            closeConfirmAcceptModal();
-            closeJobDetail();
-            return;
+            closeConfirmAcceptModal(); closeJobDetail(); return;
         }
-
-        activeJobId = selectedJobId;
-        localStorage.setItem('activeJobId', activeJobId);
-
-        closeConfirmAcceptModal();
-        closeJobDetail(); 
+        activeJobId = selectedJobId; localStorage.setItem('activeJobId', activeJobId);
+        closeConfirmAcceptModal(); closeJobDetail(); 
         
-        db.ref('bookings/' + activeJobId).update({ 
-            status: "รับงานแล้ว กำลังเดินทางไปหา",
-            driverPhone: "0946379669"
-        }).then(() => {
-            if(APPS_SCRIPT_URL) {
-                let msg = "🏎️ คนขับตอบรับงานของคุณแล้ว! กำลังรีบเดินทางไปหาคุณครับ";
-                fetch(`${APPS_SCRIPT_URL}?action=notify&type=status_update&userId=${activeJobId}&msg=${encodeURIComponent(msg)}`, {mode: 'no-cors'});
-            }
+        db.ref('bookings/' + activeJobId).update({ status: "รับงานแล้ว กำลังเดินทางไปหา", driverPhone: "0946379669" }).then(() => {
+            if(APPS_SCRIPT_URL) fetch(`${APPS_SCRIPT_URL}?action=notify&type=status_update&userId=${activeJobId}&msg=${encodeURIComponent("🏎️ คนขับตอบรับงานของคุณแล้ว! กำลังรีบเดินทางไปหาคุณครับ")}`, {mode: 'no-cors'});
         });
-
-        document.getElementById('idlePanel').classList.add('hidden');
-        document.getElementById('activeJobPanel').classList.remove('hidden');
-        
-        updateRoute(true);
-        updateActiveJobUI();
+        document.getElementById('idlePanel').classList.add('hidden'); document.getElementById('activeJobPanel').classList.remove('hidden');
+        updateRoute(true); updateActiveJobUI();
     }
 
     function updateActiveJobUI() {
         if(!activeJobData) return;
-        
         document.getElementById('passengerName').innerText = activeJobData.name || "ลูกค้า";
         document.getElementById('btnCallPassenger').href = "tel:" + activeJobData.phone;
         document.getElementById('jobPick').innerText = activeJobData.pName;
         document.getElementById('jobDrop').innerText = activeJobData.dName;
         document.getElementById('jobPrice').innerText = "฿" + activeJobData.price;
 
-        let statusText = document.getElementById('jobStatusHeader');
-        let btnAction = document.getElementById('btnAction');
-
+        let statusText = document.getElementById('jobStatusHeader'); let btnAction = document.getElementById('btnAction');
         document.getElementById('btnOverview').classList.remove('hidden');
 
         let s = activeJobData.status;
         if(s.includes("กำลังเดินทางไปหา") || s.includes("รับงานแล้ว")) {
-            statusText.innerText = "กำลังเดินทางไปรับ";
-            btnAction.innerText = "มาถึงจุดรับ";
-            btnAction.className = "flex-[2] bg-[#2B3A6F] text-white py-3 rounded-xl font-bold text-base shadow-md";
-        } 
-        else if(s.includes("มาถึงจุดรับ") || s.includes("ถึงจุดรับแล้ว")) {
-            statusText.innerText = "รอผู้โดยสารขึ้นรถ";
-            btnAction.innerText = "ผู้โดยสารขึ้นรถ";
-            btnAction.className = "flex-[2] bg-yellow-500 text-white py-3 rounded-xl font-bold text-base shadow-md";
-        } 
-        else if(s.includes("ออกเดินทาง") || s.includes("ไปยังจุดส่ง")) {
-            statusText.innerText = "กำลังเดินทางไปจุดส่ง";
-            btnAction.innerText = "ถึงที่หมาย (จบงาน)";
-            btnAction.className = "flex-[2] bg-green-500 text-white py-3 rounded-xl font-bold text-base shadow-md";
+            statusText.innerText = "กำลังเดินทางไปรับ"; btnAction.innerText = "มาถึงจุดรับ"; btnAction.className = "flex-[2] bg-[#2B3A6F] text-white py-3 rounded-xl font-bold text-base shadow-md";
+        } else if(s.includes("มาถึงจุดรับ") || s.includes("ถึงจุดรับแล้ว")) {
+            statusText.innerText = "รอผู้โดยสารขึ้นรถ"; btnAction.innerText = "ผู้โดยสารขึ้นรถ"; btnAction.className = "flex-[2] bg-yellow-500 text-white py-3 rounded-xl font-bold text-base shadow-md";
+        } else if(s.includes("ออกเดินทาง") || s.includes("ไปยังจุดส่ง")) {
+            statusText.innerText = "กำลังเดินทางไปจุดส่ง"; btnAction.innerText = "ถึงที่หมาย (จบงาน)"; btnAction.className = "flex-[2] bg-green-500 text-white py-3 rounded-xl font-bold text-base shadow-md";
         }
     }
 
     function handleMainActionClick() {
         if(!activeJobId || !activeJobData) return;
         let s = activeJobData.status;
-        
-        if(s.includes("กำลังเดินทางไปหา") || s.includes("รับงานแล้ว")) {
-            document.getElementById('arriveModal').classList.remove('hidden');
-        } 
-        else if(s.includes("มาถึงจุดรับ") || s.includes("ถึงจุดรับแล้ว")) {
-            document.getElementById('boardedModal').classList.remove('hidden');
-        } 
-        else if(s.includes("ออกเดินทาง") || s.includes("ไปยังจุดส่ง")) {
-            document.getElementById('finishJobModal').classList.remove('hidden');
-        }
+        if(s.includes("กำลังเดินทางไปหา") || s.includes("รับงานแล้ว")) document.getElementById('arriveModal').classList.remove('hidden');
+        else if(s.includes("มาถึงจุดรับ") || s.includes("ถึงจุดรับแล้ว")) document.getElementById('boardedModal').classList.remove('hidden');
+        else if(s.includes("ออกเดินทาง") || s.includes("ไปยังจุดส่ง")) document.getElementById('finishJobModal').classList.remove('hidden');
     }
 
     function closeArriveModal() { document.getElementById('arriveModal').classList.add('hidden'); }
@@ -629,148 +541,85 @@
     function executeArrive() {
         closeArriveModal();
         db.ref('bookings/' + activeJobId).update({ status: "มาถึงจุดรับแล้ว" }).then(() => {
-            if(APPS_SCRIPT_URL) {
-                let msg = "📍 คนขับเดินทางมาถึงจุดรับของคุณเรียบร้อยแล้วครับ!";
-                fetch(`${APPS_SCRIPT_URL}?action=notify&type=status_update&userId=${activeJobId}&msg=${encodeURIComponent(msg)}`, {mode: 'no-cors'});
-            }
+            if(APPS_SCRIPT_URL) fetch(`${APPS_SCRIPT_URL}?action=notify&type=status_update&userId=${activeJobId}&msg=${encodeURIComponent("📍 คนขับเดินทางมาถึงจุดรับของคุณเรียบร้อยแล้วครับ!")}`, {mode: 'no-cors'});
         });
     }
 
     function executeStartTrip() {
         closeBoardedModal();
-        db.ref('bookings/' + activeJobId).update({ 
-            status: "เริ่มออกเดินทาง ไปยังจุดส่ง",
-            tripStartTime: firebase.database.ServerValue.TIMESTAMP 
-        }).then(() => {
-            if(APPS_SCRIPT_URL) {
-                let msg = "✨ ผู้โดยสารขึ้นรถเรียบร้อยแล้ว! กำลังเริ่มออกเดินทางไปยังจุดส่ง";
-                fetch(`${APPS_SCRIPT_URL}?action=notify&type=status_update&userId=${activeJobId}&msg=${encodeURIComponent(msg)}`, {mode: 'no-cors'});
-            }
+        db.ref('bookings/' + activeJobId).update({ status: "เริ่มออกเดินทาง ไปยังจุดส่ง", tripStartTime: firebase.database.ServerValue.TIMESTAMP }).then(() => {
+            if(APPS_SCRIPT_URL) fetch(`${APPS_SCRIPT_URL}?action=notify&type=status_update&userId=${activeJobId}&msg=${encodeURIComponent("✨ ผู้โดยสารขึ้นรถเรียบร้อยแล้ว! กำลังเริ่มออกเดินทางไปยังจุดส่ง")}`, {mode: 'no-cors'});
             updateRoute(true); 
         });
     }
 
     function executeFinishJob() {
-        closeFinishModal();
-        isFinishingJob = true; 
-        
-        let dist = activeJobData.distance || 0;
-        let price = activeJobData.price || 0;
-        let pName = activeJobData.pName || "";
-        let dName = activeJobData.dName || "";
-
+        closeFinishModal(); isFinishingJob = true; 
+        let dist = activeJobData.distance || 0; let price = activeJobData.price || 0; let pName = activeJobData.pName || ""; let dName = activeJobData.dName || "";
         let actualDur = activeJobData.duration || 0;
-        if (activeJobData.tripStartTime) {
-            let diffMs = Date.now() - activeJobData.tripStartTime;
-            actualDur = Math.max(1, Math.ceil(diffMs / 60000)); 
-        }
+        if (activeJobData.tripStartTime) actualDur = Math.max(1, Math.ceil((Date.now() - activeJobData.tripStartTime) / 60000)); 
 
-        if(APPS_SCRIPT_URL) {
-            let msg = `🏁 การเดินทางสิ้นสุดลงแล้วเรียบร้อย!\n\n📍 จุดรับ: ${pName}\n🏁 จุดส่ง: ${dName}\n🛣️ ระยะทาง: ${dist} กม.\n⏱️ เวลาเดินทางจริง: ${actualDur} นาที\n💵 ราคาเหมาจ่าย: ${price} บาท\n\nขอบคุณที่ใช้บริการ F1 Driver ครับ!`;
-            fetch(`${APPS_SCRIPT_URL}?action=notify&type=status_update&userId=${activeJobId}&msg=${encodeURIComponent(msg)}`, {mode: 'no-cors'});
-        }
+        if(APPS_SCRIPT_URL) fetch(`${APPS_SCRIPT_URL}?action=notify&type=status_update&userId=${activeJobId}&msg=${encodeURIComponent(`🏁 การเดินทางสิ้นสุดลงแล้วเรียบร้อย!\n\n📍 จุดรับ: ${pName}\n🏁 จุดส่ง: ${dName}\n🛣️ ระยะทาง: ${dist} กม.\n⏱️ เวลาเดินทางจริง: ${actualDur} นาที\n💵 ราคาเหมาจ่าย: ${price} บาท\n\nขอบคุณที่ใช้บริการ F1 Driver ครับ!`)}`, {mode: 'no-cors'});
 
         setTimeout(() => {
             db.ref('bookings/' + activeJobId).update({ status: "ถึงที่หมายเรียบร้อยแล้ว" }).then(() => {
-                showAlert("สำเร็จ!", "ส่งผู้โดยสารเรียบร้อย รอรับงานถัดไป", "success", () => {
-                    isFinishingJob = false;
-                    resetToIdle();
-                });
+                showAlert("สำเร็จ!", "ส่งผู้โดยสารเรียบร้อย รอรับงานถัดไป", "success", () => { isFinishingJob = false; resetToIdle(); });
             });
         }, 500);
     }
 
-    function promptCancelJob() {
-        document.getElementById('driverCancelModal').classList.remove('hidden');
-    }
-
-    function closeDriverCancelModal() {
-        document.getElementById('driverCancelModal').classList.add('hidden');
-    }
+    function promptCancelJob() { document.getElementById('driverCancelModal').classList.remove('hidden'); }
+    function closeDriverCancelModal() { document.getElementById('driverCancelModal').classList.add('hidden'); }
 
     function executeCancelJob() {
         closeDriverCancelModal();
         if(activeJobId) {
             let oldJobId = activeJobId;
             db.ref('bookings/' + activeJobId).update({ status: "ยกเลิกโดยคนขับ" }).then(() => {
-                if(APPS_SCRIPT_URL) {
-                    fetch(`${APPS_SCRIPT_URL}?action=notify&type=cancel_driver&userId=${oldJobId}`, {mode:'no-cors'});
-                }
-                showAlert("ยกเลิกงานแล้ว", "ระบบได้ทำการยกเลิกงานนี้เรียบร้อยแล้ว", "error", () => {
-                    resetToIdle();
-                });
+                if(APPS_SCRIPT_URL) fetch(`${APPS_SCRIPT_URL}?action=notify&type=cancel_driver&userId=${oldJobId}`, {mode:'no-cors'});
+                showAlert("ยกเลิกงานแล้ว", "ระบบได้ทำการยกเลิกงานนี้เรียบร้อยแล้ว", "error", () => { resetToIdle(); });
             });
         }
     }
 
     function resetToIdle() {
-        localStorage.removeItem('activeJobId');
-        activeJobId = null;
-        activeJobData = null;
-        selectedJobId = null;
-        document.getElementById('activeJobPanel').classList.add('hidden');
-        document.getElementById('idlePanel').classList.remove('hidden');
-        document.getElementById('btnOverview').classList.add('hidden'); 
-        document.getElementById('etaDisplay').classList.add('hidden'); 
-        clearMapRoutes(); 
-        centerToDriver(); 
-        renderJobList(); 
+        localStorage.removeItem('activeJobId'); activeJobId = null; activeJobData = null; selectedJobId = null;
+        document.getElementById('activeJobPanel').classList.add('hidden'); document.getElementById('idlePanel').classList.remove('hidden');
+        document.getElementById('btnOverview').classList.add('hidden'); document.getElementById('etaDisplay').classList.add('hidden'); 
+        clearMapRoutes(); centerToDriver(); renderJobList(); 
     }
 
     function updateRoute(forceZoom = false) {
         if(!activeJobData || !directionsService) return;
-        let origin = {lat: driverLat, lng: driverLng};
-        let dest;
-        let isGoingToPickup = false;
-        let isGoingToDropoff = false;
+        let origin = {lat: driverLat, lng: driverLng}; let dest; let isGoingToPickup = false; let isGoingToDropoff = false;
 
         if(activeJobData.status.includes("กำลังเดินทางไปหา") || activeJobData.status.includes("รับงานแล้ว") || activeJobData.status.includes("มาถึงจุดรับ")) {
             dest = {lat: activeJobData.pLat, lng: activeJobData.pLng};
-            markerPick.setPosition(dest); markerPick.setMap(map); markerDrop.setMap(null);
-            isGoingToPickup = true;
+            markerPick.setPosition(dest); markerPick.setMap(map); markerDrop.setMap(null); isGoingToPickup = true;
         } else {
             dest = {lat: activeJobData.dLat, lng: activeJobData.dLng};
-            markerDrop.setPosition(dest); markerDrop.setMap(map); markerPick.setMap(null);
-            isGoingToDropoff = true;
+            markerDrop.setPosition(dest); markerDrop.setMap(map); markerPick.setMap(null); isGoingToDropoff = true;
         }
 
         directionsService.route({origin: origin, destination: dest, travelMode: 'DRIVING'}, (res, stat) => {
             if(stat === 'OK') {
-                directionsRenderer.setDirections(res);
-                currentRouteBounds = res.routes[0].bounds; 
-                
-                let leg = res.routes[0].legs[0];
-                let distMeters = leg.distance.value; 
-                let distKm = distMeters / 1000;
+                directionsRenderer.setDirections(res); currentRouteBounds = res.routes[0].bounds; 
+                let leg = res.routes[0].legs[0]; let distKm = leg.distance.value / 1000;
                 
                 let etaEl = document.getElementById('etaDisplay');
-                etaEl.innerText = `ระยะทาง ${leg.distance.text} • ${leg.duration.text}`;
-                etaEl.classList.remove('hidden');
+                etaEl.innerText = `ระยะทาง ${leg.distance.text} • ${leg.duration.text}`; etaEl.classList.remove('hidden');
 
                 if(isGoingToPickup && distKm <= 2.0 && activeJobData.notifiedPick !== true) {
-                    activeJobData.notifiedPick = true; 
                     db.ref('bookings/' + activeJobId).update({ notifiedPick: true });
-                    if(APPS_SCRIPT_URL) {
-                        let msg = `⚡ คนขับใกล้ถึงจุดรับแล้วครับ! (ระยะห่างอีกประมาณ ${distKm.toFixed(1)} กม.)`;
-                        fetch(`${APPS_SCRIPT_URL}?action=notify&type=status_update&userId=${activeJobId}&msg=${encodeURIComponent(msg)}`, {mode: 'no-cors'});
-                    }
-                } 
-                else if(isGoingToDropoff && distKm <= 2.0 && activeJobData.notifiedDrop !== true) {
-                    activeJobData.notifiedDrop = true; 
+                    if(APPS_SCRIPT_URL) fetch(`${APPS_SCRIPT_URL}?action=notify&type=status_update&userId=${activeJobId}&msg=${encodeURIComponent(`⚡ คนขับใกล้ถึงจุดรับแล้วครับ! (ระยะห่างอีกประมาณ ${distKm.toFixed(1)} กม.)`)}`, {mode: 'no-cors'});
+                } else if(isGoingToDropoff && distKm <= 2.0 && activeJobData.notifiedDrop !== true) {
                     db.ref('bookings/' + activeJobId).update({ notifiedDrop: true });
-                    if(APPS_SCRIPT_URL) {
-                        let msg = `⚡ ใกล้ถึงจุดหมายปลายทางแล้วครับ! (ระยะห่างอีกประมาณ ${distKm.toFixed(1)} กม.)`;
-                        fetch(`${APPS_SCRIPT_URL}?action=notify&type=status_update&userId=${activeJobId}&msg=${encodeURIComponent(msg)}`, {mode: 'no-cors'});
-                    }
+                    if(APPS_SCRIPT_URL) fetch(`${APPS_SCRIPT_URL}?action=notify&type=status_update&userId=${activeJobId}&msg=${encodeURIComponent(`⚡ ใกล้ถึงจุดหมายปลายทางแล้วครับ! (ระยะห่างอีกประมาณ ${distKm.toFixed(1)} กม.)`)}`, {mode: 'no-cors'});
                 }
                 
                 if (forceZoom) {
-                    isTrackingMode = false;
-                    document.getElementById('btnCrosshair').classList.replace('text-blue-600', 'text-gray-400');
-                    setTimeout(() => {
-                        const mapPadding = { top: 80, right: 50, bottom: 320, left: 50 }; 
-                        map.fitBounds(currentRouteBounds, mapPadding);
-                    }, 200);
+                    isTrackingMode = false; document.getElementById('btnCrosshair').classList.replace('text-blue-600', 'text-gray-400');
+                    setTimeout(() => { map.fitBounds(currentRouteBounds, { top: 80, right: 50, bottom: 320, left: 50 }); }, 200);
                 }
             }
         });
@@ -779,11 +628,8 @@
     function openDriverNavMap() {
         if(!activeJobData) return;
         let lat, lng;
-        if(activeJobData.status.includes("ออกเดินทาง") || activeJobData.status.includes("ไปยังจุดส่ง")) {
-            lat = activeJobData.dLat; lng = activeJobData.dLng;
-        } else {
-            lat = activeJobData.pLat; lng = activeJobData.pLng;
-        }
+        if(activeJobData.status.includes("ออกเดินทาง") || activeJobData.status.includes("ไปยังจุดส่ง")) { lat = activeJobData.dLat; lng = activeJobData.dLng; } 
+        else { lat = activeJobData.pLat; lng = activeJobData.pLng; }
         window.open(`https://www.google.com/maps/dir/?api=1&origin=${driverLat},${driverLng}&destination=${lat},${lng}&travelmode=driving`, '_blank');
     }
 
