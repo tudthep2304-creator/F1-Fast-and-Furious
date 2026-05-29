@@ -46,11 +46,11 @@
     </div>
     
     <div class="bg-blue-50 p-3 rounded-xl mb-3 flex justify-between items-center border border-blue-100">
-        <div>
+        <div class="flex-1 truncate pr-2">
             <p class="text-[11px] text-gray-500">ผู้โดยสาร</p>
-            <p class="font-bold text-gray-800 text-sm" id="passengerName">...</p>
+            <p class="font-bold text-gray-800 text-sm truncate" id="passengerName">...</p>
         </div>
-        <a href="#" id="btnCallPassenger" class="bg-green-500 text-white px-4 py-2 rounded-lg font-bold text-sm shadow-sm flex gap-2 items-center">
+        <a href="#" id="btnCallPassenger" class="bg-green-500 text-white px-4 py-2 rounded-lg font-bold text-sm shadow-sm flex gap-2 items-center shrink-0">
             <i class="fas fa-phone-alt"></i> โทร
         </a>
     </div>
@@ -96,7 +96,6 @@
   </div>
 
   <script>
-    // 🌟 แก้ไข API Key ของ Firebase ให้ถูกต้อง (ไม่ใช่ Key ของ Google Maps)
     firebase.initializeApp({
       apiKey: "AIzaSyBNtaYaX1OW-86_9EGiVN9EpgPzWOX_twQ",
       authDomain: "myride-chiangrai.firebaseapp.com",
@@ -117,6 +116,7 @@
     let activeJobId = null;
     let activeJobData = null;
     let incomingJobId = null;
+    let allBookings = null; // 🌟 เก็บข้อมูลงานทั้งหมดไว้
 
     // เริ่มต้นแผนที่คนขับ
     function initMap() {
@@ -153,25 +153,21 @@
             statusEl.className = "text-sm font-bold text-green-600";
             gpsEl.innerText = "กำลังค้นหาพิกัด GPS ของคุณ...";
             
-            // อัปเดตฐานข้อมูลให้ผู้โดยสารเห็น
             db.ref('driver').update({ status: "ออนไลน์" });
 
-            // ติดตาม GPS
             if (navigator.geolocation) {
                 watchId = navigator.geolocation.watchPosition((pos) => {
                     driverLat = pos.coords.latitude;
                     driverLng = pos.coords.longitude;
                     
-                    // อัปเดตตำแหน่งตัวเองบนแมพ
                     let posObj = {lat: driverLat, lng: driverLng};
                     if(markerDriver) markerDriver.setPosition(posObj);
-                    if(!activeJobId) map.setCenter(posObj); // ซูมหาตัวเองถ้าไม่มีงาน
+                    if(!activeJobId) map.setCenter(posObj); 
 
-                    // ส่งขึ้น Firebase
                     db.ref('driver').update({ lat: driverLat, lng: driverLng });
                     gpsEl.innerText = `พิกัดอัปเดตล่าสุด: ${new Date().toLocaleTimeString()}`;
                     
-                    if(activeJobId) updateRoute(); // ถ้ามีงานให้อัปเดตเส้นทาง
+                    if(activeJobId) updateRoute(); 
                 }, 
                 (err) => { gpsEl.innerText = "GPS Error: กรุณาเปิด Location (ตำแหน่งที่ตั้ง)"; }, 
                 { enableHighAccuracy: true, maximumAge: 10000 });
@@ -184,23 +180,38 @@
             db.ref('driver').update({ status: "ออฟไลน์" });
             if(watchId) navigator.geolocation.clearWatch(watchId);
         }
+
+        // 🌟 เรียกเช็คงานทันทีเมื่อกดออนไลน์!
+        checkJobs();
     }
 
-    // 🌟 ระบบดักจับงานจากผู้โดยสาร
+    // 🌟 ติดตามการเปลี่ยนแปลงของฐานข้อมูลตลอดเวลา
     db.ref('bookings').on('value', snap => {
-        if(!isOnline) return; 
-        const bookings = snap.val();
-        if(!bookings) {
+        allBookings = snap.val();
+        checkJobs();
+    });
+
+    // 🌟 ระบบดักจับและตรวจสอบงาน
+    function checkJobs() {
+        if (!isOnline) {
+            // ถ้าออฟไลน์ ให้ซ่อนป๊อปอัปไปเลยถ้ามันเด้งค้างอยู่
+            if(document.getElementById('incomingModal').classList.contains('flex') && !activeJobId) {
+                rejectJob(); 
+            }
+            return; 
+        }
+        
+        if (!allBookings) {
             if(activeJobId) resetToIdle();
             return;
         }
 
         // 1. ถ้ามีงานที่เรารับไว้แล้ว (Active)
-        if(activeJobId && bookings[activeJobId]) {
-            activeJobData = bookings[activeJobId];
+        if (activeJobId && allBookings[activeJobId]) {
+            activeJobData = allBookings[activeJobId];
             updateActiveJobUI();
             return;
-        } else if (activeJobId && !bookings[activeJobId]) {
+        } else if (activeJobId && !allBookings[activeJobId]) {
             // โดนผู้โดยสารกดยกเลิก
             alert("ผู้โดยสารได้ยกเลิกงานนี้แล้ว");
             resetToIdle();
@@ -209,9 +220,9 @@
 
         // 2. ถ้าไม่มีงานที่ทำอยู่ ให้หางานใหม่ที่สถานะ "รอผู้ขับขี่ตอบรับ"
         let foundNewJob = false;
-        for (let key in bookings) {
-            let b = bookings[key];
-            if (b.status === "รอผู้ขับขี่ตอบรับ" && !document.getElementById('incomingModal').classList.contains('flex')) {
+        for (let key in allBookings) {
+            let b = allBookings[key];
+            if (b.status === "รอผู้ขับขี่ตอบรับ" && !activeJobId) {
                 incomingJobId = key;
                 document.getElementById('incPick').innerText = b.pName;
                 document.getElementById('incDrop').innerText = b.dName;
@@ -219,10 +230,16 @@
                 document.getElementById('incomingModal').classList.remove('hidden');
                 document.getElementById('incomingModal').classList.add('flex');
                 foundNewJob = true;
-                break;
+                break; // โชว์ทีละงาน
             }
         }
-    });
+
+        // ถ้าไม่มีงานเลย ก็ให้ซ่อนป๊อปอัปไว้
+        if(!foundNewJob && !activeJobId) {
+            document.getElementById('incomingModal').classList.add('hidden');
+            document.getElementById('incomingModal').classList.remove('flex');
+        }
+    }
 
     function rejectJob() {
         document.getElementById('incomingModal').classList.add('hidden');
@@ -236,17 +253,16 @@
         document.getElementById('incomingModal').classList.add('hidden');
         document.getElementById('incomingModal').classList.remove('flex');
         
-        // 🌟 อัปเดตสถานะไปบอกผู้โดยสารว่า "กำลังเดินทางไปหา"
         db.ref('bookings/' + activeJobId).update({ 
             status: "รับงานแล้ว กำลังเดินทางไปหา",
-            driverPhone: "0946379669" // แอบส่งเบอร์เข้าไปในระบบ
+            driverPhone: "0946379669"
         });
 
         document.getElementById('idlePanel').classList.add('hidden');
         document.getElementById('activeJobPanel').classList.remove('hidden');
     }
 
-    // 🌟 อัปเดตหน้าจอคนขับตามสถานะปัจจุบัน
+    // อัปเดตหน้าจอคนขับตามสถานะปัจจุบัน
     function updateActiveJobUI() {
         if(!activeJobData) return;
         
@@ -283,7 +299,7 @@
         updateRoute();
     }
 
-    // 🌟 จัดการ Action ปุ่มหลัก
+    // จัดการ Action ปุ่มหลัก
     function nextAction() {
         if(!activeJobId || !activeJobData) return;
         let s = activeJobData.status;
