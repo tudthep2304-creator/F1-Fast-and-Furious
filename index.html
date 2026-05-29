@@ -26,7 +26,7 @@
   </div>
 
   <div class="fixed top-20 right-4 z-30 flex flex-col gap-3">
-      <button onclick="centerToDriver()" class="bg-white w-12 h-12 flex items-center justify-center rounded-full shadow-lg text-[#2B3A6F] border border-gray-200 active:bg-gray-100 transition">
+      <button onclick="centerToDriver()" id="btnCrosshair" class="bg-white w-12 h-12 flex items-center justify-center rounded-full shadow-lg text-blue-600 border border-gray-200 active:bg-gray-100 transition">
           <i class="fas fa-crosshairs text-xl"></i>
       </button>
       <button onclick="fitRouteBounds()" id="btnOverview" class="hidden bg-white w-12 h-12 flex items-center justify-center rounded-full shadow-lg text-green-600 border border-gray-200 active:bg-gray-100 transition">
@@ -182,7 +182,8 @@
     let isOnline = false;
     let watchId = null;
     let isFirstGps = true; 
-    let lastRouteUpdate = 0; // 🌟 ใช้จับเวลาการอัปเดตเส้นทาง
+    let lastRouteUpdate = 0; 
+    let isTrackingMode = true; // 🌟 สถานะ Tracking Mode
     
     let activeJobId = null;
     let activeJobData = null;
@@ -218,14 +219,22 @@
         if (window.alertCloseCallback) window.alertCloseCallback();
     }
 
+    // 🌟 ระบบ Tracking: กดแล้วเข้าสู่โหมดติดตามรถ (แผนที่วิ่งตาม)
     function centerToDriver() {
+        isTrackingMode = true;
+        document.getElementById('btnCrosshair').classList.replace('text-gray-400', 'text-blue-600');
+        
         if(map && driverLat && driverLng) {
             map.panTo({lat: driverLat, lng: driverLng});
             map.setZoom(16);
         }
     }
 
+    // 🌟 ระบบ Overview: กดดูภาพรวม จะปิดโหมดติดตามอัตโนมัติ
     function fitRouteBounds() {
+        isTrackingMode = false;
+        document.getElementById('btnCrosshair').classList.replace('text-blue-600', 'text-gray-400');
+        
         if (map && currentRouteBounds) {
             const mapPadding = { top: 80, right: 50, bottom: 320, left: 50 }; 
             map.fitBounds(currentRouteBounds, mapPadding);
@@ -247,9 +256,14 @@
         padding: { bottom: 320 } 
       });
 
+      // 🌟 ถ้าคนขับใช้นิ้วเลื่อนแผนที่ ให้ปิดโหมดติดตามทันที
+      map.addListener('dragstart', () => {
+          isTrackingMode = false;
+          document.getElementById('btnCrosshair').classList.replace('text-blue-600', 'text-gray-400');
+      });
+
       directionsService = new google.maps.DirectionsService();
       
-      // ให้มันรักษาขอบเขตที่คนขับใช้นิ้วเลื่อนไว้ ไม่ให้มันเด้งตามรัวๆ
       directionsRenderer = new google.maps.DirectionsRenderer({ 
           map: map, 
           suppressMarkers: true, 
@@ -293,13 +307,17 @@
                     let posObj = {lat: driverLat, lng: driverLng};
                     if(markerDriver) markerDriver.setPosition(posObj);
                     
+                    // 🌟 ถ้า Tracking Mode เปิดอยู่ ให้แผนที่วิ่งตามรถ!
+                    if(isTrackingMode && map) {
+                        map.panTo(posObj);
+                    }
+                    
                     if(isFirstGps) {
-                        if(!activeJobId && !selectedJobId) map.setCenter(posObj);
+                        if(!activeJobId && !selectedJobId && isTrackingMode) map.setZoom(16);
                         if(activeJobId) updateRoute(true); 
                         isFirstGps = false;
                     }
 
-                    // 🌟 วาดเส้นสีฟ้าใหม่แบบ Real-time ทุกๆ 10 วินาทีที่รถขยับ 
                     if(activeJobId && (Date.now() - lastRouteUpdate > 10000)) {
                         lastRouteUpdate = Date.now();
                         updateRoute(false); 
@@ -467,8 +485,7 @@
 
         if (!activeJobId) {
             clearMapRoutes();
-            map.setZoom(16);
-            map.setCenter({lat: driverLat, lng: driverLng});
+            centerToDriver(); // กลับสู่โหมดติดตามปกติ
         }
     }
 
@@ -521,7 +538,6 @@
         let statusText = document.getElementById('jobStatusHeader');
         let btnAction = document.getElementById('btnAction');
 
-        // โชว์ปุ่ม Overview เสมอเวลามีงาน
         document.getElementById('btnOverview').classList.remove('hidden');
 
         let s = activeJobData.status;
@@ -540,9 +556,6 @@
             btnAction.innerText = "ถึงที่หมาย (จบงาน)";
             btnAction.className = "flex-[2] bg-green-500 text-white py-3 rounded-xl font-bold text-base shadow-md";
         }
-        
-        // วาดเส้นทางใหม่
-        updateRoute();
     }
 
     function promptFinishOrNext() {
@@ -639,12 +652,10 @@
         document.getElementById('btnOverview').classList.add('hidden'); 
         document.getElementById('etaDisplay').classList.add('hidden'); 
         clearMapRoutes(); 
-        map.setZoom(16);
-        map.setCenter({lat: driverLat, lng: driverLng});
+        centerToDriver(); // เปิดโหมด Tracking กลับมาเมื่อเคลียร์งาน
         renderJobList(); 
     }
 
-    // 🌟 ระบบคำนวณและอัปเดตเส้นทางสีฟ้า พร้อมข้อมูล ETA (ระยะทางและเวลา)
     function updateRoute(forceZoom = false) {
         if(!activeJobData || !directionsService) return;
         let origin = {lat: driverLat, lng: driverLng};
@@ -663,13 +674,15 @@
                 directionsRenderer.setDirections(res);
                 currentRouteBounds = res.routes[0].bounds; 
                 
-                // 🌟 ดึงข้อมูลระยะทางและเวลาจาก Google Maps API มาโชว์
                 let leg = res.routes[0].legs[0];
                 let etaEl = document.getElementById('etaDisplay');
                 etaEl.innerText = `ระยะทาง ${leg.distance.text} • ${leg.duration.text}`;
                 etaEl.classList.remove('hidden');
                 
+                // 🌟 ปิดโหมดติดตามชั่วคราวเมื่อต้องการซูมดูภาพรวม
                 if (forceZoom) {
+                    isTrackingMode = false;
+                    document.getElementById('btnCrosshair').classList.replace('text-blue-600', 'text-gray-400');
                     setTimeout(() => {
                         const mapPadding = { top: 80, right: 50, bottom: 320, left: 50 }; 
                         map.fitBounds(currentRouteBounds, mapPadding);
