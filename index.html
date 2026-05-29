@@ -58,7 +58,10 @@
 
   <div id="activeJobPanel" class="ui-panel hidden h-auto pb-8 pt-5">
     <div class="flex justify-between items-center border-b pb-2 mb-2">
-      <h2 class="font-black text-indigo-700 text-base" id="jobStatusHeader">กำลังเดินทางไปหา</h2>
+      <div>
+          <h2 class="font-black text-indigo-700 text-base" id="jobStatusHeader">กำลังเดินทางไปหา</h2>
+          <p class="text-xs text-blue-600 font-bold hidden mt-0.5" id="etaDisplay">ระยะทาง -- กม. • -- นาที</p>
+      </div>
       <span class="bg-green-100 text-green-700 px-3 py-1 rounded-full font-bold text-sm" id="jobPrice">฿0</span>
     </div>
     
@@ -178,7 +181,8 @@
     let driverLat = 19.910479, driverLng = 99.840576; 
     let isOnline = false;
     let watchId = null;
-    let isFirstGps = true; // 🌟 ตรวจสอบ GPS ครั้งแรก
+    let isFirstGps = true; 
+    let lastRouteUpdate = 0; // 🌟 ใช้จับเวลาการอัปเดตเส้นทาง
     
     let activeJobId = null;
     let activeJobData = null;
@@ -187,7 +191,7 @@
     let hiddenJobs = {}; 
     let isFinishingJob = false;
     
-    let currentRouteBounds = null; // 🌟 เก็บค่าพิกัดกรอบเส้นทางไว้ใช้กับปุ่ม Overview
+    let currentRouteBounds = null; 
 
     function showAlert(title, message, type = 'info', callback = null) {
         document.getElementById('alertTitle').innerText = title;
@@ -221,7 +225,6 @@
         }
     }
 
-    // 🌟 ฟังก์ชันซูมดูภาพรวมเส้นทางทั้งหมด (รถ กับ จุดหมาย)
     function fitRouteBounds() {
         if (map && currentRouteBounds) {
             const mapPadding = { top: 80, right: 50, bottom: 320, left: 50 }; 
@@ -245,10 +248,12 @@
       });
 
       directionsService = new google.maps.DirectionsService();
+      
+      // ให้มันรักษาขอบเขตที่คนขับใช้นิ้วเลื่อนไว้ ไม่ให้มันเด้งตามรัวๆ
       directionsRenderer = new google.maps.DirectionsRenderer({ 
           map: map, 
           suppressMarkers: true, 
-          preserveViewport: true, // 🌟 ไม่ซูมเด้งเองเวลารถขยับ
+          preserveViewport: true, 
           polylineOptions: {strokeColor:'#4285F4', strokeWeight:6} 
       });
       
@@ -276,7 +281,7 @@
             statusEl.innerText = "🟢 ออนไลน์ (พร้อมรับงาน)";
             statusEl.className = "text-sm font-bold text-green-600";
             gpsEl.innerText = "กำลังค้นหาพิกัด GPS ของคุณ...";
-            isFirstGps = true; // รีเซ็ตการเช็ค GPS ใหม่
+            isFirstGps = true; 
             
             db.ref('driver').update({ status: "ออนไลน์" });
 
@@ -288,11 +293,16 @@
                     let posObj = {lat: driverLat, lng: driverLng};
                     if(markerDriver) markerDriver.setPosition(posObj);
                     
-                    // 🌟 วาดเส้นทางและซูม "ครั้งแรก" ที่ได้ GPS เพื่อให้แม่นยำที่สุด
                     if(isFirstGps) {
                         if(!activeJobId && !selectedJobId) map.setCenter(posObj);
-                        if(activeJobId) updateRoute(true); // บังคับอัปเดตและซูมภาพรวม
+                        if(activeJobId) updateRoute(true); 
                         isFirstGps = false;
+                    }
+
+                    // 🌟 วาดเส้นสีฟ้าใหม่แบบ Real-time ทุกๆ 10 วินาทีที่รถขยับ 
+                    if(activeJobId && (Date.now() - lastRouteUpdate > 10000)) {
+                        lastRouteUpdate = Date.now();
+                        updateRoute(false); 
                     }
 
                     db.ref('driver').update({ lat: driverLat, lng: driverLng });
@@ -495,7 +505,6 @@
         document.getElementById('idlePanel').classList.add('hidden');
         document.getElementById('activeJobPanel').classList.remove('hidden');
         
-        // บังคับวาดเส้นทางและซูมทันทีที่รับงาน
         updateRoute(true);
         updateActiveJobUI();
     }
@@ -512,14 +521,14 @@
         let statusText = document.getElementById('jobStatusHeader');
         let btnAction = document.getElementById('btnAction');
 
+        // โชว์ปุ่ม Overview เสมอเวลามีงาน
+        document.getElementById('btnOverview').classList.remove('hidden');
+
         let s = activeJobData.status;
         if(s.includes("กำลังเดินทางไปหา") || s.includes("รับงานแล้ว")) {
             statusText.innerText = "กำลังเดินทางไปรับ";
             btnAction.innerText = "มาถึงจุดรับ";
             btnAction.className = "flex-[2] bg-[#2B3A6F] text-white py-3 rounded-xl font-bold text-base shadow-md";
-            markerPick.setPosition({lat: activeJobData.pLat, lng: activeJobData.pLng}); markerPick.setMap(map);
-            markerDrop.setMap(null);
-            document.getElementById('btnOverview').classList.remove('hidden'); // โชว์ปุ่มดูภาพรวม
         } 
         else if(s.includes("มาถึงจุดรับ") || s.includes("ถึงจุดรับแล้ว")) {
             statusText.innerText = "รอผู้โดยสารขึ้นรถ";
@@ -530,9 +539,10 @@
             statusText.innerText = "กำลังเดินทางไปจุดส่ง";
             btnAction.innerText = "ถึงที่หมาย (จบงาน)";
             btnAction.className = "flex-[2] bg-green-500 text-white py-3 rounded-xl font-bold text-base shadow-md";
-            markerDrop.setPosition({lat: activeJobData.dLat, lng: activeJobData.dLng}); markerDrop.setMap(map);
-            markerPick.setMap(null);
         }
+        
+        // วาดเส้นทางใหม่
+        updateRoute();
     }
 
     function promptFinishOrNext() {
@@ -591,7 +601,7 @@
                     let msg = "✨ ผู้โดยสารขึ้นรถเรียบร้อยแล้ว! กำลังเริ่มออกเดินทางไปยังจุดส่ง";
                     fetch(`${APPS_SCRIPT_URL}?action=notify&type=status_update&userId=${activeJobId}&msg=${encodeURIComponent(msg)}`, {mode: 'no-cors'});
                 }
-                updateRoute(true); // บังคับวาดเส้นทางใหม่และจัดหน้าจอ
+                updateRoute(true); 
             });
         } 
     }
@@ -626,14 +636,15 @@
         selectedJobId = null;
         document.getElementById('activeJobPanel').classList.add('hidden');
         document.getElementById('idlePanel').classList.remove('hidden');
-        document.getElementById('btnOverview').classList.add('hidden'); // ซ่อนปุ่มภาพรวม
+        document.getElementById('btnOverview').classList.add('hidden'); 
+        document.getElementById('etaDisplay').classList.add('hidden'); 
         clearMapRoutes(); 
         map.setZoom(16);
         map.setCenter({lat: driverLat, lng: driverLng});
         renderJobList(); 
     }
 
-    // 🌟 ฟังก์ชันอัปเดตเส้นทาง (บังคับวาดเส้นเฉพาะเมื่อมีการรับงาน หรือสถานะเปลี่ยนจุดหมาย)
+    // 🌟 ระบบคำนวณและอัปเดตเส้นทางสีฟ้า พร้อมข้อมูล ETA (ระยะทางและเวลา)
     function updateRoute(forceZoom = false) {
         if(!activeJobData || !directionsService) return;
         let origin = {lat: driverLat, lng: driverLng};
@@ -650,9 +661,14 @@
         directionsService.route({origin: origin, destination: dest, travelMode: 'DRIVING'}, (res, stat) => {
             if(stat === 'OK') {
                 directionsRenderer.setDirections(res);
-                currentRouteBounds = res.routes[0].bounds; // บันทึกกรอบภาพรวมเก็บไว้ให้ปุ่ม Overview ใช้
+                currentRouteBounds = res.routes[0].bounds; 
                 
-                // ถ้าระบุให้ซูมบังคับ (เช่น เพิ่งรับงานใหม่) ให้จัดภาพรวมให้พอดี
+                // 🌟 ดึงข้อมูลระยะทางและเวลาจาก Google Maps API มาโชว์
+                let leg = res.routes[0].legs[0];
+                let etaEl = document.getElementById('etaDisplay');
+                etaEl.innerText = `ระยะทาง ${leg.distance.text} • ${leg.duration.text}`;
+                etaEl.classList.remove('hidden');
+                
                 if (forceZoom) {
                     setTimeout(() => {
                         const mapPadding = { top: 80, right: 50, bottom: 320, left: 50 }; 
