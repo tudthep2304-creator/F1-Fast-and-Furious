@@ -107,9 +107,9 @@
         </div>
     </div>
     
-    <div class="bg-gray-900/60 p-2.5 rounded-xl text-center border border-gray-700 mb-3 space-y-1">
-        <p class="text-gray-400 text-[11px]" id="gpsStatus">รอเปิดระบบเพื่ออัปเดต GPS...</p>
-        <p class="text-[10px] text-green-400 hidden" id="wakeLockStatus"><i class="fas fa-sun"></i> หน้าจอจะเปิดค้างไว้ตลอดเวลา</p>
+    <div class="bg-gray-900/60 p-3 rounded-xl text-center border border-gray-700 mb-3 space-y-1">
+        <p class="text-gray-400 text-xs" id="gpsStatus">รอเปิดระบบเพื่ออัปเดต GPS...</p>
+        <p class="text-[11px] text-green-400 hidden" id="wakeLockStatus"><i class="fas fa-cog fa-spin"></i> หน้าจอจะเปิดค้างไว้ตลอดเวลา</p>
     </div>
 
     <h3 class="text-sm font-bold text-gray-400 mb-2 flex items-center gap-2"><i class="fas fa-list-ul"></i> รายการงานที่รอรับ</h3>
@@ -346,22 +346,21 @@
     let hiddenJobs = {}; 
     let currentRouteBounds = null; 
 
+    let isProcessingAction = false;
     let lastNotifiedMsg = ""; 
+
     let knownPendingJobs = [];
     let isAlarmRinging = false; 
 
-    // 🌟 สร้างรหัส Session ID แบบสุ่ม
     function generateUUID() {
         return Math.random().toString(36).substring(2) + Date.now().toString(36);
     }
 
-    // 🌟 ตรวจสอบว่าล็อกอินหรือยัง
     function checkLogin() {
         if (!driverPin || !ALLOWED_PINS.includes(driverPin)) {
             document.getElementById('loginModal').classList.remove('hidden');
         } else {
             document.getElementById('loginModal').classList.add('hidden');
-            // ตรวจจับเครื่องซ้อน
             db.ref('driver_sessions/' + driverPin).on('value', snap => {
                 if (snap.val() && snap.val() !== driverSessionId) {
                     forceLogout("รหัสผ่านนี้ถูกใช้งานจากอุปกรณ์อื่น\nระบบจะทำการออกจากระบบโดยอัตโนมัติ");
@@ -372,7 +371,6 @@
         }
     }
 
-    // 🌟 ฟังก์ชันล็อกอิน (ตรวจสอบรหัสผ่าน)
     function submitLogin() {
         let pin = document.getElementById('pinInput').value;
         if(pin.length !== 4) {
@@ -399,9 +397,9 @@
             document.getElementById('onlineToggle').checked = true;
             toggleOnline();
         }
+        processBookings(); // ประมวลผลงานที่ค้างอยู่ทันที
     }
 
-    // 🌟 ฟังก์ชันล็อกเอาท์และเตะออก
     function forceLogout(msg) {
         if(msg) alert(msg);
         isOnline = false;
@@ -420,6 +418,13 @@
 
     window.onload = () => {
         checkLogin();
+        if (driverPin) {
+            let savedOnlineState = localStorage.getItem('isDriverOnline');
+            if (savedOnlineState === 'true') {
+                document.getElementById('onlineToggle').checked = true;
+                toggleOnline();
+            }
+        }
     };
 
     function togglePanel(panelId) {
@@ -623,6 +628,7 @@
             isFirstGps = true; 
             
             requestWakeLock(); 
+
             db.ref('driver').update({ status: "ออนไลน์" });
 
             let snd = document.getElementById('jobAlertSound');
@@ -676,17 +682,24 @@
     }
 
     db.ref('bookings').on('value', snap => {
+        allBookings = snap.val();
+        processBookings(); // ประมวลผลข้อมูลใหม่ทุกครั้ง
+    });
+
+    // 🌟 ระบบประมวลผลข้อมูลงาน (กู้คืนงาน 100%)
+    function processBookings() {
         if(!driverPin) return; 
 
-        allBookings = snap.val();
+        let savedJobId = localStorage.getItem('activeJobId');
         let foundActiveJob = false;
 
         if (allBookings) {
             for (let key in allBookings) {
                 let b = allBookings[key];
-                let s = b.status;
-                // 🌟 ตรวจจับงานค้าง ที่เป็นของคนขับ PIN นี้เท่านั้น (กู้คืนงาน 100%)
-                if ((s.includes("รับงานแล้ว") || s.includes("มาถึงจุดรับ") || s.includes("เริ่มออกเดินทาง")) && b.driverPin === driverPin) {
+                let s = b.status || "";
+                // เช็คว่ามีงานค้างที่เป็นของ PIN ตัวเอง หรือเป็นงานที่บันทึกไว้ในเครื่อง
+                if ((s.includes("รับงานแล้ว") || s.includes("มาถึงจุดรับ") || s.includes("เริ่มออกเดินทาง")) && 
+                    (b.driverPin === driverPin || key === savedJobId)) {
                     activeJobId = key;
                     activeJobData = b;
                     localStorage.setItem('activeJobId', activeJobId);
@@ -705,26 +718,15 @@
             }
             updateActiveJobUI();
         } else {
-            let savedJobId = localStorage.getItem('activeJobId');
-            if (savedJobId && activeJobId === savedJobId) {
+            if (savedJobId && activeJobId === savedJobId && !isProcessingAction) {
                 localStorage.removeItem('activeJobId');
                 showAlert("งานถูกยกเลิก", "ผู้โดยสารได้ทำการยกเลิกงานนี้แล้วครับ", "error", () => { resetToIdle(); });
-            } else if (activeJobId && !savedJobId) {
+            } else if (activeJobId && !savedJobId && !isProcessingAction) {
                 showAlert("งานถูกยกเลิก", "ผู้โดยสารได้ทำการยกเลิกงานนี้แล้วครับ", "error", () => { resetToIdle(); });
             }
-            if (activeJobId && !foundActiveJob) resetToIdle();
+            if (activeJobId && !foundActiveJob && !isProcessingAction) resetToIdle();
         }
         renderJobList(); 
-    });
-
-    function checkActiveJobStatus() {
-        if (!activeJobId) return; 
-        if (!allBookings || !allBookings[activeJobId]) {
-            showAlert("งานถูกยกเลิก", "ผู้โดยสารได้ทำการยกเลิกงานนี้แล้วครับ", "error", () => { resetToIdle(); });
-            return;
-        }
-        activeJobData = allBookings[activeJobId];
-        updateActiveJobUI();
     }
 
     function renderJobList() {
@@ -844,37 +846,45 @@
     function closePendingCancelModal() { document.getElementById('pendingCancelModal').classList.add('hidden'); }
 
     function executeRejectPendingJob() {
+        if(isProcessingAction) return; isProcessingAction = true;
         closePendingCancelModal();
-        if(!selectedJobId) return;
+        if(!selectedJobId) { isProcessingAction = false; return; }
+        
         let jobIdToCancel = selectedJobId;
         closeJobDetail(); 
 
         db.ref('bookings/' + jobIdToCancel).update({ status: "ยกเลิกโดยคนขับ" }).then(() => {
             sendLineNotify(jobIdToCancel, "", 'cancel_driver');
-            showAlert("ยกเลิกสำเร็จ", "ปฏิเสธและยกเลิกงานเรียบร้อยแล้ว", "success", () => { renderJobList(); });
-        }).catch(e=>console.error(e));
+            showAlert("ยกเลิกสำเร็จ", "ปฏิเสธและยกเลิกงานเรียบร้อยแล้ว", "success", () => {
+                isProcessingAction = false;
+                renderJobList(); 
+            });
+        }).catch(()=>{ isProcessingAction = false; });
     }
 
     function promptAcceptJob() { document.getElementById('confirmAcceptModal').classList.remove('hidden'); }
     function closeConfirmAcceptModal() { document.getElementById('confirmAcceptModal').classList.add('hidden'); }
 
     function executeAcceptJob() {
+        if(isProcessingAction) return; isProcessingAction = true;
+        
         if(!selectedJobId || !allBookings[selectedJobId]) {
             showAlert("ข้อผิดพลาด", "ขออภัย งานนี้ถูกยกเลิกไปแล้ว", "error");
             closeConfirmAcceptModal(); closeJobDetail(); 
-            return;
+            isProcessingAction = false; return;
         }
         activeJobId = selectedJobId; localStorage.setItem('activeJobId', activeJobId);
         closeConfirmAcceptModal(); closeJobDetail(); 
         
-        // 🌟 สลักรหัส PIN ของคนขับลงไปในงานด้วย เพื่อให้กู้คืนงานกลับมาถูกคน!
+        // 🌟 ประทับตรายืนยันว่างานนี้เป็นของ PIN นี้เท่านั้น! (สำคัญมากในการกู้คืนงาน)
         db.ref('bookings/' + activeJobId).update({ 
             status: "รับงานแล้ว กำลังเดินทางไปหา", 
             driverPhone: "0946379669",
             driverPin: driverPin 
         }).then(() => {
             sendLineNotify(activeJobId, "🏎️ คนขับตอบรับงานของคุณแล้ว! กำลังรีบเดินทางไปหาคุณครับ");
-        }).catch(e=>console.error(e));
+            isProcessingAction = false;
+        }).catch(()=>{ isProcessingAction = false; });
         
         document.getElementById('idlePanel').classList.add('hidden'); document.getElementById('activeJobPanel').classList.remove('hidden');
         expandPanel('activeJobPanel'); 
@@ -922,21 +932,26 @@
     function closeFinishModal() { document.getElementById('finishJobModal').classList.add('hidden'); }
 
     function executeArrive() {
+        if(isProcessingAction) return; isProcessingAction = true;
         closeArriveModal();
         db.ref('bookings/' + activeJobId).update({ status: "มาถึงจุดรับแล้ว" }).then(() => {
             sendLineNotify(activeJobId, "📍 คนขับเดินทางมาถึงจุดรับของคุณเรียบร้อยแล้วครับ!");
-        }).catch(e=>console.error(e));
+            setTimeout(() => { isProcessingAction = false; }, 1500);
+        }).catch(()=>{ isProcessingAction = false; });
     }
 
     function executeStartTrip() {
+        if(isProcessingAction) return; isProcessingAction = true;
         closeBoardedModal();
         db.ref('bookings/' + activeJobId).update({ status: "เริ่มออกเดินทาง ไปยังจุดส่ง", tripStartTime: firebase.database.ServerValue.TIMESTAMP }).then(() => {
             sendLineNotify(activeJobId, "✨ ผู้โดยสารขึ้นรถเรียบร้อยแล้ว! กำลังเริ่มออกเดินทางไปยังจุดส่ง");
             updateRoute(true); 
-        }).catch(e=>console.error(e));
+            setTimeout(() => { isProcessingAction = false; }, 1500);
+        }).catch(()=>{ isProcessingAction = false; });
     }
 
     function executeFinishJob() {
+        if(isProcessingAction) return; isProcessingAction = true;
         closeFinishModal(); 
         
         let dist = activeJobData.distance || 0; let price = activeJobData.price || 0; let pName = activeJobData.pName || ""; let dName = activeJobData.dName || "";
@@ -946,22 +961,25 @@
         sendLineNotify(activeJobId, `🏁 การเดินทางสิ้นสุดลงแล้วเรียบร้อย!\n\n📍 จุดรับ: ${pName}\n🏁 จุดส่ง: ${dName}\n🛣️ ระยะทาง: ${dist} กม.\n⏱️ เวลาเดินทางจริง: ${actualDur} นาที\n💵 ราคาเหมาจ่าย: ${price} บาท\n\nขอบคุณที่ใช้บริการ F1 Driver ครับ!`);
 
         db.ref('bookings/' + activeJobId).update({ status: "ถึงที่หมายเรียบร้อยแล้ว" }).then(() => {
-            showAlert("สำเร็จ!", "ส่งผู้โดยสารเรียบร้อย รอรับงานถัดไป", "success", () => { resetToIdle(); });
-        }).catch(e=>console.error(e));
+            showAlert("สำเร็จ!", "ส่งผู้โดยสารเรียบร้อย รอรับงานถัดไป", "success", () => { isProcessingAction = false; resetToIdle(); });
+        }).catch(()=>{ isProcessingAction = false; });
     }
 
     function promptCancelJob() { document.getElementById('driverCancelModal').classList.remove('hidden'); }
     function closeDriverCancelModal() { document.getElementById('driverCancelModal').classList.add('hidden'); }
 
     function executeCancelJob() {
+        if(isProcessingAction) return; isProcessingAction = true;
         closeDriverCancelModal();
         if(activeJobId) {
             let oldJobId = activeJobId;
             db.ref('bookings/' + activeJobId).update({ status: "ยกเลิกโดยคนขับ" }).then(() => {
                 sendLineNotify(oldJobId, "", 'cancel_driver');
-                showAlert("ยกเลิกงานแล้ว", "ระบบได้ทำการยกเลิกงานนี้เรียบร้อยแล้ว", "error", () => { resetToIdle(); });
-            }).catch(e=>console.error(e));
-        }
+                showAlert("ยกเลิกงานแล้ว", "ระบบได้ทำการยกเลิกงานนี้เรียบร้อยแล้ว", "error", () => { 
+                    isProcessingAction = false; resetToIdle(); 
+                });
+            }).catch(()=>{ isProcessingAction = false; });
+        } else { isProcessingAction = false; }
     }
 
     function resetToIdle() {
