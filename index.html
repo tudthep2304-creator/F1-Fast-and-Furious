@@ -175,6 +175,7 @@
     let selectedJobId = null; 
     let allBookings = null;
     let hiddenJobs = {}; 
+    let isFinishingJob = false; // 🌟 ป้องกัน Alert ชนกันตอนจบงาน
 
     function showAlert(title, message, type = 'info', callback = null) {
         document.getElementById('alertTitle').innerText = title;
@@ -264,14 +265,13 @@
         renderJobList();
     }
 
-    // 🌟 ระบบตรวจสอบฐานข้อมูลแบบ Real-time และการกู้คืนงาน (Auto-Resume)
     db.ref('bookings').on('value', snap => {
         allBookings = snap.val();
         
+        let savedJobId = localStorage.getItem('activeJobId');
         let foundActiveJob = false;
 
         if (allBookings) {
-            // 🌟 1. ดึงงานที่ค้างอยู่จากฐานข้อมูลโดยตรง! (ถ้าคนขับเคยรับงานไว้ มันจะเด้งกลับมาทันที)
             for (let key in allBookings) {
                 let s = allBookings[key].status;
                 if (s.includes("รับงานแล้ว") || s.includes("มาถึงจุดรับ") || s.includes("เริ่มออกเดินทาง")) {
@@ -285,11 +285,9 @@
         }
 
         if (foundActiveJob) {
-            // บังคับสลับหน้าจอไปที่งานที่ค้างอยู่
             document.getElementById('idlePanel').classList.add('hidden');
             document.getElementById('activeJobPanel').classList.remove('hidden');
             
-            // เปิดสวิตช์ออนไลน์ให้อัตโนมัติถ้ายังไม่ได้เปิด
             if (!isOnline) {
                 document.getElementById('onlineToggle').checked = true;
                 isOnline = true; 
@@ -297,25 +295,34 @@
             }
             updateActiveJobUI();
         } else {
-            // 🌟 2. ถ้าไม่มีงานที่ Active แล้ว (อาจจะโดนลูกค้ากดยกเลิกไปแล้ว)
-            let savedJobId = localStorage.getItem('activeJobId');
-            if (savedJobId && activeJobId === savedJobId) {
-                // งานที่ค้างอยู่ในเครื่อง หายไปจากฐานข้อมูล หรือโดนยกเลิก
+            if (savedJobId && activeJobId === savedJobId && !isFinishingJob) {
                 localStorage.removeItem('activeJobId');
                 showAlert("งานถูกยกเลิก", "ผู้โดยสารได้ทำการยกเลิกงานนี้แล้วครับ", "error", () => { resetToIdle(); });
-            } else if (activeJobId && !savedJobId) {
-                // กรณีทำงานอยู่แล้วงานหายไปดื้อๆ
+            } else if (activeJobId && !savedJobId && !isFinishingJob) {
                 showAlert("งานถูกยกเลิก", "ผู้โดยสารได้ทำการยกเลิกงานนี้แล้วครับ", "error", () => { resetToIdle(); });
             }
             
-            // เคลียร์หน้าจอให้กลับเป็นสถานะรองาน
-            if (activeJobId && !foundActiveJob) {
+            if (activeJobId && !foundActiveJob && !isFinishingJob) {
                 resetToIdle();
             }
         }
 
         renderJobList(); 
     });
+
+    function checkActiveJobStatus() {
+        if (!activeJobId || isFinishingJob) return; // 🌟 ถ้ากำลังจบงาน ไม่ต้องสนใจ
+        
+        if (!allBookings || !allBookings[activeJobId]) {
+            showAlert("งานถูกยกเลิก", "ผู้โดยสารได้ทำการยกเลิกงานนี้แล้วครับ", "error", () => {
+                resetToIdle();
+            });
+            return;
+        }
+
+        activeJobData = allBookings[activeJobId];
+        updateActiveJobUI();
+    }
 
     function renderJobList() {
         const listContainer = document.getElementById('jobListContainer');
@@ -491,23 +498,32 @@
         document.getElementById('finishJobModal').classList.add('hidden');
     }
 
+    // 🌟 ระบบยิงข้อความจบงาน (แก้ปัญหาแอปผู้โดยสารลบงานเร็วเกินไป)
     function executeFinishJob() {
         closeFinishModal();
+        isFinishingJob = true; // ล็อกไม่ให้เด้งข้อความยกเลิก
+        
         let dist = activeJobData.distance || 0;
         let dur = activeJobData.duration || 0;
         let price = activeJobData.price || 0;
         let pName = activeJobData.pName || "";
         let dName = activeJobData.dName || "";
 
-        db.ref('bookings/' + activeJobId).update({ status: "ถึงที่หมายเรียบร้อยแล้ว" }).then(() => {
-            if(APPS_SCRIPT_URL) {
-                let msg = `🏁 การเดินทางสิ้นสุดลงแล้วเรียบร้อย!\n\n📍 จุดรับ: ${pName}\n🏁 จุดส่ง: ${dName}\n🛣️ ระยะทาง: ${dist} กม.\n⏱️ เวลาเดินทาง: ${dur} นาที\n💵 ราคาเหมาจ่าย: ${price} บาท\n\nขอบคุณที่ใช้บริการ F1 Driver ครับ!`;
-                fetch(`${APPS_SCRIPT_URL}?action=notify&type=status_update&userId=${activeJobId}&msg=${encodeURIComponent(msg)}`, {mode: 'no-cors'});
-            }
-            showAlert("สำเร็จ!", "ส่งผู้โดยสารเรียบร้อย รอรับงานถัดไป", "success", () => {
-                resetToIdle();
+        // 1. ส่งแจ้งเตือนสรุปบิลไปก่อนเลย!
+        if(APPS_SCRIPT_URL) {
+            let msg = `🏁 การเดินทางสิ้นสุดลงแล้วเรียบร้อย!\n\n📍 จุดรับ: ${pName}\n🏁 จุดส่ง: ${dName}\n🛣️ ระยะทาง: ${dist} กม.\n⏱️ เวลาเดินทาง: ${dur} นาที\n💵 ราคาเหมาจ่าย: ${price} บาท\n\nขอบคุณที่ใช้บริการ F1 Driver ครับ!`;
+            fetch(`${APPS_SCRIPT_URL}?action=notify&type=status_update&userId=${activeJobId}&msg=${encodeURIComponent(msg)}`, {mode: 'no-cors'});
+        }
+
+        // 2. หน่วงเวลา 0.5 วิ ค่อยอัปเดตให้ฐานข้อมูลลบงาน
+        setTimeout(() => {
+            db.ref('bookings/' + activeJobId).update({ status: "ถึงที่หมายเรียบร้อยแล้ว" }).then(() => {
+                showAlert("สำเร็จ!", "ส่งผู้โดยสารเรียบร้อย รอรับงานถัดไป", "success", () => {
+                    isFinishingJob = false;
+                    resetToIdle();
+                });
             });
-        });
+        }, 500);
     }
 
     function nextAction() {
