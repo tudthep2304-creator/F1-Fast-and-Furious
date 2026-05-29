@@ -12,7 +12,25 @@
     @import url('https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;700&display=swap');
     body { font-family: 'Kanit', sans-serif; background-color: #f3f4f6; }
     .map-container { position: fixed; inset: 0; width: 100vw; height: 100vh; z-index: 0; background: #e5e7eb; }
-    .ui-panel { position: fixed; bottom: 0; left: 0; right: 0; background: white; border-top-left-radius: 24px; border-top-right-radius: 24px; box-shadow: 0 -10px 25px rgba(0,0,0,0.15); z-index: 10; display: flex; flex-direction: column; padding: 20px; max-height: 80vh; overflow-y: auto;}
+    
+    /* 🌟 ปรับ UI ให้เป็นการ์ดลอยทับแผนที่ (Floating Card) */
+    .ui-panel { 
+        position: fixed; 
+        bottom: 20px; 
+        left: 16px; 
+        right: 16px; 
+        background: white; 
+        border-radius: 24px; /* ขอบมนทุกมุม */
+        box-shadow: 0 10px 40px rgba(0,0,0,0.12); /* เงาฟุ้งๆ ดูมีมิติ */
+        border: 1px solid rgba(255,255,255,0.8);
+        z-index: 10; 
+        display: flex; 
+        flex-direction: column; 
+        padding: 20px; 
+        max-height: calc(100vh - 120px); 
+        overflow-y: auto;
+    }
+
     .job-scroll::-webkit-scrollbar { width: 4px; }
     .job-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
   </style>
@@ -36,7 +54,7 @@
       </button>
   </div>
 
-  <div id="idlePanel" class="ui-panel h-auto pb-6 pt-5">
+  <div id="idlePanel" class="ui-panel">
     <div class="flex justify-between items-center mb-4">
       <div>
         <h2 class="font-bold text-lg text-gray-800">โหมดรับงาน</h2>
@@ -50,7 +68,7 @@
     
     <div class="bg-gray-50 p-2.5 rounded-xl text-center border border-gray-100 mb-3 space-y-1">
         <p class="text-gray-500 text-[11px]" id="gpsStatus">รอเปิดระบบเพื่ออัปเดต GPS...</p>
-        <p class="text-[10px] text-orange-500 hidden" id="wakeLockStatus"><i class="fas fa-sun"></i> ระบบป้องกันหน้าจอดับทำงานแล้ว (โปรดเปิดแอปค้างไว้)</p>
+        <p class="text-[10px] text-orange-500 hidden" id="wakeLockStatus"><i class="fas fa-sun"></i> ระบบป้องกันหน้าจอดับทำงานแล้ว</p>
     </div>
 
     <h3 class="text-sm font-bold text-gray-700 mb-2 flex items-center gap-2"><i class="fas fa-list-ul"></i> รายการงานที่รอรับ</h3>
@@ -59,94 +77,98 @@
     </div>
   </div>
 
-  <div id="activeJobPanel" class="ui-panel hidden h-auto pb-8 pt-5">
-    <div class="flex justify-between items-center border-b pb-2 mb-2">
+  <div id="activeJobPanel" class="ui-panel hidden">
+    <div class="flex justify-between items-center border-b border-gray-100 pb-3 mb-3">
       <div>
-          <h2 class="font-black text-indigo-700 text-base" id="jobStatusHeader">กำลังเดินทางไปหา</h2>
+          <h2 class="font-black text-[#2B3A6F] text-base" id="jobStatusHeader">กำลังเดินทางไปหา</h2>
           <p class="text-xs text-blue-600 font-bold hidden mt-0.5" id="etaDisplay">ระยะทาง -- กม. • -- นาที</p>
       </div>
-      <span class="bg-green-100 text-green-700 px-3 py-1 rounded-full font-bold text-sm" id="jobPrice">฿0</span>
+      <span class="bg-green-100 text-green-700 px-3 py-1.5 rounded-xl font-bold text-sm" id="jobPrice">฿0</span>
     </div>
     
-    <div class="bg-blue-50 p-3 rounded-xl mb-3 flex justify-between items-center border border-blue-100">
+    <div class="bg-blue-50/50 p-3 rounded-xl mb-3 flex justify-between items-center border border-blue-100">
         <div class="flex-1 truncate pr-2">
-            <p class="text-[11px] text-gray-500">ผู้โดยสาร</p>
+            <p class="text-[11px] text-gray-500 font-medium">ผู้โดยสาร</p>
             <p class="font-bold text-gray-800 text-sm truncate" id="passengerName">...</p>
         </div>
-        <a href="#" id="btnCallPassenger" class="bg-green-500 text-white px-4 py-2 rounded-lg font-bold text-sm shadow-sm flex gap-2 items-center shrink-0">
+        <a href="#" id="btnCallPassenger" class="bg-green-500 text-white px-4 py-2 rounded-xl font-bold text-sm shadow-sm flex gap-2 items-center shrink-0 hover:bg-green-600 transition">
             <i class="fas fa-phone-alt"></i> โทร
         </a>
     </div>
 
-    <div class="mb-4 space-y-1">
-      <p class="text-[11px] text-gray-400 truncate">รับ: <span class="font-bold text-gray-700" id="jobPick">...</span></p>
-      <p class="text-[11px] text-gray-400 truncate">ส่ง: <span class="font-bold text-gray-700" id="jobDrop">...</span></p>
+    <div class="mb-4 bg-gray-50 p-3 rounded-xl border border-gray-100 relative">
+        <div class="absolute left-[1.35rem] top-6 bottom-6 w-0.5 border-l-2 border-dashed border-gray-300"></div>
+        <div class="flex items-start gap-3 mb-3 relative z-10">
+            <div class="mt-1"><i class="fas fa-circle text-[10px] text-green-500"></i></div>
+            <p class="text-xs text-gray-600 truncate font-medium flex-1" id="jobPick">...</p>
+        </div>
+        <div class="flex items-start gap-3 relative z-10">
+            <div class="mt-1"><i class="fas fa-square text-[10px] text-blue-500"></i></div>
+            <p class="text-xs text-gray-600 truncate font-medium flex-1" id="jobDrop">...</p>
+        </div>
     </div>
 
     <div class="flex gap-2 mb-2">
         <button id="btnAction" onclick="handleMainActionClick()" class="flex-[2] bg-[#2B3A6F] text-white py-3 rounded-xl font-bold text-base shadow-md transition-colors active:bg-blue-800">
             มาถึงจุดรับ
         </button>
-        <button onclick="openDriverNavMap()" class="flex-1 bg-blue-100 text-blue-700 py-3 rounded-xl font-bold border border-blue-200 text-sm flex items-center justify-center gap-1">
+        <button onclick="openDriverNavMap()" class="flex-1 bg-blue-50 text-blue-600 py-3 rounded-xl font-bold border border-blue-200 text-sm flex items-center justify-center gap-1 hover:bg-blue-100 transition">
             <i class="fas fa-location-arrow"></i> นำทาง
         </button>
     </div>
-    <button onclick="promptCancelJob()" class="w-full bg-red-50 text-red-600 py-2 rounded-xl font-bold border border-red-200 text-sm mt-1">ยกเลิกงานนี้</button>
+    <button onclick="promptCancelJob()" class="w-full bg-red-50 text-red-600 py-2.5 rounded-xl font-bold border border-red-200 text-sm mt-1 hover:bg-red-100 transition">ยกเลิกงานนี้</button>
   </div>
 
-  <div id="jobDetailModal" class="hidden fixed inset-0 z-[100] bg-black/40 backdrop-blur-[2px] flex flex-col justify-end pb-8 px-4 transition-opacity">
-      <div class="bg-white rounded-3xl p-5 w-full max-w-md mx-auto shadow-2xl transform transition-all scale-100 pointer-events-auto">
-          
-          <div class="flex justify-between items-center mb-3">
-              <div class="flex items-center gap-2 overflow-hidden pr-2">
-                  <div class="w-8 h-8 rounded-full bg-[#2B3A6F] text-white flex items-center justify-center shrink-0 text-sm shadow-sm">
-                      <i class="fas fa-user"></i>
-                  </div>
-                  <h3 class="text-base font-bold text-gray-800 truncate" id="detailName">...</h3>
+  <div id="jobDetailModal" class="hidden fixed bottom-[20px] left-[16px] right-[16px] z-[100] bg-white rounded-[24px] p-5 shadow-[0_10px_40px_rgba(0,0,0,0.15)] border border-gray-100 flex flex-col">
+      <div class="flex justify-between items-center mb-4">
+          <div class="flex items-center gap-2 overflow-hidden pr-2">
+              <div class="w-9 h-9 rounded-full bg-[#2B3A6F] text-white flex items-center justify-center shrink-0 text-sm shadow-sm">
+                  <i class="fas fa-user"></i>
               </div>
-              <div class="flex items-center gap-2 shrink-0">
-                  <span class="font-black text-green-600 text-lg bg-green-50 px-2 py-0.5 rounded-lg border border-green-100" id="detailPrice">฿0</span>
-                  <button onclick="closeJobDetail()" class="text-gray-400 hover:text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-full w-8 h-8 flex items-center justify-center transition-colors">
-                      <i class="fas fa-times"></i>
-                  </button>
-              </div>
+              <h3 class="text-base font-bold text-gray-800 truncate" id="detailName">...</h3>
           </div>
-          
-          <div class="mb-5 bg-gray-50 p-3 rounded-xl border border-gray-100 relative">
-              <div class="absolute left-[1.35rem] top-6 bottom-6 w-0.5 border-l-2 border-dashed border-gray-300"></div>
-              
-              <div class="flex items-start gap-3 mb-3 relative z-10">
-                  <div class="mt-1"><i class="fas fa-circle text-[10px] text-green-500"></i></div>
-                  <div class="flex-1 overflow-hidden">
-                      <p class="text-xs text-gray-700 truncate font-medium" id="detailPick">...</p>
-                      <p class="text-[10px] font-bold text-green-600 mt-0.5 bg-green-50/50 inline-block px-1.5 py-0.5 rounded" id="detailEtaToPick">
-                          <i class="fas fa-car-side"></i> ห่างจากคุณ: กำลังคำนวณ...
-                      </p>
-                  </div>
-              </div>
-
-              <div class="flex items-start gap-3 relative z-10">
-                  <div class="mt-1"><i class="fas fa-square text-[10px] text-blue-500"></i></div>
-                  <div class="flex-1 overflow-hidden">
-                      <p class="text-xs text-gray-700 truncate font-medium" id="detailDrop">...</p>
-                      <p class="text-[10px] font-bold text-blue-600 mt-0.5 bg-blue-50/50 inline-block px-1.5 py-0.5 rounded" id="detailEtaToDrop">
-                          <i class="fas fa-road"></i> ระยะทางไปส่ง: กำลังคำนวณ...
-                      </p>
-                  </div>
-              </div>
-          </div>
-
-          <div class="flex gap-2">
-              <button onclick="promptRejectPendingJob()" class="flex-1 py-3 bg-red-50 text-red-600 font-bold rounded-xl border border-red-200 hover:bg-red-100 transition-colors text-sm">ยกเลิกงานนี้</button>
-              <button onclick="promptAcceptJob()" class="flex-[2] py-3 bg-green-500 text-white font-bold rounded-xl shadow-md hover:bg-green-600 transition-colors text-sm flex justify-center items-center gap-1.5">
-                  <i class="fas fa-bolt"></i> รับงานเลย!
+          <div class="flex items-center gap-2 shrink-0">
+              <span class="font-black text-green-600 text-lg bg-green-50 px-2.5 py-1 rounded-xl border border-green-100" id="detailPrice">฿0</span>
+              <button onclick="closeJobDetail()" class="text-gray-400 hover:text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-full w-8 h-8 flex items-center justify-center transition-colors">
+                  <i class="fas fa-times"></i>
               </button>
           </div>
+      </div>
+      
+      <div class="mb-5 bg-gray-50 p-3.5 rounded-2xl border border-gray-100 relative">
+          <div class="absolute left-[1.4rem] top-7 bottom-7 w-0.5 border-l-2 border-dashed border-gray-300"></div>
+          
+          <div class="flex items-start gap-3.5 mb-4 relative z-10">
+              <div class="mt-1"><i class="fas fa-circle text-[10px] text-green-500"></i></div>
+              <div class="flex-1 overflow-hidden">
+                  <p class="text-[13px] text-gray-800 truncate font-medium leading-tight" id="detailPick">...</p>
+                  <p class="text-[11px] font-bold text-green-600 mt-1 bg-green-50/70 inline-block px-1.5 py-0.5 rounded" id="detailEtaToPick">
+                      <i class="fas fa-car-side"></i> ห่างจากคุณ: กำลังคำนวณ...
+                  </p>
+              </div>
+          </div>
+
+          <div class="flex items-start gap-3.5 relative z-10">
+              <div class="mt-1"><i class="fas fa-square text-[10px] text-blue-500"></i></div>
+              <div class="flex-1 overflow-hidden">
+                  <p class="text-[13px] text-gray-800 truncate font-medium leading-tight" id="detailDrop">...</p>
+                  <p class="text-[11px] font-bold text-blue-600 mt-1 bg-blue-50/70 inline-block px-1.5 py-0.5 rounded" id="detailEtaToDrop">
+                      <i class="fas fa-road"></i> ระยะทางไปส่ง: กำลังคำนวณ...
+                  </p>
+              </div>
+          </div>
+      </div>
+
+      <div class="flex gap-2.5">
+          <button onclick="promptRejectPendingJob()" class="flex-1 py-3.5 bg-red-50 text-red-600 font-bold rounded-xl border border-red-200 hover:bg-red-100 transition-colors text-sm">ยกเลิกงานนี้</button>
+          <button onclick="promptAcceptJob()" class="flex-[2] py-3.5 bg-green-500 text-white font-bold rounded-xl shadow-md hover:bg-green-600 transition-colors text-sm flex justify-center items-center gap-1.5">
+              <i class="fas fa-bolt"></i> รับงานเลย!
+          </button>
       </div>
   </div>
 
   <div id="pendingCancelModal" class="hidden fixed inset-0 z-[110] bg-black/50 flex items-center justify-center p-4">
-      <div class="bg-white rounded-2xl p-6 w-full max-w-sm text-center shadow-xl">
+      <div class="bg-white rounded-3xl p-6 w-full max-w-sm text-center shadow-xl">
           <div class="w-16 h-16 bg-red-100 text-red-500 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl"><i class="fas fa-times-circle"></i></div>
           <h3 class="text-xl font-bold text-gray-800 mb-2">ยืนยันปฏิเสธงานนี้?</h3>
           <p class="text-sm text-gray-500 mb-6">หากยืนยัน ระบบจะยกเลิกการเรียกรถและแจ้งเตือนผู้โดยสารว่าไม่มีรถว่างทันที</p>
@@ -156,9 +178,8 @@
           </div>
       </div>
   </div>
-
   <div id="confirmAcceptModal" class="hidden fixed inset-0 z-[110] bg-black/50 flex items-center justify-center p-4">
-      <div class="bg-white rounded-2xl p-6 w-full max-w-sm text-center shadow-xl">
+      <div class="bg-white rounded-3xl p-6 w-full max-w-sm text-center shadow-xl">
           <div class="w-16 h-16 bg-green-100 text-green-500 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl"><i class="fas fa-car-side"></i></div>
           <h3 class="text-xl font-bold text-gray-800 mb-2">ยืนยันรับงานนี้?</h3>
           <p class="text-sm text-gray-500 mb-6">คุณต้องการรับงานนี้และเดินทางไปรับผู้โดยสารใช่หรือไม่?</p>
@@ -169,7 +190,7 @@
       </div>
   </div>
   <div id="arriveModal" class="hidden fixed inset-0 z-[110] bg-black/50 flex items-center justify-center p-4">
-      <div class="bg-white rounded-2xl p-6 w-full max-w-sm text-center shadow-xl">
+      <div class="bg-white rounded-3xl p-6 w-full max-w-sm text-center shadow-xl">
           <div class="w-16 h-16 bg-blue-100 text-[#2B3A6F] rounded-full flex items-center justify-center mx-auto mb-4 text-3xl"><i class="fas fa-map-marker-alt"></i></div>
           <h3 class="text-xl font-bold text-gray-800 mb-2">ยืนยันมาถึงจุดรับ?</h3>
           <p class="text-sm text-gray-500 mb-6">คุณได้เดินทางมาถึงจุดรับผู้โดยสารเรียบร้อยแล้วใช่หรือไม่?</p>
@@ -180,7 +201,7 @@
       </div>
   </div>
   <div id="boardedModal" class="hidden fixed inset-0 z-[110] bg-black/50 flex items-center justify-center p-4">
-      <div class="bg-white rounded-2xl p-6 w-full max-w-sm text-center shadow-xl">
+      <div class="bg-white rounded-3xl p-6 w-full max-w-sm text-center shadow-xl">
           <div class="w-16 h-16 bg-yellow-100 text-yellow-500 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl"><i class="fas fa-user-check"></i></div>
           <h3 class="text-xl font-bold text-gray-800 mb-2">ผู้โดยสารขึ้นรถแล้ว?</h3>
           <p class="text-sm text-gray-500 mb-6">ผู้โดยสารขึ้นรถเรียบร้อย และพร้อมออกเดินทางใช่หรือไม่?</p>
@@ -191,7 +212,7 @@
       </div>
   </div>
   <div id="finishJobModal" class="hidden fixed inset-0 z-[110] bg-black/50 flex items-center justify-center p-4">
-      <div class="bg-white rounded-2xl p-6 w-full max-w-sm text-center shadow-xl">
+      <div class="bg-white rounded-3xl p-6 w-full max-w-sm text-center shadow-xl">
           <div class="w-16 h-16 bg-green-100 text-green-500 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl"><i class="fas fa-check-circle"></i></div>
           <h3 class="text-xl font-bold text-gray-800 mb-2">ยืนยันจบงานและรับเงิน?</h3>
           <p class="text-sm text-gray-500 mb-6">คุณได้ส่งผู้โดยสารถึงจุดหมายปลายทางอย่างปลอดภัยแล้วใช่หรือไม่?</p>
@@ -202,18 +223,18 @@
       </div>
   </div>
   <div id="driverCancelModal" class="hidden fixed inset-0 z-[110] bg-black/50 flex items-center justify-center p-4">
-      <div class="bg-white rounded-2xl p-6 w-full max-w-sm text-center shadow-xl">
+      <div class="bg-white rounded-3xl p-6 w-full max-w-sm text-center shadow-xl">
           <div class="w-16 h-16 bg-red-100 text-red-500 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl"><i class="fas fa-exclamation-triangle"></i></div>
           <h3 class="text-xl font-bold text-gray-800 mb-2">ยืนยันยกเลิกงานนี้?</h3>
           <p class="text-sm text-gray-500 mb-6">หากยกเลิก ผู้โดยสารจะถูกแจ้งเตือนว่าคุณไม่สามารถไปรับได้ และงานจะถูกลบออก</p>
           <div class="flex gap-3">
               <button onclick="closeDriverCancelModal()" class="flex-1 py-3 bg-gray-100 text-gray-700 font-bold rounded-xl hover:bg-gray-200">ปิด</button>
-              <button onclick="executeCancelJob()" class="flex-1 py-3 bg-red-500 text-white font-bold rounded-xl shadow-md hover:bg-red-600">ยืนยันยกเลิก</button>
+              <button onclick="executeCancelJob()" class="flex-[2] py-3 bg-red-500 text-white font-bold rounded-xl shadow-md hover:bg-red-600">ยืนยันยกเลิก</button>
           </div>
       </div>
   </div>
   <div id="alertModal" class="hidden fixed inset-0 z-[120] bg-black/50 flex items-center justify-center p-4">
-      <div class="bg-white rounded-2xl p-6 w-full max-w-sm text-center shadow-xl">
+      <div class="bg-white rounded-3xl p-6 w-full max-w-sm text-center shadow-xl">
           <div id="alertIcon" class="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl"></div>
           <h3 id="alertTitle" class="text-xl font-bold text-gray-800 mb-2">...</h3>
           <p id="alertMessage" class="text-sm text-gray-500 mb-6 whitespace-pre-line">...</p>
@@ -236,7 +257,6 @@
     const db = firebase.database();
 
     let map, directionsService, directionsRenderer;
-    // 🌟 ตัวแปรเก็บเส้นทางที่วาดเอง (Custom Polylines)
     let polylinePick = null;
     let polylineDrop = null;
     
@@ -338,7 +358,7 @@
         isTrackingMode = false;
         document.getElementById('btnCrosshair').classList.replace('text-blue-600', 'text-gray-400');
         if (map && currentRouteBounds) {
-            map.fitBounds(currentRouteBounds, { top: 80, right: 50, bottom: 320, left: 50 });
+            map.fitBounds(currentRouteBounds, { top: 80, right: 50, bottom: 280, left: 50 });
         } else {
             centerToDriver();
         }
@@ -347,18 +367,17 @@
     function initMap() {
       if (typeof google === 'undefined' || typeof google.maps === 'undefined') return;
       map = new google.maps.Map(document.getElementById('map'), { 
-        zoom: 16, center: {lat: driverLat, lng: driverLng}, mapTypeId: 'hybrid', disableDefaultUI: true, gestureHandling: 'greedy', zoomControl: true, padding: { bottom: 320 } 
+        zoom: 16, center: {lat: driverLat, lng: driverLng}, mapTypeId: 'hybrid', disableDefaultUI: true, gestureHandling: 'greedy', zoomControl: true, padding: { bottom: 280 } 
       });
       map.addListener('dragstart', () => {
           isTrackingMode = false; document.getElementById('btnCrosshair').classList.replace('text-blue-600', 'text-gray-400');
       });
       directionsService = new google.maps.DirectionsService();
       
-      // 🌟 ตั้งค่าให้ซ่อนเส้นมาตรฐานของ Google เพื่อให้เราวาดเส้นสีเองได้
       directionsRenderer = new google.maps.DirectionsRenderer({ 
           map: map, 
           suppressMarkers: true, 
-          suppressPolylines: true, // ปิดเส้นสีฟ้าดั้งเดิม
+          suppressPolylines: true, 
           preserveViewport: true 
       });
       
@@ -367,7 +386,6 @@
       markerDriver = new google.maps.Marker({map: map, position: {lat: driverLat, lng: driverLng}, icon: {url: "https://img.icons8.com/color/48/car-top-view.png", scaledSize: new google.maps.Size(44, 44), anchor: new google.maps.Point(22, 22)}, zIndex: 9999});
     }
 
-    // 🌟 ฟังก์ชันวาดเส้นสีตามสถานะ
     function drawCustomPolylines(response, isGoingToPickup, isGoingToDropoff) {
         if(polylinePick) { polylinePick.setMap(null); polylinePick = null; }
         if(polylineDrop) { polylineDrop.setMap(null); polylineDrop = null; }
@@ -375,21 +393,19 @@
         const route = response.routes[0];
 
         if (route.legs.length === 2) {
-            // โหมดพรีวิว (วาด 2 เส้น)
             polylinePick = new google.maps.Polyline({
                 path: route.legs[0].steps.flatMap(step => step.path),
-                strokeColor: '#22c55e', // สีเขียว
+                strokeColor: '#22c55e', 
                 strokeWeight: 6,
                 map: map
             });
             polylineDrop = new google.maps.Polyline({
                 path: route.legs[1].steps.flatMap(step => step.path),
-                strokeColor: '#3b82f6', // สีฟ้า
+                strokeColor: '#3b82f6', 
                 strokeWeight: 6,
                 map: map
             });
         } else if (route.legs.length === 1) {
-            // โหมดขับขี่จริง (วาดเส้นเดียวตามสถานะ)
             const activePoly = new google.maps.Polyline({
                 path: route.legs[0].steps.flatMap(step => step.path),
                 strokeColor: isGoingToPickup ? '#22c55e' : '#3b82f6',
@@ -430,7 +446,7 @@
                     
                     let posObj = {lat: driverLat, lng: driverLng};
                     if(markerDriver) markerDriver.setPosition(posObj);
-                    if(isTrackingMode && map) map.panTo(posObj);
+                    if(isTrackingMode && map && !selectedJobId) map.panTo(posObj);
                     
                     if(isFirstGps) {
                         if(!activeJobId && !selectedJobId && isTrackingMode) map.setZoom(16);
@@ -532,10 +548,10 @@
                     hasNewJob = true;
                 }
 
-                html += `<div onclick="openJobDetail('${key}')" class="bg-white p-3 rounded-lg shadow-sm border border-gray-200 cursor-pointer active:bg-blue-50 hover:bg-gray-50 transition-colors">
-                    <div class="flex justify-between items-center mb-1"><span class="font-bold text-sm text-[#2B3A6F]"><i class="fas fa-user-circle"></i> ${b.name || 'ลูกค้า'}</span><span class="font-black text-green-600 bg-green-50 px-2 py-0.5 rounded">฿${b.price}</span></div>
-                    <p class="text-xs text-gray-500 truncate"><span class="text-blue-500 font-bold">รับ:</span> ${b.pName}</p>
-                    <p class="text-xs text-gray-500 truncate"><span class="text-red-500 font-bold">ส่ง:</span> ${b.dName}</p>
+                html += `<div onclick="openJobDetail('${key}')" class="bg-white p-3 rounded-xl shadow-sm border border-gray-200 cursor-pointer active:bg-blue-50 hover:bg-gray-50 transition-colors">
+                    <div class="flex justify-between items-center mb-1"><span class="font-bold text-sm text-[#2B3A6F]"><i class="fas fa-user-circle"></i> ${b.name || 'ลูกค้า'}</span><span class="font-black text-green-600 bg-green-50 px-2 py-0.5 rounded-lg">฿${b.price}</span></div>
+                    <p class="text-[11px] text-gray-500 truncate"><span class="text-blue-500 font-bold">รับ:</span> ${b.pName}</p>
+                    <p class="text-[11px] text-gray-500 truncate"><span class="text-red-500 font-bold">ส่ง:</span> ${b.dName}</p>
                 </div>`;
             }
         }
@@ -552,6 +568,7 @@
         knownPendingJobs = currentPendingJobs;
     }
 
+    // 🌟 สลับกระดานงานเป็น Job Detail Card
     function openJobDetail(jobId) {
         selectedJobId = jobId; 
         let job = allBookings[jobId];
@@ -564,6 +581,8 @@
         document.getElementById('detailEtaToPick').innerHTML = `<i class="fas fa-car-side"></i> ห่างจากคุณ: กำลังคำนวณ...`;
         document.getElementById('detailEtaToDrop').innerHTML = `<i class="fas fa-road"></i> ระยะทางไปส่ง: กำลังคำนวณ...`;
         
+        // ซ่อนกระดานหลัก โชว์การ์ดพรีวิว
+        document.getElementById('idlePanel').classList.add('hidden');
         document.getElementById('jobDetailModal').classList.remove('hidden');
 
         let origin = {lat: driverLat, lng: driverLng}; 
@@ -583,7 +602,7 @@
         directionsService.route(request, (res, stat) => {
             if(stat === 'OK') {
                 directionsRenderer.setDirections(res);
-                drawCustomPolylines(res, true, true); // 🌟 วาด 2 เส้น
+                drawCustomPolylines(res, true, true); 
                 
                 let legPick = res.routes[0].legs[0]; 
                 let legDrop = res.routes[0].legs[1]; 
@@ -598,7 +617,6 @@
 
     function clearMapRoutes() {
         if(directionsRenderer) directionsRenderer.setDirections({routes: []});
-        // 🌟 ลบเส้นวาดสีๆ ทิ้ง
         if(polylinePick) { polylinePick.setMap(null); polylinePick = null; }
         if(polylineDrop) { polylineDrop.setMap(null); polylineDrop = null; }
         if(markerPick) markerPick.setMap(null); if(markerDrop) markerDrop.setMap(null);
@@ -606,8 +624,13 @@
     }
 
     function closeJobDetail() {
-        document.getElementById('jobDetailModal').classList.add('hidden'); selectedJobId = null;
-        if (!activeJobId) { clearMapRoutes(); centerToDriver(); }
+        document.getElementById('jobDetailModal').classList.add('hidden'); 
+        selectedJobId = null;
+        if (!activeJobId) { 
+            clearMapRoutes(); 
+            document.getElementById('idlePanel').classList.remove('hidden'); // โชว์กระดานคืน
+            centerToDriver(); 
+        }
     }
 
     function promptRejectPendingJob() {
@@ -649,7 +672,8 @@
         db.ref('bookings/' + activeJobId).update({ status: "รับงานแล้ว กำลังเดินทางไปหา", driverPhone: "0946379669" }).then(() => {
             if(APPS_SCRIPT_URL) fetch(`${APPS_SCRIPT_URL}?action=notify&type=status_update&userId=${activeJobId}&msg=${encodeURIComponent("🏎️ คนขับตอบรับงานของคุณแล้ว! กำลังรีบเดินทางไปหาคุณครับ")}`, {mode: 'no-cors'});
         });
-        document.getElementById('idlePanel').classList.add('hidden'); document.getElementById('activeJobPanel').classList.remove('hidden');
+        document.getElementById('idlePanel').classList.add('hidden'); 
+        document.getElementById('activeJobPanel').classList.remove('hidden');
         updateRoute(true); updateActiveJobUI();
     }
 
@@ -668,15 +692,15 @@
         let s = activeJobData.status;
         if(s.includes("กำลังเดินทางไปหา") || s.includes("รับงานแล้ว")) {
             statusText.innerText = "กำลังเดินทางไปรับ"; 
-            etaEl.className = "text-xs text-green-600 font-bold mt-0.5 inline-block"; // สีเขียวตอนไปรับ
+            etaEl.className = "text-xs text-green-600 font-bold mt-0.5 inline-block";
             btnAction.innerText = "มาถึงจุดรับ"; btnAction.className = "flex-[2] bg-[#2B3A6F] text-white py-3 rounded-xl font-bold text-base shadow-md";
         } else if(s.includes("มาถึงจุดรับ") || s.includes("ถึงจุดรับแล้ว")) {
             statusText.innerText = "รอผู้โดยสารขึ้นรถ"; 
-            etaEl.classList.add('hidden'); // ซ่อนระยะทางตอนรอ
+            etaEl.classList.add('hidden');
             btnAction.innerText = "ผู้โดยสารขึ้นรถ"; btnAction.className = "flex-[2] bg-yellow-500 text-white py-3 rounded-xl font-bold text-base shadow-md";
         } else if(s.includes("ออกเดินทาง") || s.includes("ไปยังจุดส่ง")) {
             statusText.innerText = "กำลังเดินทางไปจุดส่ง"; 
-            etaEl.className = "text-xs text-blue-600 font-bold mt-0.5 inline-block"; // สีฟ้าตอนไปส่ง
+            etaEl.className = "text-xs text-blue-600 font-bold mt-0.5 inline-block";
             btnAction.innerText = "ถึงที่หมาย (จบงาน)"; btnAction.className = "flex-[2] bg-green-500 text-white py-3 rounded-xl font-bold text-base shadow-md";
         }
     }
@@ -739,8 +763,10 @@
 
     function resetToIdle() {
         localStorage.removeItem('activeJobId'); activeJobId = null; activeJobData = null; selectedJobId = null;
-        document.getElementById('activeJobPanel').classList.add('hidden'); document.getElementById('idlePanel').classList.remove('hidden');
-        document.getElementById('btnOverview').classList.add('hidden'); document.getElementById('etaDisplay').classList.add('hidden'); 
+        document.getElementById('activeJobPanel').classList.add('hidden'); 
+        document.getElementById('idlePanel').classList.remove('hidden');
+        document.getElementById('btnOverview').classList.add('hidden'); 
+        document.getElementById('etaDisplay').classList.add('hidden'); 
         clearMapRoutes(); centerToDriver(); renderJobList(); 
     }
 
@@ -759,13 +785,13 @@
         directionsService.route({origin: origin, destination: dest, travelMode: 'DRIVING'}, (res, stat) => {
             if(stat === 'OK') {
                 directionsRenderer.setDirections(res); 
-                drawCustomPolylines(res, isGoingToPickup, isGoingToDropoff); // 🌟 วาดเส้นตามสถานะ
+                drawCustomPolylines(res, isGoingToPickup, isGoingToDropoff); 
                 
                 currentRouteBounds = res.routes[0].bounds; 
                 let leg = res.routes[0].legs[0]; let distKm = leg.distance.value / 1000;
                 
                 let etaEl = document.getElementById('etaDisplay');
-                etaEl.innerText = `ระยะทาง ${leg.distance.text} • ${leg.duration.text}`; 
+                etaEl.innerText = `ระยะทาง ${leg.distance.text} • ${leg.duration.text}`; etaEl.classList.remove('hidden');
 
                 if(isGoingToPickup && distKm <= 2.0 && activeJobData.notifiedPick !== true) {
                     db.ref('bookings/' + activeJobId).update({ notifiedPick: true });
@@ -777,7 +803,7 @@
                 
                 if (forceZoom) {
                     isTrackingMode = false; document.getElementById('btnCrosshair').classList.replace('text-blue-600', 'text-gray-400');
-                    setTimeout(() => { map.fitBounds(currentRouteBounds, { top: 80, right: 50, bottom: 320, left: 50 }); }, 200);
+                    setTimeout(() => { map.fitBounds(currentRouteBounds, { top: 80, right: 50, bottom: 280, left: 50 }); }, 200);
                 }
             }
         });
