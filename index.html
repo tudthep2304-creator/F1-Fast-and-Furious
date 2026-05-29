@@ -42,7 +42,6 @@
     .job-scroll::-webkit-scrollbar { width: 4px; }
     .job-scroll::-webkit-scrollbar-thumb { background: #16a34a; border-radius: 4px; }
     
-    /* 🌟 สไตล์กล่องใส่ PIN */
     .pin-input {
         letter-spacing: 0.5em;
         text-align: center;
@@ -321,7 +320,9 @@
     });
     const db = firebase.database();
 
-    // 🌟 ตัวแปรระบบ PIN และ Session
+    // 🌟 ระบบตรวจสอบรหัสที่อนุญาต 3 รหัส
+    const ALLOWED_PINS = ['2304', '0604', '0105'];
+
     let driverPin = localStorage.getItem('driverPin');
     let driverSessionId = localStorage.getItem('driverSessionId');
 
@@ -349,18 +350,18 @@
     let knownPendingJobs = [];
     let isAlarmRinging = false; 
 
-    // 🌟 ระบบสร้างรหัส Session แบบสุ่ม
+    // 🌟 สร้างรหัส Session ID แบบสุ่ม
     function generateUUID() {
         return Math.random().toString(36).substring(2) + Date.now().toString(36);
     }
 
     // 🌟 ตรวจสอบว่าล็อกอินหรือยัง
     function checkLogin() {
-        if (!driverPin) {
+        if (!driverPin || !ALLOWED_PINS.includes(driverPin)) {
             document.getElementById('loginModal').classList.remove('hidden');
         } else {
             document.getElementById('loginModal').classList.add('hidden');
-            // ตรวจจับถ้ามีเครื่องอื่นใช้ PIN เดียวกันล็อกอินเข้ามา
+            // ตรวจจับเครื่องซ้อน
             db.ref('driver_sessions/' + driverPin).on('value', snap => {
                 if (snap.val() && snap.val() !== driverSessionId) {
                     forceLogout("รหัสผ่านนี้ถูกใช้งานจากอุปกรณ์อื่น\nระบบจะทำการออกจากระบบโดยอัตโนมัติ");
@@ -371,13 +372,19 @@
         }
     }
 
-    // 🌟 ฟังก์ชันกดยืนยัน PIN
+    // 🌟 ฟังก์ชันล็อกอิน (ตรวจสอบรหัสผ่าน)
     function submitLogin() {
         let pin = document.getElementById('pinInput').value;
         if(pin.length !== 4) {
             alert("กรุณาระบุรหัส PIN 4 หลักให้ครบถ้วน");
             return;
         }
+        if(!ALLOWED_PINS.includes(pin)) {
+            alert("รหัส PIN ไม่ถูกต้อง หรือไม่ได้รับอนุญาตให้เข้าระบบ");
+            document.getElementById('pinInput').value = '';
+            return;
+        }
+        
         driverPin = pin;
         driverSessionId = generateUUID();
         localStorage.setItem('driverPin', driverPin);
@@ -387,7 +394,6 @@
         document.getElementById('loginModal').classList.add('hidden');
         checkLogin();
         
-        // ถ้าเคยเปิดออนไลน์ไว้ให้เปิดต่อ
         let savedOnlineState = localStorage.getItem('isDriverOnline');
         if (savedOnlineState === 'true') {
             document.getElementById('onlineToggle').checked = true;
@@ -395,7 +401,7 @@
         }
     }
 
-    // 🌟 ฟังก์ชันล็อกเอาท์ (เตะออก)
+    // 🌟 ฟังก์ชันล็อกเอาท์และเตะออก
     function forceLogout(msg) {
         if(msg) alert(msg);
         isOnline = false;
@@ -412,7 +418,6 @@
         }
     }
 
-    // เริ่มทำงานเมื่อเปิดเว็บ
     window.onload = () => {
         checkLogin();
     };
@@ -463,12 +468,18 @@
         try {
             if ('wakeLock' in navigator) {
                 wakeLock = await navigator.wakeLock.request('screen');
+                document.getElementById('wakeLockStatus').classList.remove('hidden');
             }
         } catch (err) { console.log('Wake Lock Error:', err); }
     }
 
     function releaseWakeLock() {
-        if (wakeLock !== null) { wakeLock.release().then(() => { wakeLock = null; }); }
+        if (wakeLock !== null) { 
+            wakeLock.release().then(() => { 
+                wakeLock = null; 
+                document.getElementById('wakeLockStatus').classList.add('hidden');
+            }); 
+        }
     }
 
     document.addEventListener("visibilitychange", () => {
@@ -593,7 +604,6 @@
     }
 
     function toggleOnline() {
-        // บังคับให้ล็อกอินก่อน
         if(!driverPin) {
             document.getElementById('onlineToggle').checked = false;
             document.getElementById('loginModal').classList.remove('hidden');
@@ -613,8 +623,6 @@
             isFirstGps = true; 
             
             requestWakeLock(); 
-            document.getElementById('wakeLockStatus').classList.remove('hidden');
-
             db.ref('driver').update({ status: "ออนไลน์" });
 
             let snd = document.getElementById('jobAlertSound');
@@ -660,8 +668,6 @@
             gpsEl.innerText = "ระบบถูกปิดชั่วคราว";
             
             releaseWakeLock(); 
-            document.getElementById('wakeLockStatus').classList.add('hidden');
-
             db.ref('driver').update({ status: "ออฟไลน์" });
             if(watchId) navigator.geolocation.clearWatch(watchId);
             stopAlarm(); 
@@ -670,7 +676,7 @@
     }
 
     db.ref('bookings').on('value', snap => {
-        if(!driverPin) return; // ไม่แสดงข้อมูลถ้ายังไม่ล็อกอิน
+        if(!driverPin) return; 
 
         allBookings = snap.val();
         let foundActiveJob = false;
@@ -679,7 +685,7 @@
             for (let key in allBookings) {
                 let b = allBookings[key];
                 let s = b.status;
-                // 🌟 ระบบกู้คืนงาน: เช็คว่างานที่ค้างอยู่เป็นของ PIN นี้หรือไม่
+                // 🌟 ตรวจจับงานค้าง ที่เป็นของคนขับ PIN นี้เท่านั้น (กู้คืนงาน 100%)
                 if ((s.includes("รับงานแล้ว") || s.includes("มาถึงจุดรับ") || s.includes("เริ่มออกเดินทาง")) && b.driverPin === driverPin) {
                     activeJobId = key;
                     activeJobData = b;
@@ -710,6 +716,16 @@
         }
         renderJobList(); 
     });
+
+    function checkActiveJobStatus() {
+        if (!activeJobId) return; 
+        if (!allBookings || !allBookings[activeJobId]) {
+            showAlert("งานถูกยกเลิก", "ผู้โดยสารได้ทำการยกเลิกงานนี้แล้วครับ", "error", () => { resetToIdle(); });
+            return;
+        }
+        activeJobData = allBookings[activeJobId];
+        updateActiveJobUI();
+    }
 
     function renderJobList() {
         const listContainer = document.getElementById('jobListContainer');
@@ -851,7 +867,7 @@
         activeJobId = selectedJobId; localStorage.setItem('activeJobId', activeJobId);
         closeConfirmAcceptModal(); closeJobDetail(); 
         
-        // 🌟 ประทับตรายืนยันว่างานนี้เป็นของ PIN นี้เท่านั้น!
+        // 🌟 สลักรหัส PIN ของคนขับลงไปในงานด้วย เพื่อให้กู้คืนงานกลับมาถูกคน!
         db.ref('bookings/' + activeJobId).update({ 
             status: "รับงานแล้ว กำลังเดินทางไปหา", 
             driverPhone: "0946379669",
@@ -995,7 +1011,7 @@
                     let btn = document.getElementById('btnCrosshair');
                     btn.classList.remove('text-green-400');
                     btn.classList.add('text-gray-500');
-                    setTimeout(() => { map.fitBounds(currentRouteBounds, { top: 80, right: 50, bottom: 380, left: 50 }); }, 200);
+                    setTimeout(() => { map.fitBounds(currentRouteBounds, { top: 80, right: 50, bottom: 400, left: 50 }); }, 200);
                 }
             }
         });
