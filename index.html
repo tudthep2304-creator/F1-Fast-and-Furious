@@ -19,7 +19,7 @@
 </head>
 <body class="h-screen w-screen m-0 overflow-hidden">
 
-  <audio id="jobAlertSound" src="https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3" preload="auto"></audio>
+  <audio id="jobAlertSound" src="https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3" preload="auto" loop></audio>
 
   <div id="map" class="map-container"></div>
 
@@ -224,8 +224,24 @@
     let isFinishingJob = false;
     let currentRouteBounds = null; 
 
-    // 🌟 ตัวแปรเก็บรายการงานที่เคยรับรู้แล้ว (เอาไว้เช็คเวลามีงานใหม่เข้ามา)
     let knownPendingJobs = [];
+    let isAlarmRinging = false; // 🌟 เช็คว่าเสียงเตือนทำงานอยู่ไหม
+
+    // 🌟 ฟังก์ชันหยุดเสียงเตือนทันทีที่มีการสัมผัสหน้าจอ
+    function stopAlarm() {
+        if (isAlarmRinging) {
+            let snd = document.getElementById('jobAlertSound');
+            if (snd) {
+                snd.pause();
+                snd.currentTime = 0; // รีเซ็ตเสียงกลับไปจุดเริ่มต้น
+            }
+            isAlarmRinging = false;
+        }
+    }
+
+    // 🌟 ดักจับการแตะและคลิกทุกพื้นที่บนหน้าจอเพื่อปิดเสียง
+    document.addEventListener('touchstart', stopAlarm);
+    document.addEventListener('click', stopAlarm);
 
     async function requestWakeLock() {
         try {
@@ -331,7 +347,6 @@
             requestWakeLock(); 
             db.ref('driver').update({ status: "ออนไลน์" });
 
-            // 🌟 เล่นเสียงเบาๆ 1 ทีเพื่อขอสิทธิ์การเล่นเสียงจาก Browser (Tricking the browser)
             let snd = document.getElementById('jobAlertSound');
             if(snd) {
                 snd.volume = 0; 
@@ -373,6 +388,7 @@
             releaseWakeLock(); 
             db.ref('driver').update({ status: "ออฟไลน์" });
             if(watchId) navigator.geolocation.clearWatch(watchId);
+            stopAlarm(); // ปิดเสียงเผื่อดังค้างอยู่
         }
         renderJobList();
     }
@@ -433,7 +449,7 @@
 
         let html = ''; let jobCount = 0;
         let currentPendingJobs = []; 
-        let hasNewJob = false; // 🌟 ตรวจสอบว่ามีงานใหม่เข้ามาไหม
+        let hasNewJob = false; 
 
         for (let key in allBookings) {
             let b = allBookings[key];
@@ -442,7 +458,6 @@
                 jobCount++;
                 currentPendingJobs.push(key);
                 
-                // 🌟 ถ้าระบบเจอไอดีงานใหม่ ที่ไม่เคยเห็นมาก่อน (แปลว่ามีลูกค้าเรียกเข้ามาใหม่)
                 if (!knownPendingJobs.includes(key)) {
                     hasNewJob = true;
                 }
@@ -458,14 +473,15 @@
         if (jobCount === 0) html = '<p class="text-center text-gray-400 text-sm py-4">ยังไม่มีงานในขณะนี้...</p>';
         listContainer.innerHTML = html;
 
-        // 🌟 ถ้าระบบเจองานใหม่ และคนขับเปิดออนไลน์อยู่ ให้ส่งเสียงแจ้งเตือนและสั่น!
+        // 🌟 ถ้ามีงานใหม่ ให้ดังวนซ้ำ!
         if (hasNewJob && isOnline) {
             let snd = document.getElementById('jobAlertSound');
-            if (snd) snd.play().catch(e => console.log('Autoplay prevented'));
-            if (navigator.vibrate) navigator.vibrate([300, 100, 300, 100, 300]); // สั่น 3 จังหวะเตือน
+            if (snd) {
+                snd.play().then(() => { isAlarmRinging = true; }).catch(e => console.log('Autoplay prevented'));
+            }
+            if (navigator.vibrate) navigator.vibrate([500, 200, 500, 200, 500]); 
         }
 
-        // 🌟 อัปเดตรายการงานที่รับรู้แล้วล่าสุด
         knownPendingJobs = currentPendingJobs;
     }
 
