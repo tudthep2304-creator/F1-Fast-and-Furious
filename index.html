@@ -80,8 +80,8 @@
     <button onclick="cancelJob()" class="w-full bg-red-50 text-red-600 py-2 rounded-xl font-bold border border-red-200 text-sm mt-1">ยกเลิกงานนี้</button>
   </div>
 
-  <div id="jobDetailModal" class="hidden fixed inset-0 z-[100] bg-black/70 flex items-center justify-center p-4">
-      <div class="bg-white rounded-2xl p-5 w-full max-w-sm shadow-2xl transform transition-all scale-100">
+  <div id="jobDetailModal" class="hidden fixed inset-0 z-[100] bg-black/40 flex flex-col justify-end pb-8 px-4">
+      <div class="bg-white rounded-3xl p-5 w-full max-w-md mx-auto shadow-2xl transform transition-all scale-100">
           <div class="flex justify-between items-center border-b pb-3 mb-3">
               <h3 class="text-lg font-black text-gray-800">รายละเอียดงาน</h3>
               <div class="flex items-center gap-3">
@@ -92,7 +92,7 @@
               </div>
           </div>
           
-          <div class="space-y-3 mb-4">
+          <div class="space-y-3 mb-5">
               <div>
                   <p class="text-xs text-gray-500 font-bold mb-1">ผู้โดยสาร</p>
                   <p class="text-sm text-gray-800 font-medium" id="detailName">...</p>
@@ -107,12 +107,8 @@
               </div>
           </div>
 
-          <button onclick="previewRouteMap()" class="w-full mb-3 py-2.5 bg-blue-50 text-blue-600 font-bold rounded-xl border border-blue-200 hover:bg-blue-100 transition-colors flex justify-center items-center gap-2 shadow-sm">
-              <i class="fas fa-map-marked-alt"></i> ดูเส้นทางบนแผนที่ (Google Maps)
-          </button>
-
           <div class="flex gap-2">
-              <button onclick="hideJob()" class="flex-1 py-3 bg-red-50 text-red-600 font-bold rounded-xl border border-red-200 hover:bg-red-100 transition-colors">ปฏิเสธงานนี้</button>
+              <button onclick="hideJob()" class="flex-1 py-3 bg-red-50 text-red-600 font-bold rounded-xl border border-red-200 hover:bg-red-100 transition-colors">ข้ามงานนี้</button>
               <button onclick="acceptJob()" class="flex-[2] py-3 bg-green-500 text-white font-bold rounded-xl shadow-md hover:bg-green-600 transition-colors">รับงานเลย!</button>
           </div>
       </div>
@@ -142,7 +138,9 @@
     let activeJobData = null;
     let selectedJobId = null; 
     let allBookings = null;
-    let hiddenJobs = []; // 🌟 เก็บไอดีงานที่เรากด "ปฏิเสธ" ไว้ เพื่อไม่ให้แสดงซ้ำ
+    
+    // 🌟 แก้ไข: ใช้ตัวแปร Object เพื่อจำ Timestamp ของงาน แทนที่จะจำแค่ ID
+    let hiddenJobs = {}; 
 
     function initMap() {
       if (typeof google === 'undefined' || typeof google.maps === 'undefined') return;
@@ -186,7 +184,7 @@
                     
                     let posObj = {lat: driverLat, lng: driverLng};
                     if(markerDriver) markerDriver.setPosition(posObj);
-                    if(!activeJobId) map.setCenter(posObj); 
+                    if(!activeJobId && !selectedJobId) map.setCenter(posObj); // ไม่เด้งกลับถ้ากำลังดูพรีวิวอยู่
 
                     db.ref('driver').update({ lat: driverLat, lng: driverLng });
                     gpsEl.innerText = `พิกัดอัปเดตล่าสุด: ${new Date().toLocaleTimeString()}`;
@@ -226,7 +224,6 @@
         updateActiveJobUI();
     }
 
-    // 🌟 วาดกระดานงาน (กรองงานที่เราเคยกดปฏิเสธออกไป)
     function renderJobList() {
         const listContainer = document.getElementById('jobListContainer');
         
@@ -247,8 +244,11 @@
 
         for (let key in allBookings) {
             let b = allBookings[key];
-            // ตรวจสอบสถานะ และเช็คว่าเราไม่ได้เคยกดซ่อนงานนี้ (ปฏิเสธงาน)
-            if (b.status === "รอผู้ขับขี่ตอบรับ" && !hiddenJobs.includes(key)) {
+            
+            // 🌟 ตรวจสอบว่างานนี้เคยกดซ่อนใน Timestamp เดิมหรือไม่ (ถ้าลูกค้าเรียกใหม่เวลาเปลี่ยน งานจะโผล่มาใหม่)
+            let isHidden = hiddenJobs[key] && hiddenJobs[key] === b.timestamp;
+
+            if (b.status === "รอผู้ขับขี่ตอบรับ" && !isHidden) {
                 jobCount++;
                 html += `
                 <div onclick="openJobDetail('${key}')" class="bg-white p-3 rounded-lg shadow-sm border border-gray-200 cursor-pointer active:bg-blue-50 hover:bg-gray-50 transition-colors">
@@ -270,6 +270,7 @@
         listContainer.innerHTML = html;
     }
 
+    // 🌟 ระบบเปิดหน้าต่าง และวาดพรีวิวเส้นทางลงแผนที่ทันที
     function openJobDetail(jobId) {
         selectedJobId = jobId;
         let job = allBookings[jobId];
@@ -280,27 +281,50 @@
         document.getElementById('detailPrice').innerText = "฿" + job.price;
         
         document.getElementById('jobDetailModal').classList.remove('hidden');
+
+        // วาดเส้นทางบนแผนที่แบบ Preview
+        let origin = {lat: job.pLat, lng: job.pLng};
+        let dest = {lat: job.dLat, lng: job.dLng};
+        
+        markerPick.setPosition(origin); markerPick.setMap(map);
+        markerDrop.setPosition(dest); markerDrop.setMap(map);
+
+        directionsService.route({origin: origin, destination: dest, travelMode: 'DRIVING'}, (res, stat) => {
+            if(stat === 'OK') {
+                directionsRenderer.setDirections(res);
+                setTimeout(() => {
+                    // เว้นช่องว่างด้านล่างแผนที่ให้พ้นระยะป๊อปอัป (ป้องกันถูกบัง)
+                    const mapPadding = { top: 80, right: 50, bottom: 420, left: 50 }; 
+                    map.fitBounds(res.routes[0].bounds, mapPadding);
+                }, 100);
+            }
+        });
     }
 
-    // 🌟 ปิดหน้าต่างเฉยๆ (งานยังอยู่ในกระดาน)
+    // 🌟 ปิดหน้าต่างพรีวิว และเคลียร์เส้นทางทิ้ง
     function closeJobDetail() {
         document.getElementById('jobDetailModal').classList.add('hidden');
         selectedJobId = null;
+
+        // ล้างแผนที่กลับสู่สภาวะปกติ (ถ้ายังไม่ได้กดรับงาน)
+        if (!activeJobId) {
+            if(directionsRenderer) directionsRenderer.setDirections({routes: []});
+            if(markerPick) markerPick.setMap(null);
+            if(markerDrop) markerDrop.setMap(null);
+            map.setZoom(15);
+            map.setCenter({lat: driverLat, lng: driverLng});
+        }
     }
 
-    // 🌟 ปฏิเสธงาน (ซ่อนออกจากกระดานของเราถาวร)
+    // 🌟 กดปฏิเสธงาน (ซ่อนโดยใช้ Timestamp)
     function hideJob() {
         if(!selectedJobId) return;
-        hiddenJobs.push(selectedJobId);
+        
+        let job = allBookings[selectedJobId];
+        hiddenJobs[selectedJobId] = job.timestamp; // จดจำเวลาของงานที่ปฏิเสธไว้
+        
         closeJobDetail();
         renderJobList(); 
-    }
-
-    // 🌟 ดูเส้นทางก่อนรับงาน (จากจุดรับ -> จุดส่ง) บน Google Maps
-    function previewRouteMap() {
-        if(!selectedJobId || !allBookings[selectedJobId]) return;
-        let job = allBookings[selectedJobId];
-        window.open(`https://www.google.com/maps/dir/?api=1&origin=${job.pLat},${job.pLng}&destination=${job.dLat},${job.dLng}&travelmode=driving`, '_blank');
     }
 
     function acceptJob() {
@@ -449,7 +473,6 @@
         });
     }
 
-    // 🌟 แก้ไข URL ของระบบนำทางให้ถูกต้องตามมาตรฐาน
     function openDriverNavMap() {
         if(!activeJobData) return;
         let lat, lng;
