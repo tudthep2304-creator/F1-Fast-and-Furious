@@ -13,7 +13,7 @@
     body { font-family: 'Kanit', sans-serif; background-color: #f3f4f6; }
     .map-container { position: fixed; inset: 0; width: 100vw; height: 100vh; z-index: 0; background: #e5e7eb; }
     .ui-panel { position: fixed; bottom: 0; left: 0; right: 0; background: white; border-top-left-radius: 24px; border-top-right-radius: 24px; box-shadow: 0 -10px 25px rgba(0,0,0,0.15); z-index: 10; display: flex; flex-direction: column; padding: 20px; max-height: 80vh; overflow-y: auto;}
-    /* ปรับแต่ง Scrollbar สำหรับรายการงาน */
+    /* Scrollbar สำหรับรายการงาน */
     .job-scroll::-webkit-scrollbar { width: 4px; }
     .job-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
   </style>
@@ -43,7 +43,7 @@
     </div>
 
     <h3 class="text-sm font-bold text-gray-700 mb-2 flex items-center gap-2"><i class="fas fa-list-ul"></i> รายการงานที่รอรับ</h3>
-    <div id="jobListContainer" class="job-scroll space-y-2 max-h-[30vh] overflow-y-auto bg-gray-100 p-2 rounded-xl border border-gray-200">
+    <div id="jobListContainer" class="job-scroll space-y-2 max-h-[35vh] overflow-y-auto bg-gray-100 p-2 rounded-xl border border-gray-200">
         <p class="text-center text-gray-400 text-sm py-4">กรุณาเปิดออนไลน์เพื่อดูงาน</p>
     </div>
   </div>
@@ -84,10 +84,15 @@
       <div class="bg-white rounded-2xl p-5 w-full max-w-sm shadow-2xl transform transition-all scale-100">
           <div class="flex justify-between items-center border-b pb-3 mb-3">
               <h3 class="text-lg font-black text-gray-800">รายละเอียดงาน</h3>
-              <span class="font-black text-green-600 text-lg" id="detailPrice">฿0</span>
+              <div class="flex items-center gap-3">
+                  <span class="font-black text-green-600 text-lg" id="detailPrice">฿0</span>
+                  <button onclick="closeJobDetail()" class="text-gray-400 hover:text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-full w-8 h-8 flex items-center justify-center transition-colors">
+                      <i class="fas fa-times"></i>
+                  </button>
+              </div>
           </div>
           
-          <div class="space-y-3 mb-5">
+          <div class="space-y-3 mb-4">
               <div>
                   <p class="text-xs text-gray-500 font-bold mb-1">ผู้โดยสาร</p>
                   <p class="text-sm text-gray-800 font-medium" id="detailName">...</p>
@@ -102,18 +107,20 @@
               </div>
           </div>
 
-          <div class="flex gap-3">
-              <button onclick="closeJobDetail()" class="flex-1 py-3 bg-gray-200 text-gray-700 font-bold rounded-xl hover:bg-gray-300 transition-colors">ปิดหน้าต่าง</button>
+          <button onclick="previewRouteMap()" class="w-full mb-3 py-2.5 bg-blue-50 text-blue-600 font-bold rounded-xl border border-blue-200 hover:bg-blue-100 transition-colors flex justify-center items-center gap-2 shadow-sm">
+              <i class="fas fa-map-marked-alt"></i> ดูเส้นทางบนแผนที่ (Google Maps)
+          </button>
+
+          <div class="flex gap-2">
+              <button onclick="hideJob()" class="flex-1 py-3 bg-red-50 text-red-600 font-bold rounded-xl border border-red-200 hover:bg-red-100 transition-colors">ปฏิเสธงานนี้</button>
               <button onclick="acceptJob()" class="flex-[2] py-3 bg-green-500 text-white font-bold rounded-xl shadow-md hover:bg-green-600 transition-colors">รับงานเลย!</button>
           </div>
       </div>
   </div>
 
   <script>
-    // URL ของ Apps Script สำหรับแจ้งเตือน
     const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwwdopAPESHRrHEYTSa-CzFMbh0JX9WHUa37PMEJmxDkah7ui67cVtOn68cnM-2DtmR/exec"; 
     
-    // ตั้งค่า Firebase
     firebase.initializeApp({
       apiKey: "AIzaSyBNtaYaX1OW-86_9EGiVN9EpgPzWOX_twQ",
       authDomain: "myride-chiangrai.firebaseapp.com",
@@ -133,8 +140,9 @@
     
     let activeJobId = null;
     let activeJobData = null;
-    let selectedJobId = null; // เก็บไอดีงานที่กดดูรายละเอียด
+    let selectedJobId = null; 
     let allBookings = null;
+    let hiddenJobs = []; // 🌟 เก็บไอดีงานที่เรากด "ปฏิเสธ" ไว้ เพื่อไม่ให้แสดงซ้ำ
 
     function initMap() {
       if (typeof google === 'undefined' || typeof google.maps === 'undefined') return;
@@ -199,29 +207,26 @@
         renderJobList();
     }
 
-    // ติดตามการเปลี่ยนแปลงของฐานข้อมูลตลอดเวลา
     db.ref('bookings').on('value', snap => {
         allBookings = snap.val();
-        checkActiveJobStatus(); // เช็คงานที่กำลังทำอยู่
-        renderJobList(); // อัปเดตกระดานงาน
+        checkActiveJobStatus(); 
+        renderJobList(); 
     });
 
     function checkActiveJobStatus() {
         if (!activeJobId) return;
         
-        // ถ้าผู้โดยสารกดยกเลิกงานที่เรากำลังทำอยู่
         if (!allBookings || !allBookings[activeJobId]) {
             alert("⚠️ ผู้โดยสารได้ยกเลิกงานนี้แล้ว");
             resetToIdle();
             return;
         }
 
-        // อัปเดตข้อมูลงานปัจจุบัน
         activeJobData = allBookings[activeJobId];
         updateActiveJobUI();
     }
 
-    // 🌟 ฟังก์ชันวาดกระดานงาน (Job List)
+    // 🌟 วาดกระดานงาน (กรองงานที่เราเคยกดปฏิเสธออกไป)
     function renderJobList() {
         const listContainer = document.getElementById('jobListContainer');
         
@@ -230,7 +235,7 @@
             return;
         }
 
-        if (activeJobId) return; // ถ้าทำรับงานอยู่แล้ว ไม่ต้องวาดกระดานใหม่
+        if (activeJobId) return; 
 
         if (!allBookings) {
             listContainer.innerHTML = '<p class="text-center text-gray-400 text-sm py-4">ยังไม่มีงานในขณะนี้...</p>';
@@ -242,7 +247,8 @@
 
         for (let key in allBookings) {
             let b = allBookings[key];
-            if (b.status === "รอผู้ขับขี่ตอบรับ") {
+            // ตรวจสอบสถานะ และเช็คว่าเราไม่ได้เคยกดซ่อนงานนี้ (ปฏิเสธงาน)
+            if (b.status === "รอผู้ขับขี่ตอบรับ" && !hiddenJobs.includes(key)) {
                 jobCount++;
                 html += `
                 <div onclick="openJobDetail('${key}')" class="bg-white p-3 rounded-lg shadow-sm border border-gray-200 cursor-pointer active:bg-blue-50 hover:bg-gray-50 transition-colors">
@@ -264,7 +270,6 @@
         listContainer.innerHTML = html;
     }
 
-    // 🌟 เปิดหน้าต่างดูรายละเอียดงาน
     function openJobDetail(jobId) {
         selectedJobId = jobId;
         let job = allBookings[jobId];
@@ -277,13 +282,27 @@
         document.getElementById('jobDetailModal').classList.remove('hidden');
     }
 
-    // 🌟 ปิดหน้าต่างรายละเอียด (ข้ามงาน)
+    // 🌟 ปิดหน้าต่างเฉยๆ (งานยังอยู่ในกระดาน)
     function closeJobDetail() {
         document.getElementById('jobDetailModal').classList.add('hidden');
         selectedJobId = null;
     }
 
-    // 🌟 กดยืนยันรับงาน
+    // 🌟 ปฏิเสธงาน (ซ่อนออกจากกระดานของเราถาวร)
+    function hideJob() {
+        if(!selectedJobId) return;
+        hiddenJobs.push(selectedJobId);
+        closeJobDetail();
+        renderJobList(); 
+    }
+
+    // 🌟 ดูเส้นทางก่อนรับงาน (จากจุดรับ -> จุดส่ง) บน Google Maps
+    function previewRouteMap() {
+        if(!selectedJobId || !allBookings[selectedJobId]) return;
+        let job = allBookings[selectedJobId];
+        window.open(`https://www.google.com/maps/dir/?api=1&origin=${job.pLat},${job.pLng}&destination=${job.dLat},${job.dLng}&travelmode=driving`, '_blank');
+    }
+
     function acceptJob() {
         if(!selectedJobId || !allBookings[selectedJobId]) {
             alert("ขออภัย งานนี้ถูกคนขับท่านอื่นรับไปแล้ว หรือถูกยกเลิก");
@@ -294,12 +313,10 @@
         activeJobId = selectedJobId;
         closeJobDetail();
         
-        // อัปเดตสถานะขึ้นฐานข้อมูล
         db.ref('bookings/' + activeJobId).update({ 
             status: "รับงานแล้ว กำลังเดินทางไปหา",
             driverPhone: "0946379669"
         }).then(() => {
-            // แจ้งเตือนลูกค้า
             if(APPS_SCRIPT_URL) {
                 let msg = "🏎️ คนขับตอบรับงานของคุณแล้ว! กำลังรีบเดินทางไปหาคุณครับ";
                 fetch(`${APPS_SCRIPT_URL}?action=notify&type=status_update&userId=${activeJobId}&msg=${encodeURIComponent(msg)}`, {mode: 'no-cors'});
@@ -308,6 +325,7 @@
 
         document.getElementById('idlePanel').classList.add('hidden');
         document.getElementById('activeJobPanel').classList.remove('hidden');
+        updateActiveJobUI();
     }
 
     function updateActiveJobUI() {
@@ -410,7 +428,7 @@
         if(markerDrop) markerDrop.setMap(null);
         map.setZoom(15);
         map.setCenter({lat: driverLat, lng: driverLng});
-        renderJobList(); // วาดกระดานใหม่
+        renderJobList(); 
     }
 
     function updateRoute() {
@@ -431,6 +449,7 @@
         });
     }
 
+    // 🌟 แก้ไข URL ของระบบนำทางให้ถูกต้องตามมาตรฐาน
     function openDriverNavMap() {
         if(!activeJobData) return;
         let lat, lng;
