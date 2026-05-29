@@ -1,3 +1,9 @@
+ปัญหาทั้ง 3 จุดนี้แก้ไขได้ครับ!
+ 1. **เรื่องกรอบขาวบังรถ:** เกิดจากตัวแผนที่ (Map Canvas) ไม่รู้ว่าแผงสีขาวด้านล่างมันสูงขึ้นแค่ไหน จุดกึ่งกลางมันเลยอยู่ต่ำเกินไป ผมได้ทำการ "ดันจุดศูนย์กลางแผนที่ขึ้น (Map Padding)" ให้พ้นระยะของกรอบขาวทั้งหมดแล้วครับ คราวนี้เห็นตัวรถชัดเจนแน่นอน
+ 2. **เรื่องแจ้งเตือนซ้ำ:** อาการส่งซ้ำเกิดจากการที่คนขับอาจจะเผลอกดปุ่ม "มาถึงแล้ว" เบิ้ล 2 ครั้งติดกัน (Double Click) ก่อนที่หน้าต่างจะปิดลง ผมได้ฝังระบบ **"ล็อกปุ่ม (Anti-Spam)"** ไว้ให้แล้วครับ กดปุ๊บจะล็อกปุ่มทันที 2 วินาที ไม่มีทางส่งซ้ำเข้า LINE ลูกค้าแน่นอน
+ 3. **ระยะทางและเวลารวม (ก่อนรับงาน):** ผมได้เพิ่มข้อความสรุป **"ระยะทางรวม"** และ **"เวลาประเมินรวม"** (จากคนขับ -> จุดรับ -> จุดส่ง) ไว้ที่ด้านบนสุดของหน้าต่างรายละเอียดงานให้แล้วครับ เพื่อให้คุณมองปราดเดียวแล้วประเมินความคุ้มค่าได้เลย
+คัดลอกโค้ดฉบับสมบูรณ์นี้ ไปวางทับในไฟล์ index.html ของ **แอปคนขับ** ได้เลยครับ:
+```html
 <!DOCTYPE html>
 <html lang="th">
 <head>
@@ -13,6 +19,7 @@
     body { font-family: 'Kanit', sans-serif; background-color: #f3f4f6; }
     .map-container { position: fixed; inset: 0; width: 100vw; height: 100vh; z-index: 0; background: #e5e7eb; }
     
+    /* UI แบบติดขอบจอด้านล่าง (Docked Bottom) */
     .ui-panel { 
         position: fixed; 
         bottom: 0; 
@@ -118,11 +125,14 @@
     <button onclick="promptCancelJob()" class="w-full bg-red-50 text-red-600 py-2.5 rounded-xl font-bold border border-red-200 text-sm mt-1 hover:bg-red-100 transition">ยกเลิกงานนี้</button>
   </div>
 
-  <div id="jobDetailModal" class="hidden fixed bottom-0 left-0 right-0 z-[100] pointer-events-none flex flex-col justify-end transition-transform">
-      <div class="bg-white rounded-t-[24px] p-5 w-full mx-auto shadow-[0_-10px_40px_rgba(0,0,0,0.15)] pointer-events-auto transform transition-all scale-100 pb-8">
+  <div id="jobDetailModal" class="hidden fixed inset-0 z-[100] bg-black/40 backdrop-blur-[2px] flex flex-col justify-end transition-opacity">
+      <div class="bg-white rounded-t-[24px] p-5 w-full mx-auto shadow-[0_-5px_25px_rgba(0,0,0,0.15)] pointer-events-auto transform transition-all scale-100 pb-8">
           
           <div class="flex justify-between items-center mb-4">
-              <h3 class="text-lg font-black text-[#2B3A6F]">รายละเอียดงาน</h3>
+              <div>
+                  <h3 class="text-lg font-black text-[#2B3A6F]">รายละเอียดงาน</h3>
+                  <p class="text-xs text-gray-500 font-medium mt-0.5" id="detailTotalEta">ระยะทางรวม: กำลังคำนวณ...</p>
+              </div>
               <div class="flex items-center gap-2 shrink-0">
                   <span class="font-black text-green-600 text-lg bg-green-50 px-2.5 py-1 rounded-xl border border-green-100" id="detailPrice">฿0</span>
                   <button onclick="closeJobDetail()" class="text-gray-400 hover:text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-full w-8 h-8 flex items-center justify-center transition-colors">
@@ -130,7 +140,7 @@
                   </button>
               </div>
           </div>
-
+          
           <div class="bg-blue-50/50 p-3 rounded-xl mb-4 flex justify-between items-center border border-blue-100">
               <div class="flex items-center gap-3 overflow-hidden pr-2">
                   <div class="w-10 h-10 rounded-full bg-[#2B3A6F] text-white flex items-center justify-center shrink-0 shadow-sm">
@@ -145,7 +155,7 @@
                   <i class="fas fa-phone-alt"></i> โทร
               </a>
           </div>
-          
+
           <div class="mb-5 bg-gray-50 p-4 rounded-2xl border border-gray-100 relative">
               <div class="absolute left-[1.5rem] top-8 bottom-8 w-0.5 border-l-2 border-dashed border-gray-300"></div>
               
@@ -242,7 +252,7 @@
           <p class="text-sm text-gray-500 mb-6">หากยกเลิก ผู้โดยสารจะถูกแจ้งเตือนว่าคุณไม่สามารถไปรับได้ และงานจะถูกลบออก</p>
           <div class="flex gap-3">
               <button onclick="closeDriverCancelModal()" class="flex-1 py-3 bg-gray-100 text-gray-700 font-bold rounded-xl hover:bg-gray-200">ปิด</button>
-              <button onclick="executeCancelJob()" class="flex-[2] py-3 bg-red-500 text-white font-bold rounded-xl shadow-md hover:bg-red-600">ยืนยันยกเลิก</button>
+              <button onclick="executeCancelJob()" class="flex-1 py-3 bg-red-500 text-white font-bold rounded-xl shadow-md hover:bg-red-600">ยืนยันยกเลิก</button>
           </div>
       </div>
   </div>
@@ -287,8 +297,10 @@
     let selectedJobId = null; 
     let allBookings = null;
     let hiddenJobs = {}; 
-    let isFinishingJob = false;
     let currentRouteBounds = null; 
+
+    // 🌟 ตัวแปรป้องกันการกดปุ่มซ้ำ (Anti-Spam)
+    let isProcessingAction = false;
 
     let knownPendingJobs = [];
     let isAlarmRinging = false; 
@@ -371,7 +383,7 @@
         isTrackingMode = false;
         document.getElementById('btnCrosshair').classList.replace('text-blue-600', 'text-gray-400');
         if (map && currentRouteBounds) {
-            map.fitBounds(currentRouteBounds, { top: 80, right: 50, bottom: 420, left: 50 });
+            map.fitBounds(currentRouteBounds, { top: 100, right: 50, bottom: 480, left: 50 });
         } else {
             centerToDriver();
         }
@@ -380,8 +392,16 @@
     function initMap() {
       if (typeof google === 'undefined' || typeof google.maps === 'undefined') return;
       map = new google.maps.Map(document.getElementById('map'), { 
-        zoom: 16, center: {lat: driverLat, lng: driverLng}, mapTypeId: 'hybrid', disableDefaultUI: true, gestureHandling: 'greedy', zoomControl: true, padding: { bottom: 420 } 
+        zoom: 16, 
+        center: {lat: driverLat, lng: driverLng}, 
+        mapTypeId: 'hybrid', 
+        disableDefaultUI: true, 
+        gestureHandling: 'greedy', 
+        zoomControl: true, 
+        // 🌟 ดันจุดโฟกัสแผนที่ขึ้นด้านบน เพื่อหนีกรอบสีขาวด้านล่างที่หนาขึ้น
+        padding: { top: 50, bottom: 450, left: 0, right: 0 } 
       });
+
       map.addListener('dragstart', () => {
           isTrackingMode = false; document.getElementById('btnCrosshair').classList.replace('text-blue-600', 'text-gray-400');
       });
@@ -519,19 +539,19 @@
             }
             updateActiveJobUI();
         } else {
-            if (savedJobId && activeJobId === savedJobId && !isFinishingJob) {
+            if (savedJobId && activeJobId === savedJobId && !isProcessingAction) {
                 localStorage.removeItem('activeJobId');
                 showAlert("งานถูกยกเลิก", "ผู้โดยสารได้ทำการยกเลิกงานนี้แล้วครับ", "error", () => { resetToIdle(); });
-            } else if (activeJobId && !savedJobId && !isFinishingJob) {
+            } else if (activeJobId && !savedJobId && !isProcessingAction) {
                 showAlert("งานถูกยกเลิก", "ผู้โดยสารได้ทำการยกเลิกงานนี้แล้วครับ", "error", () => { resetToIdle(); });
             }
-            if (activeJobId && !foundActiveJob && !isFinishingJob) resetToIdle();
+            if (activeJobId && !foundActiveJob && !isProcessingAction) resetToIdle();
         }
         renderJobList(); 
     });
 
     function checkActiveJobStatus() {
-        if (!activeJobId || isFinishingJob) return; 
+        if (!activeJobId || isProcessingAction) return; 
         if (!allBookings || !allBookings[activeJobId]) {
             showAlert("งานถูกยกเลิก", "ผู้โดยสารได้ทำการยกเลิกงานนี้แล้วครับ", "error", () => { resetToIdle(); });
             return;
@@ -561,7 +581,7 @@
                     hasNewJob = true;
                 }
 
-                html += `<div onclick="openJobDetail('${key}')" class="bg-white p-3 rounded-lg shadow-sm border border-gray-200 cursor-pointer active:bg-blue-50 hover:bg-gray-50 transition-colors">
+                html += `<div onclick="openJobDetail('${key}')" class="bg-white p-3 rounded-xl shadow-sm border border-gray-200 cursor-pointer active:bg-blue-50 hover:bg-gray-50 transition-colors">
                     <div class="flex justify-between items-center mb-1"><span class="font-bold text-sm text-[#2B3A6F]"><i class="fas fa-user-circle"></i> ${b.name || 'ลูกค้า'}</span><span class="font-black text-green-600 bg-green-50 px-2 py-0.5 rounded-lg">฿${b.price}</span></div>
                     <p class="text-[11px] text-gray-500 truncate"><span class="text-blue-500 font-bold">รับ:</span> ${b.pName}</p>
                     <p class="text-[11px] text-gray-500 truncate"><span class="text-red-500 font-bold">ส่ง:</span> ${b.dName}</p>
@@ -590,7 +610,6 @@
         document.getElementById('detailDrop').innerText = job.dName;
         document.getElementById('detailPrice').innerText = "฿" + job.price;
         
-        // 🌟 อัปเดตปุ่มโทรในหน้า Detail ให้ทำงานได้จริงตามเบอร์ลูกค้า
         if(job.phone) {
             document.getElementById('btnCallDetail').href = "tel:" + job.phone;
             document.getElementById('btnCallDetail').classList.remove('hidden');
@@ -598,6 +617,7 @@
             document.getElementById('btnCallDetail').classList.add('hidden');
         }
 
+        document.getElementById('detailTotalEta').innerText = `ระยะทางรวม: กำลังคำนวณ...`;
         document.getElementById('detailEtaToPick').innerHTML = `<i class="fas fa-car-side"></i> ห่างจากคุณ: กำลังคำนวณ...`;
         document.getElementById('detailEtaToDrop').innerHTML = `<i class="fas fa-road"></i> ระยะทางไปส่ง: กำลังคำนวณ...`;
         
@@ -624,11 +644,16 @@
                 
                 let legPick = res.routes[0].legs[0]; 
                 let legDrop = res.routes[0].legs[1]; 
+                
+                // 🌟 คำนวณระยะทางรวม และเวลารวมมาแสดงให้คนขับดูก่อนตัดสินใจ
+                let totalDist = (legPick.distance.value + legDrop.distance.value) / 1000;
+                let totalMins = Math.round((legPick.duration.value + legDrop.duration.value) / 60);
 
+                document.getElementById('detailTotalEta').innerText = `ระยะทางรวม: ${totalDist.toFixed(1)} กม. • เวลาประเมิน: ${totalMins} นาที`;
                 document.getElementById('detailEtaToPick').innerHTML = `<i class="fas fa-car-side"></i> ห่างจากคุณ: ${legPick.distance.text} • ${legPick.duration.text}`;
                 document.getElementById('detailEtaToDrop').innerHTML = `<i class="fas fa-road"></i> ระยะทางไปส่ง: ${legDrop.distance.text} • ${legDrop.duration.text}`;
 
-                setTimeout(() => { map.fitBounds(res.routes[0].bounds, { top: 80, right: 50, bottom: 420, left: 50 }); }, 100);
+                setTimeout(() => { map.fitBounds(res.routes[0].bounds, { top: 100, right: 50, bottom: 480, left: 50 }); }, 100);
             }
         });
     }
@@ -646,17 +671,13 @@
         if (!activeJobId) { clearMapRoutes(); centerToDriver(); }
     }
 
-    function promptRejectPendingJob() {
-        document.getElementById('pendingCancelModal').classList.remove('hidden');
-    }
-    
-    function closePendingCancelModal() {
-        document.getElementById('pendingCancelModal').classList.add('hidden');
-    }
+    function promptRejectPendingJob() { document.getElementById('pendingCancelModal').classList.remove('hidden'); }
+    function closePendingCancelModal() { document.getElementById('pendingCancelModal').classList.add('hidden'); }
 
     function executeRejectPendingJob() {
+        if(isProcessingAction) return; isProcessingAction = true;
         closePendingCancelModal();
-        if(!selectedJobId) return;
+        if(!selectedJobId) { isProcessingAction = false; return; }
         
         let jobIdToCancel = selectedJobId;
         closeJobDetail(); 
@@ -666,25 +687,32 @@
                 fetch(`${APPS_SCRIPT_URL}?action=notify&type=cancel_driver&userId=${jobIdToCancel}`, {mode:'no-cors'});
             }
             showAlert("ยกเลิกสำเร็จ", "ปฏิเสธและยกเลิกงานเรียบร้อยแล้ว", "success", () => {
+                isProcessingAction = false;
                 renderJobList(); 
             });
-        });
+        }).catch(()=>{ isProcessingAction = false; });
     }
 
     function promptAcceptJob() { document.getElementById('confirmAcceptModal').classList.remove('hidden'); }
     function closeConfirmAcceptModal() { document.getElementById('confirmAcceptModal').classList.add('hidden'); }
 
     function executeAcceptJob() {
+        if(isProcessingAction) return; isProcessingAction = true;
+        
         if(!selectedJobId || !allBookings[selectedJobId]) {
             showAlert("ข้อผิดพลาด", "ขออภัย งานนี้ถูกยกเลิกไปแล้ว", "error");
-            closeConfirmAcceptModal(); closeJobDetail(); return;
+            closeConfirmAcceptModal(); closeJobDetail(); 
+            isProcessingAction = false;
+            return;
         }
         activeJobId = selectedJobId; localStorage.setItem('activeJobId', activeJobId);
         closeConfirmAcceptModal(); closeJobDetail(); 
         
         db.ref('bookings/' + activeJobId).update({ status: "รับงานแล้ว กำลังเดินทางไปหา", driverPhone: "0946379669" }).then(() => {
             if(APPS_SCRIPT_URL) fetch(`${APPS_SCRIPT_URL}?action=notify&type=status_update&userId=${activeJobId}&msg=${encodeURIComponent("🏎️ คนขับตอบรับงานของคุณแล้ว! กำลังรีบเดินทางไปหาคุณครับ")}`, {mode: 'no-cors'});
-        });
+            isProcessingAction = false;
+        }).catch(()=>{ isProcessingAction = false; });
+        
         document.getElementById('idlePanel').classList.add('hidden'); document.getElementById('activeJobPanel').classList.remove('hidden');
         updateRoute(true); updateActiveJobUI();
     }
@@ -729,23 +757,32 @@
     function closeBoardedModal() { document.getElementById('boardedModal').classList.add('hidden'); }
     function closeFinishModal() { document.getElementById('finishJobModal').classList.add('hidden'); }
 
+    // 🌟 ยืนยันถึงจุดรับ (มี Anti-Spam กันส่งแจ้งเตือนเบิ้ล)
     function executeArrive() {
+        if(isProcessingAction) return; isProcessingAction = true;
         closeArriveModal();
         db.ref('bookings/' + activeJobId).update({ status: "มาถึงจุดรับแล้ว" }).then(() => {
             if(APPS_SCRIPT_URL) fetch(`${APPS_SCRIPT_URL}?action=notify&type=status_update&userId=${activeJobId}&msg=${encodeURIComponent("📍 คนขับเดินทางมาถึงจุดรับของคุณเรียบร้อยแล้วครับ!")}`, {mode: 'no-cors'});
-        });
+            setTimeout(() => { isProcessingAction = false; }, 2000); // ปลดล็อกหลัง 2 วิ
+        }).catch(()=>{ isProcessingAction = false; });
     }
 
+    // 🌟 ยืนยันผู้โดยสารขึ้นรถ (มี Anti-Spam)
     function executeStartTrip() {
+        if(isProcessingAction) return; isProcessingAction = true;
         closeBoardedModal();
         db.ref('bookings/' + activeJobId).update({ status: "เริ่มออกเดินทาง ไปยังจุดส่ง", tripStartTime: firebase.database.ServerValue.TIMESTAMP }).then(() => {
             if(APPS_SCRIPT_URL) fetch(`${APPS_SCRIPT_URL}?action=notify&type=status_update&userId=${activeJobId}&msg=${encodeURIComponent("✨ ผู้โดยสารขึ้นรถเรียบร้อยแล้ว! กำลังเริ่มออกเดินทางไปยังจุดส่ง")}`, {mode: 'no-cors'});
             updateRoute(true); 
-        });
+            setTimeout(() => { isProcessingAction = false; }, 2000);
+        }).catch(()=>{ isProcessingAction = false; });
     }
 
+    // 🌟 ยืนยันจบงาน (มี Anti-Spam)
     function executeFinishJob() {
-        closeFinishModal(); isFinishingJob = true; 
+        if(isProcessingAction) return; isProcessingAction = true;
+        closeFinishModal(); 
+        
         let dist = activeJobData.distance || 0; let price = activeJobData.price || 0; let pName = activeJobData.pName || ""; let dName = activeJobData.dName || "";
         let actualDur = activeJobData.duration || 0;
         if (activeJobData.tripStartTime) actualDur = Math.max(1, Math.ceil((Date.now() - activeJobData.tripStartTime) / 60000)); 
@@ -754,7 +791,7 @@
 
         setTimeout(() => {
             db.ref('bookings/' + activeJobId).update({ status: "ถึงที่หมายเรียบร้อยแล้ว" }).then(() => {
-                showAlert("สำเร็จ!", "ส่งผู้โดยสารเรียบร้อย รอรับงานถัดไป", "success", () => { isFinishingJob = false; resetToIdle(); });
+                showAlert("สำเร็จ!", "ส่งผู้โดยสารเรียบร้อย รอรับงานถัดไป", "success", () => { isProcessingAction = false; resetToIdle(); });
             });
         }, 500);
     }
@@ -763,14 +800,18 @@
     function closeDriverCancelModal() { document.getElementById('driverCancelModal').classList.add('hidden'); }
 
     function executeCancelJob() {
+        if(isProcessingAction) return; isProcessingAction = true;
         closeDriverCancelModal();
         if(activeJobId) {
             let oldJobId = activeJobId;
             db.ref('bookings/' + activeJobId).update({ status: "ยกเลิกโดยคนขับ" }).then(() => {
                 if(APPS_SCRIPT_URL) fetch(`${APPS_SCRIPT_URL}?action=notify&type=cancel_driver&userId=${oldJobId}`, {mode:'no-cors'});
-                showAlert("ยกเลิกงานแล้ว", "ระบบได้ทำการยกเลิกงานนี้เรียบร้อยแล้ว", "error", () => { resetToIdle(); });
-            });
-        }
+                showAlert("ยกเลิกงานแล้ว", "ระบบได้ทำการยกเลิกงานนี้เรียบร้อยแล้ว", "error", () => { 
+                    isProcessingAction = false;
+                    resetToIdle(); 
+                });
+            }).catch(()=>{ isProcessingAction = false; });
+        } else { isProcessingAction = false; }
     }
 
     function resetToIdle() {
@@ -813,7 +854,7 @@
                 
                 if (forceZoom) {
                     isTrackingMode = false; document.getElementById('btnCrosshair').classList.replace('text-blue-600', 'text-gray-400');
-                    setTimeout(() => { map.fitBounds(currentRouteBounds, { top: 80, right: 50, bottom: 420, left: 50 }); }, 200);
+                    setTimeout(() => { map.fitBounds(currentRouteBounds, { top: 100, right: 50, bottom: 480, left: 50 }); }, 200);
                 }
             }
         });
@@ -832,3 +873,5 @@
   <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDsZ_tbFhH6fUXRz3I6C-tMshNwwrSevd4&libraries=places&callback=initMap" async defer></script>
 </body>
 </html>
+
+```
