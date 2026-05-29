@@ -399,7 +399,6 @@
         isOnline = false;
         if(watchId) navigator.geolocation.clearWatch(watchId);
         
-        // 🌟 แก้ไข: ยกเลิกระบบ onDisconnect และเซ็ตสถานะเป็นออฟไลน์ทันทีก่อนเคลียร์ PIN
         if(driverPin) {
             db.ref('driver/status').onDisconnect().cancel();
             db.ref('driver').update({ status: "ออฟไลน์" });
@@ -417,7 +416,6 @@
         }
     }
 
-    // 🌟 ดักจับตอนคนขับกดปิดหน้าจอ หรือปิดแท็บเว็บ (ส่งสถานะออฟไลน์ทันที)
     window.addEventListener('beforeunload', () => {
         if (isOnline) {
             db.ref('driver').update({ status: "ออฟไลน์" });
@@ -494,9 +492,24 @@
         }
     }
 
+    // 🌟 พระเอกกู้ชีพ! เซ็นเซอร์จับชีพจรเน็ต ถ้าเน็ตติดแล้วเราเปิดแอปอยู่ มันจะเด้งออนไลน์ให้อัตโนมัติ
+    db.ref('.info/connected').on('value', function(snap) {
+        if (snap.val() === true) {
+            if (isOnline && driverPin) {
+                db.ref('driver/status').onDisconnect().set("ออฟไลน์");
+                db.ref('driver').update({ status: "ออนไลน์" });
+            }
+        }
+    });
+
     document.addEventListener("visibilitychange", () => {
         if (document.visibilityState === "visible" && isOnline) {
             requestWakeLock();
+            // ย้ำสถานะออนไลน์ตอนตื่นจากพักจอ
+            if(driverPin) {
+                db.ref('driver/status').onDisconnect().set("ออฟไลน์");
+                db.ref('driver').update({ status: "ออนไลน์" });
+            }
             if(navigator.geolocation) {
                 navigator.geolocation.getCurrentPosition((pos) => {
                     driverLat = pos.coords.latitude;
@@ -636,11 +649,9 @@
             
             requestWakeLock(); 
 
-            db.ref('driver').update({ status: "ออนไลน์" });
-            
-            // 🌟 หัวใจสำคัญของการแก้ปัญหาคนขับผี (Ghost Driver)
-            // สั่ง Firebase ว่า: ถ้าฉันหลุดการเชื่อมต่อ ให้เปลี่ยนสถานะฉันเป็นออฟไลน์ทันที!
+            // สร้างคำสั่งรอเตะออฟไลน์อัตโนมัติหากเน็ตหลุด
             db.ref('driver/status').onDisconnect().set("ออฟไลน์");
+            db.ref('driver').update({ status: "ออนไลน์" });
 
             let snd = document.getElementById('jobAlertSound');
             if(snd) {
@@ -686,7 +697,7 @@
             
             releaseWakeLock(); 
             
-            // 🌟 ยกเลิกคำสั่งรอตัดสายเมื่อเรากดออฟไลน์เอง
+            // ยกเลิกคำสั่งเตะออกอัตโนมัติ แล้วสั่งเป็นออฟไลน์ทันที
             db.ref('driver/status').onDisconnect().cancel();
             db.ref('driver').update({ status: "ออฟไลน์" });
             
