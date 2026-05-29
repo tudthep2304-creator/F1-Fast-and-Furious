@@ -13,7 +13,7 @@
     body { font-family: 'Kanit', sans-serif; background-color: #f3f4f6; }
     .map-container { position: fixed; inset: 0; width: 100vw; height: 100vh; z-index: 0; background: #e5e7eb; }
     
-    /* UI แบบแผงควบคุมติดขอบล่าง */
+    /* UI แบบติดขอบจอด้านล่าง (Docked Bottom) */
     .ui-panel { 
         position: fixed; 
         bottom: 0; 
@@ -127,7 +127,10 @@
                   <div class="w-9 h-9 rounded-full bg-[#2B3A6F] text-white flex items-center justify-center shrink-0 text-sm shadow-sm">
                       <i class="fas fa-user"></i>
                   </div>
-                  <h3 class="text-base font-bold text-gray-800 truncate" id="detailName">...</h3>
+                  <div class="flex-1 truncate">
+                      <h3 class="text-base font-bold text-gray-800 truncate leading-tight" id="detailName">...</h3>
+                      <p class="text-[10px] text-gray-500 font-medium" id="detailTotalEta">ระยะทางรวม: กำลังคำนวณ...</p>
+                  </div>
               </div>
               <div class="flex items-center gap-2 shrink-0">
                   <span class="font-black text-green-600 text-lg bg-green-50 px-2.5 py-1 rounded-xl border border-green-100" id="detailPrice">฿0</span>
@@ -137,6 +140,12 @@
               </div>
           </div>
           
+          <div class="bg-blue-50/50 p-2.5 rounded-xl mb-4 flex justify-end items-center border border-blue-100 hidden" id="detailCallContainer">
+              <a href="#" id="btnCallDetail" class="bg-green-500 text-white px-4 py-2 rounded-xl font-bold text-sm shadow-sm flex gap-2 items-center hover:bg-green-600 transition w-full justify-center">
+                  <i class="fas fa-phone-alt"></i> โทรหาลูกค้าสอบถามเส้นทาง
+              </a>
+          </div>
+
           <div class="mb-5 bg-gray-50 p-4 rounded-2xl border border-gray-100 relative">
               <div class="absolute left-[1.5rem] top-8 bottom-8 w-0.5 border-l-2 border-dashed border-gray-300"></div>
               
@@ -181,6 +190,7 @@
           </div>
       </div>
   </div>
+
   <div id="confirmAcceptModal" class="hidden fixed inset-0 z-[110] bg-black/50 flex items-center justify-center p-4">
       <div class="bg-white rounded-3xl p-6 w-full max-w-sm text-center shadow-xl">
           <div class="w-16 h-16 bg-green-100 text-green-500 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl"><i class="fas fa-car-side"></i></div>
@@ -232,7 +242,7 @@
           <p class="text-sm text-gray-500 mb-6">หากยกเลิก ผู้โดยสารจะถูกแจ้งเตือนว่าคุณไม่สามารถไปรับได้ และงานจะถูกลบออก</p>
           <div class="flex gap-3">
               <button onclick="closeDriverCancelModal()" class="flex-1 py-3 bg-gray-100 text-gray-700 font-bold rounded-xl hover:bg-gray-200">ปิด</button>
-              <button onclick="executeCancelJob()" class="flex-[2] py-3 bg-red-500 text-white font-bold rounded-xl shadow-md hover:bg-red-600">ยืนยันยกเลิก</button>
+              <button onclick="executeCancelJob()" class="flex-1 py-3 bg-red-500 text-white font-bold rounded-xl shadow-md hover:bg-red-600">ยืนยันยกเลิก</button>
           </div>
       </div>
   </div>
@@ -277,14 +287,15 @@
     let selectedJobId = null; 
     let allBookings = null;
     let hiddenJobs = {}; 
+    let isFinishingJob = false;
     let currentRouteBounds = null; 
 
+    // 🌟 ระบบป้องกันการส่งข้อมูลซ้ำ (Anti-Spam Filter)
     let isProcessingAction = false;
     let lastNotifiedMsg = ""; 
 
     let knownPendingJobs = [];
     let isAlarmRinging = false; 
-    let audioUnlocked = false; // 🌟 ตัวแปรเช็คการปลดล็อกเสียง
 
     function sendLineNotify(userId, msg, type = 'status_update') {
         if (!APPS_SCRIPT_URL) return;
@@ -306,25 +317,8 @@
         }
     }
 
-    // 🌟 ระบบ Audio Unlocker ที่เสถียรขึ้น (แก้ปัญหาเบราว์เซอร์บล็อกเสียง)
-    function handleTouchToUnlockAudio() {
-        if (!audioUnlocked) {
-            let snd = document.getElementById('jobAlertSound');
-            if (snd) {
-                snd.volume = 0;
-                snd.play().then(() => {
-                    snd.pause();
-                    snd.currentTime = 0;
-                    snd.volume = 1;
-                    audioUnlocked = true;
-                }).catch(err => console.log('Audio wait for unlock...'));
-            }
-        }
-        stopAlarm();
-    }
-
-    document.addEventListener('touchstart', handleTouchToUnlockAudio);
-    document.addEventListener('click', handleTouchToUnlockAudio);
+    document.addEventListener('touchstart', stopAlarm);
+    document.addEventListener('click', stopAlarm);
 
     async function requestWakeLock() {
         try {
@@ -380,14 +374,6 @@
         if (window.alertCloseCallback) window.alertCloseCallback();
     }
 
-    // 🌟 ฟังก์ชันคำนวณระยะขอบล่างของแผนที่แบบอัตโนมัติ (ครึ่งจอบน)
-    function getSafeBottomPadding() {
-        // คำนวณความสูงของหน้าจอ ให้กรอบการมองเห็นแผนที่อยู่เหนือแผงสีขาว 
-        // 0.55 คือดันขึ้น 55% ของหน้าจอ (ให้อยู่แค่ครึ่งจอบน)
-        let screenH = window.innerHeight;
-        return Math.max(420, Math.round(screenH * 0.55));
-    }
-
     function centerToDriver() {
         isTrackingMode = true;
         document.getElementById('btnCrosshair').classList.replace('text-gray-400', 'text-blue-600');
@@ -401,8 +387,8 @@
         isTrackingMode = false;
         document.getElementById('btnCrosshair').classList.replace('text-blue-600', 'text-gray-400');
         if (map && currentRouteBounds) {
-            // 🌟 ใช้สูตรคำนวณขอบล่างอัตโนมัติ ไม่ให้โดนกรอบขาวบัง
-            map.fitBounds(currentRouteBounds, { top: 80, right: 50, bottom: getSafeBottomPadding(), left: 50 });
+            // 🌟 ซูมให้พอดี และเว้นขอบล่าง 400px หนีกรอบขาวแบบแผงล่าง
+            map.fitBounds(currentRouteBounds, { top: 80, right: 50, bottom: 420, left: 50 });
         } else {
             centerToDriver();
         }
@@ -417,8 +403,8 @@
         disableDefaultUI: true, 
         gestureHandling: 'greedy', 
         zoomControl: true, 
-        // 🌟 ดันจุดศูนย์กลางเริ่มต้นให้อยู่ด้านบน
-        padding: { top: 60, bottom: getSafeBottomPadding(), left: 0, right: 0 } 
+        // 🌟 ดันศูนย์กลางแผนที่ขึ้น หนีกรอบขาว
+        padding: { top: 50, bottom: 420, left: 0, right: 0 } 
       });
 
       map.addListener('dragstart', () => {
@@ -484,6 +470,12 @@
             
             requestWakeLock(); 
             db.ref('driver').update({ status: "ออนไลน์" });
+
+            let snd = document.getElementById('jobAlertSound');
+            if(snd) {
+                snd.volume = 0; 
+                snd.play().then(() => { snd.pause(); snd.volume = 1; }).catch(e => console.log('Audio init prevented'));
+            }
 
             if (navigator.geolocation) {
                 watchId = navigator.geolocation.watchPosition((pos) => {
@@ -623,6 +615,14 @@
         document.getElementById('detailDrop').innerText = job.dName;
         document.getElementById('detailPrice').innerText = "฿" + job.price;
         
+        if(job.phone) {
+            document.getElementById('btnCallDetail').href = "tel:" + job.phone;
+            document.getElementById('detailCallContainer').classList.remove('hidden');
+        } else {
+            document.getElementById('detailCallContainer').classList.add('hidden');
+        }
+
+        document.getElementById('detailTotalEta').innerText = `ระยะทางรวม: กำลังคำนวณ...`;
         document.getElementById('detailEtaToPick').innerHTML = `<i class="fas fa-car-side"></i> ห่างจากคุณ: กำลังคำนวณ...`;
         document.getElementById('detailEtaToDrop').innerHTML = `<i class="fas fa-road"></i> ระยะทางไปส่ง: กำลังคำนวณ...`;
         
@@ -649,12 +649,15 @@
                 
                 let legPick = res.routes[0].legs[0]; 
                 let legDrop = res.routes[0].legs[1]; 
+                
+                let totalDist = (legPick.distance.value + legDrop.distance.value) / 1000;
+                let totalMins = Math.round((legPick.duration.value + legDrop.duration.value) / 60);
 
+                document.getElementById('detailTotalEta').innerText = `ระยะทางรวม: ${totalDist.toFixed(1)} กม. • เวลาประเมิน: ${totalMins} นาที`;
                 document.getElementById('detailEtaToPick').innerHTML = `<i class="fas fa-car-side"></i> ห่างจากคุณ: ${legPick.distance.text} • ${legPick.duration.text}`;
                 document.getElementById('detailEtaToDrop').innerHTML = `<i class="fas fa-road"></i> ระยะทางไปส่ง: ${legDrop.distance.text} • ${legDrop.duration.text}`;
 
-                // 🌟 ดันกรอบแผนที่ให้อยู่แค่ครึ่งบนตอนดูรายละเอียด
-                setTimeout(() => { map.fitBounds(res.routes[0].bounds, { top: 80, right: 50, bottom: getSafeBottomPadding(), left: 50 }); }, 100);
+                setTimeout(() => { map.fitBounds(res.routes[0].bounds, { top: 80, right: 50, bottom: 420, left: 50 }); }, 100);
             }
         });
     }
@@ -672,13 +675,8 @@
         if (!activeJobId) { clearMapRoutes(); centerToDriver(); }
     }
 
-    function promptRejectPendingJob() {
-        document.getElementById('pendingCancelModal').classList.remove('hidden');
-    }
-    
-    function closePendingCancelModal() {
-        document.getElementById('pendingCancelModal').classList.add('hidden');
-    }
+    function promptRejectPendingJob() { document.getElementById('pendingCancelModal').classList.remove('hidden'); }
+    function closePendingCancelModal() { document.getElementById('pendingCancelModal').classList.add('hidden'); }
 
     function executeRejectPendingJob() {
         if(isProcessingAction) return; isProcessingAction = true;
@@ -856,8 +854,7 @@
                 
                 if (forceZoom) {
                     isTrackingMode = false; document.getElementById('btnCrosshair').classList.replace('text-blue-600', 'text-gray-400');
-                    // 🌟 ใช้สูตรคำนวณขอบล่างอัตโนมัติ เพื่อให้พอดีกับทุกขนาดหน้าจอ
-                    setTimeout(() => { map.fitBounds(currentRouteBounds, { top: 80, right: 50, bottom: getSafeBottomPadding(), left: 50 }); }, 200);
+                    setTimeout(() => { map.fitBounds(currentRouteBounds, { top: 80, right: 50, bottom: 420, left: 50 }); }, 200);
                 }
             }
         });
