@@ -107,9 +107,9 @@
         </div>
     </div>
     
-    <div class="bg-gray-900/60 p-3 rounded-xl text-center border border-gray-700 mb-3 space-y-1">
-        <p class="text-gray-400 text-xs" id="gpsStatus">รอเปิดระบบเพื่ออัปเดต GPS...</p>
-        <p class="text-[11px] text-green-400 hidden" id="wakeLockStatus"><i class="fas fa-cog fa-spin"></i> หน้าจอจะเปิดค้างไว้ตลอดเวลา</p>
+    <div class="bg-gray-900/60 p-2.5 rounded-xl text-center border border-gray-700 mb-3 space-y-1">
+        <p class="text-gray-400 text-[11px]" id="gpsStatus">รอเปิดระบบเพื่ออัปเดต GPS...</p>
+        <p class="text-[10px] text-green-400 hidden" id="wakeLockStatus"><i class="fas fa-sun"></i> หน้าจอจะเปิดค้างไว้ตลอดเวลา</p>
     </div>
 
     <h3 class="text-sm font-bold text-gray-400 mb-2 flex items-center gap-2"><i class="fas fa-list-ul"></i> รายการงานที่รอรับ</h3>
@@ -320,9 +320,7 @@
     });
     const db = firebase.database();
 
-    // 🌟 ระบบตรวจสอบรหัสที่อนุญาต 3 รหัส
     const ALLOWED_PINS = ['2304', '0604', '0105'];
-
     let driverPin = localStorage.getItem('driverPin');
     let driverSessionId = localStorage.getItem('driverSessionId');
 
@@ -348,7 +346,6 @@
 
     let isProcessingAction = false;
     let lastNotifiedMsg = ""; 
-
     let knownPendingJobs = [];
     let isAlarmRinging = false; 
 
@@ -373,10 +370,7 @@
 
     function submitLogin() {
         let pin = document.getElementById('pinInput').value;
-        if(pin.length !== 4) {
-            alert("กรุณาระบุรหัส PIN 4 หลักให้ครบถ้วน");
-            return;
-        }
+        if(pin.length !== 4) { alert("กรุณาระบุรหัส PIN 4 หลักให้ครบถ้วน"); return; }
         if(!ALLOWED_PINS.includes(pin)) {
             alert("รหัส PIN ไม่ถูกต้อง หรือไม่ได้รับอนุญาตให้เข้าระบบ");
             document.getElementById('pinInput').value = '';
@@ -397,13 +391,20 @@
             document.getElementById('onlineToggle').checked = true;
             toggleOnline();
         }
-        processBookings(); // ประมวลผลงานที่ค้างอยู่ทันที
+        processBookings(); 
     }
 
     function forceLogout(msg) {
         if(msg) alert(msg);
         isOnline = false;
         if(watchId) navigator.geolocation.clearWatch(watchId);
+        
+        // 🌟 แก้ไข: ยกเลิกระบบ onDisconnect และเซ็ตสถานะเป็นออฟไลน์ทันทีก่อนเคลียร์ PIN
+        if(driverPin) {
+            db.ref('driver/status').onDisconnect().cancel();
+            db.ref('driver').update({ status: "ออฟไลน์" });
+        }
+        
         localStorage.removeItem('driverPin');
         localStorage.removeItem('driverSessionId');
         localStorage.removeItem('isDriverOnline');
@@ -415,6 +416,13 @@
             forceLogout();
         }
     }
+
+    // 🌟 ดักจับตอนคนขับกดปิดหน้าจอ หรือปิดแท็บเว็บ (ส่งสถานะออฟไลน์ทันที)
+    window.addEventListener('beforeunload', () => {
+        if (isOnline) {
+            db.ref('driver').update({ status: "ออฟไลน์" });
+        }
+    });
 
     window.onload = () => {
         checkLogin();
@@ -430,7 +438,6 @@
     function togglePanel(panelId) {
         const panel = document.getElementById(panelId);
         panel.classList.toggle('panel-collapsed');
-        
         if (map) {
             if (panel.classList.contains('panel-collapsed')) {
                 map.setOptions({ padding: { top: 80, bottom: 120, left: 0, right: 0 } });
@@ -630,6 +637,10 @@
             requestWakeLock(); 
 
             db.ref('driver').update({ status: "ออนไลน์" });
+            
+            // 🌟 หัวใจสำคัญของการแก้ปัญหาคนขับผี (Ghost Driver)
+            // สั่ง Firebase ว่า: ถ้าฉันหลุดการเชื่อมต่อ ให้เปลี่ยนสถานะฉันเป็นออฟไลน์ทันที!
+            db.ref('driver/status').onDisconnect().set("ออฟไลน์");
 
             let snd = document.getElementById('jobAlertSound');
             if(snd) {
@@ -674,7 +685,11 @@
             gpsEl.innerText = "ระบบถูกปิดชั่วคราว";
             
             releaseWakeLock(); 
+            
+            // 🌟 ยกเลิกคำสั่งรอตัดสายเมื่อเรากดออฟไลน์เอง
+            db.ref('driver/status').onDisconnect().cancel();
             db.ref('driver').update({ status: "ออฟไลน์" });
+            
             if(watchId) navigator.geolocation.clearWatch(watchId);
             stopAlarm(); 
         }
@@ -682,11 +697,12 @@
     }
 
     db.ref('bookings').on('value', snap => {
+        if(!driverPin) return; 
+
         allBookings = snap.val();
-        processBookings(); // ประมวลผลข้อมูลใหม่ทุกครั้ง
+        processBookings(); 
     });
 
-    // 🌟 ระบบประมวลผลข้อมูลงาน (กู้คืนงาน 100%)
     function processBookings() {
         if(!driverPin) return; 
 
@@ -697,7 +713,6 @@
             for (let key in allBookings) {
                 let b = allBookings[key];
                 let s = b.status || "";
-                // เช็คว่ามีงานค้างที่เป็นของ PIN ตัวเอง หรือเป็นงานที่บันทึกไว้ในเครื่อง
                 if ((s.includes("รับงานแล้ว") || s.includes("มาถึงจุดรับ") || s.includes("เริ่มออกเดินทาง")) && 
                     (b.driverPin === driverPin || key === savedJobId)) {
                     activeJobId = key;
@@ -876,7 +891,6 @@
         activeJobId = selectedJobId; localStorage.setItem('activeJobId', activeJobId);
         closeConfirmAcceptModal(); closeJobDetail(); 
         
-        // 🌟 ประทับตรายืนยันว่างานนี้เป็นของ PIN นี้เท่านั้น! (สำคัญมากในการกู้คืนงาน)
         db.ref('bookings/' + activeJobId).update({ 
             status: "รับงานแล้ว กำลังเดินทางไปหา", 
             driverPhone: "0946379669",
