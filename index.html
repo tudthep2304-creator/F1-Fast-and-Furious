@@ -96,6 +96,9 @@
   </div>
 
   <script>
+    // 🌟 อัปเดต URL เรียบร้อยแล้ว
+    const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwwdopAPESHRrHEYTSa-CzFMbh0JX9WHUa37PMEJmxDkah7ui67cVtOn68cnM-2DtmR/exec"; 
+    
     firebase.initializeApp({
       apiKey: "AIzaSyBNtaYaX1OW-86_9EGiVN9EpgPzWOX_twQ",
       authDomain: "myride-chiangrai.firebaseapp.com",
@@ -109,16 +112,15 @@
 
     let map, directionsService, directionsRenderer;
     let markerDriver, markerPick, markerDrop;
-    let driverLat = 19.910479, driverLng = 99.840576; // Default Chiang Rai
+    let driverLat = 19.910479, driverLng = 99.840576; 
     let isOnline = false;
     let watchId = null;
     
     let activeJobId = null;
     let activeJobData = null;
     let incomingJobId = null;
-    let allBookings = null; // 🌟 เก็บข้อมูลงานทั้งหมดไว้
+    let allBookings = null;
 
-    // เริ่มต้นแผนที่คนขับ
     function initMap() {
       if (typeof google === 'undefined' || typeof google.maps === 'undefined') return;
       map = new google.maps.Map(document.getElementById('map'), { 
@@ -142,7 +144,6 @@
       });
     }
 
-    // 🌟 ระบบเปิดออนไลน์ และจับ GPS อัตโนมัติ
     function toggleOnline() {
         isOnline = document.getElementById('onlineToggle').checked;
         const statusEl = document.getElementById('statusText');
@@ -180,21 +181,16 @@
             db.ref('driver').update({ status: "ออฟไลน์" });
             if(watchId) navigator.geolocation.clearWatch(watchId);
         }
-
-        // 🌟 เรียกเช็คงานทันทีเมื่อกดออนไลน์!
         checkJobs();
     }
 
-    // 🌟 ติดตามการเปลี่ยนแปลงของฐานข้อมูลตลอดเวลา
     db.ref('bookings').on('value', snap => {
         allBookings = snap.val();
         checkJobs();
     });
 
-    // 🌟 ระบบดักจับและตรวจสอบงาน
     function checkJobs() {
         if (!isOnline) {
-            // ถ้าออฟไลน์ ให้ซ่อนป๊อปอัปไปเลยถ้ามันเด้งค้างอยู่
             if(document.getElementById('incomingModal').classList.contains('flex') && !activeJobId) {
                 rejectJob(); 
             }
@@ -206,19 +202,16 @@
             return;
         }
 
-        // 1. ถ้ามีงานที่เรารับไว้แล้ว (Active)
         if (activeJobId && allBookings[activeJobId]) {
             activeJobData = allBookings[activeJobId];
             updateActiveJobUI();
             return;
         } else if (activeJobId && !allBookings[activeJobId]) {
-            // โดนผู้โดยสารกดยกเลิก
             alert("ผู้โดยสารได้ยกเลิกงานนี้แล้ว");
             resetToIdle();
             return;
         }
 
-        // 2. ถ้าไม่มีงานที่ทำอยู่ ให้หางานใหม่ที่สถานะ "รอผู้ขับขี่ตอบรับ"
         let foundNewJob = false;
         for (let key in allBookings) {
             let b = allBookings[key];
@@ -230,11 +223,10 @@
                 document.getElementById('incomingModal').classList.remove('hidden');
                 document.getElementById('incomingModal').classList.add('flex');
                 foundNewJob = true;
-                break; // โชว์ทีละงาน
+                break; 
             }
         }
 
-        // ถ้าไม่มีงานเลย ก็ให้ซ่อนป๊อปอัปไว้
         if(!foundNewJob && !activeJobId) {
             document.getElementById('incomingModal').classList.add('hidden');
             document.getElementById('incomingModal').classList.remove('flex');
@@ -256,13 +248,18 @@
         db.ref('bookings/' + activeJobId).update({ 
             status: "รับงานแล้ว กำลังเดินทางไปหา",
             driverPhone: "0946379669"
+        }).then(() => {
+            // 🌟 คนขับกดยอมรับงาน -> แจ้งเตือนผู้โดยสารเข้า LINE ทันที
+            if(APPS_SCRIPT_URL) {
+                let msg = "🏎️ คนขับตอบรับงานของคุณแล้ว! กำลังรีบเดินทางไปหาคุณครับ";
+                fetch(`${APPS_SCRIPT_URL}?action=notify&type=status_update&userId=${activeJobId}&msg=${encodeURIComponent(msg)}`, {mode: 'no-cors'});
+            }
         });
 
         document.getElementById('idlePanel').classList.add('hidden');
         document.getElementById('activeJobPanel').classList.remove('hidden');
     }
 
-    // อัปเดตหน้าจอคนขับตามสถานะปัจจุบัน
     function updateActiveJobUI() {
         if(!activeJobData) return;
         
@@ -276,14 +273,14 @@
         let btnAction = document.getElementById('btnAction');
 
         let s = activeJobData.status;
-        if(s.includes("กำลังเดินทางไปหา")) {
+        if(s.includes("กำลังเดินทางไปหา") || s.includes("รับงานแล้ว")) {
             statusText.innerText = "กำลังเดินทางไปรับ";
             btnAction.innerText = "มาถึงจุดรับ";
             btnAction.className = "flex-[2] bg-[#2B3A6F] text-white py-3 rounded-xl font-bold text-base shadow-md";
             markerPick.setPosition({lat: activeJobData.pLat, lng: activeJobData.pLng}); markerPick.setMap(map);
             markerDrop.setMap(null);
         } 
-        else if(s.includes("มาถึงจุดรับ")) {
+        else if(s.includes("มาถึงจุดรับ") || s.includes("ถึงจุดรับแล้ว")) {
             statusText.innerText = "รอผู้โดยสารขึ้นรถ";
             btnAction.innerText = "ผู้โดยสารขึ้นรถ";
             btnAction.className = "flex-[2] bg-yellow-500 text-white py-3 rounded-xl font-bold text-base shadow-md";
@@ -295,26 +292,48 @@
             markerDrop.setPosition({lat: activeJobData.dLat, lng: activeJobData.dLng}); markerDrop.setMap(map);
             markerPick.setMap(null);
         }
-        
         updateRoute();
     }
 
-    // จัดการ Action ปุ่มหลัก
     function nextAction() {
         if(!activeJobId || !activeJobData) return;
         let s = activeJobData.status;
         
-        if(s.includes("กำลังเดินทางไปหา")) {
-            db.ref('bookings/' + activeJobId).update({ status: "มาถึงจุดรับแล้ว" });
+        if(s.includes("กำลังเดินทางไปหา") || s.includes("รับงานแล้ว")) {
+            db.ref('bookings/' + activeJobId).update({ status: "มาถึงจุดรับแล้ว" }).then(() => {
+                // 🌟 คนขับกดมาถึงจุดรับ -> แจ้งเตือนผู้โดยสารเข้า LINE
+                if(APPS_SCRIPT_URL) {
+                    let msg = "📍 คนขับเดินทางมาถึงจุดรับของคุณเรียบร้อยแล้วครับ!";
+                    fetch(`${APPS_SCRIPT_URL}?action=notify&type=status_update&userId=${activeJobId}&msg=${encodeURIComponent(msg)}`, {mode: 'no-cors'});
+                }
+            });
         } 
         else if(s.includes("มาถึงจุดรับ")) {
-            db.ref('bookings/' + activeJobId).update({ status: "เริ่มออกเดินทาง ไปยังจุดส่ง" });
+            db.ref('bookings/' + activeJobId).update({ status: "เริ่มออกเดินทาง ไปยังจุดส่ง" }).then(() => {
+                // 🌟 คนขับรับผู้โดยสารขึ้นรถ -> แจ้งเตือนผู้โดยสารเข้า LINE
+                if(APPS_SCRIPT_URL) {
+                    let msg = "✨ ผู้โดยสารขึ้นรถเรียบร้อยแล้ว! กำลังเริ่มออกเดินทางไปยังจุดส่ง";
+                    fetch(`${APPS_SCRIPT_URL}?action=notify&type=status_update&userId=${activeJobId}&msg=${encodeURIComponent(msg)}`, {mode: 'no-cors'});
+                }
+            });
         } 
         else if(s.includes("ออกเดินทาง") || s.includes("ไปยังจุดส่ง")) {
             if(confirm("ยืนยันการจบงานและรับเงินใช่หรือไม่?")) {
-                db.ref('bookings/' + activeJobId).update({ status: "ถึงที่หมายเรียบร้อยแล้ว" });
-                alert("จบงานสำเร็จ! รอรับงานถัดไป");
-                resetToIdle();
+                let dist = activeJobData.distance || 0;
+                let dur = activeJobData.duration || 0;
+                let price = activeJobData.price || 0;
+                let pName = activeJobData.pName || "";
+                let dName = activeJobData.dName || "";
+
+                db.ref('bookings/' + activeJobId).update({ status: "ถึงที่หมายเรียบร้อยแล้ว" }).then(() => {
+                    // 🌟 คนขับกดจบงาน -> ส่งสรุปบิลชุดใหญ่เข้า LINE ผู้โดยสารทันที
+                    if(APPS_SCRIPT_URL) {
+                        let msg = `🏁 การเดินทางสิ้นสุดลงแล้วเรียบร้อย!\n\n📍 จุดรับ: ${pName}\n🏁 จุดส่ง: ${dName}\n🛣️ ระยะทาง: ${dist} กม.\n⏱️ เวลาเดินทาง: ${dur} นาที\n💵 ราคาเหมาจ่าย: ${price} บาท\n\nขอบคุณที่ใช้บริการ F1 Driver ครับ!`;
+                        fetch(`${APPS_SCRIPT_URL}?action=notify&type=status_update&userId=${activeJobId}&msg=${encodeURIComponent(msg)}`, {mode: 'no-cors'});
+                    }
+                    alert("จบงานสำเร็จ! รอรับงานถัดไป");
+                    resetToIdle();
+                });
             }
         }
     }
@@ -322,7 +341,13 @@
     function cancelJob() {
         if(confirm("คุณต้องการยกเลิกงานนี้ใช่หรือไม่?")) {
             if(activeJobId) {
-                db.ref('bookings/' + activeJobId).update({ status: "ยกเลิกโดยคนขับ" });
+                let oldJobId = activeJobId;
+                db.ref('bookings/' + activeJobId).update({ status: "ยกเลิกโดยคนขับ" }).then(() => {
+                    // 🌟 คนขับยกเลิกงานกลางคัน -> แจ้งเตือนผู้โดยสาร
+                    if(APPS_SCRIPT_URL) {
+                        fetch(`${APPS_SCRIPT_URL}?action=notify&type=cancel_driver&userId=${oldJobId}`, {mode:'no-cors'});
+                    }
+                });
             }
             resetToIdle();
         }
@@ -345,7 +370,7 @@
         let origin = {lat: driverLat, lng: driverLng};
         let dest;
 
-        if(activeJobData.status.includes("กำลังเดินทางไปหา") || activeJobData.status.includes("มาถึงจุดรับ")) {
+        if(activeJobData.status.includes("กำลังเดินทางไปหา") || activeJobData.status.includes("รับงานแล้ว") || activeJobData.status.includes("มาถึงจุดรับ")) {
             dest = {lat: activeJobData.pLat, lng: activeJobData.pLng};
         } else {
             dest = {lat: activeJobData.dLat, lng: activeJobData.dLng};
