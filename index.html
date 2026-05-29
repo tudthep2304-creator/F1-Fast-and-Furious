@@ -569,18 +569,25 @@
         document.getElementById('finishJobModal').classList.add('hidden');
     }
 
+    // 🌟 ฟังก์ชันคำนวณและส่งข้อความจบงาน (พร้อมเวลาเดินทางจริง)
     function executeFinishJob() {
         closeFinishModal();
         isFinishingJob = true; 
         
         let dist = activeJobData.distance || 0;
-        let dur = activeJobData.duration || 0;
         let price = activeJobData.price || 0;
         let pName = activeJobData.pName || "";
         let dName = activeJobData.dName || "";
 
+        // 🌟 คำนวณเวลาเดินทางจริง (ถ้าไม่มี ให้ใช้เวลาประเมินแทน)
+        let actualDur = activeJobData.duration || 0;
+        if (activeJobData.tripStartTime) {
+            let diffMs = Date.now() - activeJobData.tripStartTime;
+            actualDur = Math.max(1, Math.ceil(diffMs / 60000)); // เปลี่ยนเป็นนาทีและปัดขึ้น (อย่างน้อย 1 นาที)
+        }
+
         if(APPS_SCRIPT_URL) {
-            let msg = `🏁 การเดินทางสิ้นสุดลงแล้วเรียบร้อย!\n\n📍 จุดรับ: ${pName}\n🏁 จุดส่ง: ${dName}\n🛣️ ระยะทาง: ${dist} กม.\n⏱️ เวลาเดินทาง: ${dur} นาที\n💵 ราคาเหมาจ่าย: ${price} บาท\n\nขอบคุณที่ใช้บริการ F1 Driver ครับ!`;
+            let msg = `🏁 การเดินทางสิ้นสุดลงแล้วเรียบร้อย!\n\n📍 จุดรับ: ${pName}\n🏁 จุดส่ง: ${dName}\n🛣️ ระยะทาง: ${dist} กม.\n⏱️ เวลาเดินทางจริง: ${actualDur} นาที\n💵 ราคาเหมาจ่าย: ${price} บาท\n\nขอบคุณที่ใช้บริการ F1 Driver ครับ!`;
             fetch(`${APPS_SCRIPT_URL}?action=notify&type=status_update&userId=${activeJobId}&msg=${encodeURIComponent(msg)}`, {mode: 'no-cors'});
         }
 
@@ -605,7 +612,11 @@
             });
         } 
         else if(s.includes("มาถึงจุดรับ")) {
-            db.ref('bookings/' + activeJobId).update({ status: "เริ่มออกเดินทาง ไปยังจุดส่ง" }).then(() => {
+            // 🌟 ฝังเวลาเริ่มต้นเดินทาง (Trip Start Time) ลง Firebase
+            db.ref('bookings/' + activeJobId).update({ 
+                status: "เริ่มออกเดินทาง ไปยังจุดส่ง",
+                tripStartTime: firebase.database.ServerValue.TIMESTAMP 
+            }).then(() => {
                 if(APPS_SCRIPT_URL) {
                     let msg = "✨ ผู้โดยสารขึ้นรถเรียบร้อยแล้ว! กำลังเริ่มออกเดินทางไปยังจุดส่ง";
                     fetch(`${APPS_SCRIPT_URL}?action=notify&type=status_update&userId=${activeJobId}&msg=${encodeURIComponent(msg)}`, {mode: 'no-cors'});
@@ -652,7 +663,6 @@
         renderJobList(); 
     }
 
-    // 🌟 อัปเดตเส้นทางสีฟ้าแบบ Real-time พร้อมดักจับแจ้งเตือน 2 กม. อัตโนมัติ!
     function updateRoute(forceZoom = false) {
         if(!activeJobData || !directionsService) return;
         let origin = {lat: driverLat, lng: driverLng};
@@ -683,7 +693,6 @@
                 etaEl.innerText = `ระยะทาง ${leg.distance.text} • ${leg.duration.text}`;
                 etaEl.classList.remove('hidden');
 
-                // 🌟 ระบบยิงแจ้งเตือนอัตโนมัติเมื่อใกล้ถึง (ระยะ <= 2 กม.)
                 if(isGoingToPickup && distKm <= 2.0 && activeJobData.notifiedPick !== true) {
                     activeJobData.notifiedPick = true; 
                     db.ref('bookings/' + activeJobId).update({ notifiedPick: true });
