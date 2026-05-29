@@ -25,6 +25,10 @@
     <h1 class="text-lg font-bold"><i class="fas fa-car-side mr-2"></i> แอปคนขับ F1</h1>
   </div>
 
+  <button onclick="centerToDriver()" class="fixed top-20 right-4 z-30 bg-white w-12 h-12 flex items-center justify-center rounded-full shadow-lg text-[#2B3A6F] border border-gray-200 active:bg-gray-100 transition">
+      <i class="fas fa-crosshairs text-xl"></i>
+  </button>
+
   <div id="idlePanel" class="ui-panel h-auto pb-6 pt-5">
     <div class="flex justify-between items-center mb-4">
       <div>
@@ -175,8 +179,9 @@
     let selectedJobId = null; 
     let allBookings = null;
     let hiddenJobs = {}; 
-    let isFinishingJob = false; // 🌟 ป้องกัน Alert ชนกันตอนจบงาน
+    let isFinishingJob = false;
 
+    // ระบบ Alert สวยงาม
     function showAlert(title, message, type = 'info', callback = null) {
         document.getElementById('alertTitle').innerText = title;
         document.getElementById('alertMessage').innerText = message;
@@ -202,13 +207,36 @@
         if (window.alertCloseCallback) window.alertCloseCallback();
     }
 
+    // 🌟 ดึงแผนที่กลับมาที่รถ
+    function centerToDriver() {
+        if(map && driverLat && driverLng) {
+            map.panTo({lat: driverLat, lng: driverLng});
+            map.setZoom(16);
+        }
+    }
+
     function initMap() {
       if (typeof google === 'undefined' || typeof google.maps === 'undefined') return;
+      
       map = new google.maps.Map(document.getElementById('map'), { 
-        zoom: 15, center: {lat: driverLat, lng: driverLng}, mapTypeId: 'hybrid', disableDefaultUI: true, gestureHandling: 'greedy', zoomControl: true
+        zoom: 16, 
+        center: {lat: driverLat, lng: driverLng}, 
+        mapTypeId: 'hybrid', 
+        disableDefaultUI: true, 
+        gestureHandling: 'greedy',
+        // 🌟 แก้ปัญหาจุดศูนย์กลางโดนแผงสีขาวบัง โดยดันจุดโฟกัสขึ้นมา 320px
+        padding: { bottom: 320 } 
       });
+
       directionsService = new google.maps.DirectionsService();
-      directionsRenderer = new google.maps.DirectionsRenderer({ map: map, suppressMarkers: true, polylineOptions: {strokeColor:'#4285F4', strokeWeight:6} });
+      
+      // 🌟 แก้ปัญหาแผนที่เด้งสู้กับนิ้ว โดยตั้ง preserveViewport: true
+      directionsRenderer = new google.maps.DirectionsRenderer({ 
+          map: map, 
+          suppressMarkers: true, 
+          preserveViewport: true, // ไม่ให้มันซูมเด้งเองเวลารถขยับ
+          polylineOptions: {strokeColor:'#4285F4', strokeWeight:6} 
+      });
       
       markerPick = new google.maps.Marker({map: null, icon: "https://maps.google.com/mapfiles/ms/icons/green-dot.png", zIndex: 2});
       markerDrop = new google.maps.Marker({map: null, icon: "https://maps.google.com/mapfiles/ms/icons/red-dot.png", zIndex: 2});
@@ -244,15 +272,15 @@
                     
                     let posObj = {lat: driverLat, lng: driverLng};
                     if(markerDriver) markerDriver.setPosition(posObj);
-                    if(!activeJobId && !selectedJobId) map.setCenter(posObj); 
-
+                    
+                    // 🌟 วิ่งพิกัดเข้า Firebase ตลอดเวลาแบบเรียลไทม์
                     db.ref('driver').update({ lat: driverLat, lng: driverLng });
                     gpsEl.innerText = `พิกัดอัปเดตล่าสุด: ${new Date().toLocaleTimeString()}`;
                     
-                    if(activeJobId) updateRoute(); 
                 }, 
                 (err) => { gpsEl.innerText = "GPS Error: กรุณาเปิด Location (ตำแหน่งที่ตั้ง)"; }, 
-                { enableHighAccuracy: true, maximumAge: 10000 });
+                // 🌟 บังคับให้อัปเดตเร็วที่สุด เพื่อให้เรียลไทม์
+                { enableHighAccuracy: true, maximumAge: 0, timeout: 5000 });
             }
         } else {
             statusEl.innerText = "🔴 ออฟไลน์";
@@ -311,7 +339,7 @@
     });
 
     function checkActiveJobStatus() {
-        if (!activeJobId || isFinishingJob) return; // 🌟 ถ้ากำลังจบงาน ไม่ต้องสนใจ
+        if (!activeJobId || isFinishingJob) return; 
         
         if (!allBookings || !allBookings[activeJobId]) {
             showAlert("งานถูกยกเลิก", "ผู้โดยสารได้ทำการยกเลิกงานนี้แล้วครับ", "error", () => {
@@ -389,6 +417,7 @@
             if(stat === 'OK') {
                 directionsRenderer.setDirections(res);
                 setTimeout(() => {
+                    // 🌟 วาดเส้นทางใหม่ ให้พอดีกับป๊อปอัปพรีวิวที่ลอยบังอยู่ด้านล่าง
                     const mapPadding = { top: 80, right: 50, bottom: 420, left: 50 }; 
                     map.fitBounds(res.routes[0].bounds, mapPadding);
                 }, 100);
@@ -408,7 +437,7 @@
 
         if (!activeJobId) {
             clearMapRoutes();
-            map.setZoom(15);
+            map.setZoom(16);
             map.setCenter({lat: driverLat, lng: driverLng});
         }
     }
@@ -465,8 +494,6 @@
             statusText.innerText = "กำลังเดินทางไปรับ";
             btnAction.innerText = "มาถึงจุดรับ";
             btnAction.className = "flex-[2] bg-[#2B3A6F] text-white py-3 rounded-xl font-bold text-base shadow-md";
-            markerPick.setPosition({lat: activeJobData.pLat, lng: activeJobData.pLng}); markerPick.setMap(map);
-            markerDrop.setMap(null);
         } 
         else if(s.includes("มาถึงจุดรับ") || s.includes("ถึงจุดรับแล้ว")) {
             statusText.innerText = "รอผู้โดยสารขึ้นรถ";
@@ -477,9 +504,9 @@
             statusText.innerText = "กำลังเดินทางไปจุดส่ง";
             btnAction.innerText = "ถึงที่หมาย (จบงาน)";
             btnAction.className = "flex-[2] bg-green-500 text-white py-3 rounded-xl font-bold text-base shadow-md";
-            markerDrop.setPosition({lat: activeJobData.dLat, lng: activeJobData.dLng}); markerDrop.setMap(map);
-            markerPick.setMap(null);
         }
+        
+        // 🌟 วาดเส้นทางที่แท้จริงเมื่อกดรับงาน
         updateRoute();
     }
 
@@ -498,10 +525,9 @@
         document.getElementById('finishJobModal').classList.add('hidden');
     }
 
-    // 🌟 ระบบยิงข้อความจบงาน (แก้ปัญหาแอปผู้โดยสารลบงานเร็วเกินไป)
     function executeFinishJob() {
         closeFinishModal();
-        isFinishingJob = true; // ล็อกไม่ให้เด้งข้อความยกเลิก
+        isFinishingJob = true; 
         
         let dist = activeJobData.distance || 0;
         let dur = activeJobData.duration || 0;
@@ -509,13 +535,11 @@
         let pName = activeJobData.pName || "";
         let dName = activeJobData.dName || "";
 
-        // 1. ส่งแจ้งเตือนสรุปบิลไปก่อนเลย!
         if(APPS_SCRIPT_URL) {
             let msg = `🏁 การเดินทางสิ้นสุดลงแล้วเรียบร้อย!\n\n📍 จุดรับ: ${pName}\n🏁 จุดส่ง: ${dName}\n🛣️ ระยะทาง: ${dist} กม.\n⏱️ เวลาเดินทาง: ${dur} นาที\n💵 ราคาเหมาจ่าย: ${price} บาท\n\nขอบคุณที่ใช้บริการ F1 Driver ครับ!`;
             fetch(`${APPS_SCRIPT_URL}?action=notify&type=status_update&userId=${activeJobId}&msg=${encodeURIComponent(msg)}`, {mode: 'no-cors'});
         }
 
-        // 2. หน่วงเวลา 0.5 วิ ค่อยอัปเดตให้ฐานข้อมูลลบงาน
         setTimeout(() => {
             db.ref('bookings/' + activeJobId).update({ status: "ถึงที่หมายเรียบร้อยแล้ว" }).then(() => {
                 showAlert("สำเร็จ!", "ส่งผู้โดยสารเรียบร้อย รอรับงานถัดไป", "success", () => {
@@ -577,7 +601,7 @@
         document.getElementById('activeJobPanel').classList.add('hidden');
         document.getElementById('idlePanel').classList.remove('hidden');
         clearMapRoutes(); 
-        map.setZoom(15);
+        map.setZoom(16);
         map.setCenter({lat: driverLat, lng: driverLng});
         renderJobList(); 
     }
@@ -589,13 +613,20 @@
 
         if(activeJobData.status.includes("กำลังเดินทางไปหา") || activeJobData.status.includes("รับงานแล้ว") || activeJobData.status.includes("มาถึงจุดรับ")) {
             dest = {lat: activeJobData.pLat, lng: activeJobData.pLng};
+            markerPick.setPosition(dest); markerPick.setMap(map); markerDrop.setMap(null);
         } else {
             dest = {lat: activeJobData.dLat, lng: activeJobData.dLng};
+            markerDrop.setPosition(dest); markerDrop.setMap(map); markerPick.setMap(null);
         }
 
         directionsService.route({origin: origin, destination: dest, travelMode: 'DRIVING'}, (res, stat) => {
             if(stat === 'OK') {
                 directionsRenderer.setDirections(res);
+                // 🌟 บังคับซูมให้เห็นเส้นทางพอดี เมื่อมีการอัปเดตเส้นทาง (เช่น เปลี่ยนไปจุดส่ง)
+                setTimeout(() => {
+                    const mapPadding = { top: 80, right: 50, bottom: 320, left: 50 }; 
+                    map.fitBounds(res.routes[0].bounds, mapPadding);
+                }, 200);
             }
         });
     }
