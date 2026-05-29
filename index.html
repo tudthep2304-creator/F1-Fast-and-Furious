@@ -70,18 +70,18 @@
     </div>
 
     <div class="flex gap-2 mb-2">
-        <button id="btnAction" onclick="nextAction()" class="flex-[2] bg-[#2B3A6F] text-white py-3 rounded-xl font-bold text-base shadow-md transition-colors active:bg-blue-800">
+        <button id="btnAction" onclick="promptFinishOrNext()" class="flex-[2] bg-[#2B3A6F] text-white py-3 rounded-xl font-bold text-base shadow-md transition-colors active:bg-blue-800">
             มาถึงจุดรับ
         </button>
         <button onclick="openDriverNavMap()" class="flex-1 bg-blue-100 text-blue-700 py-3 rounded-xl font-bold border border-blue-200 text-sm flex items-center justify-center gap-1">
             <i class="fas fa-location-arrow"></i> นำทาง
         </button>
     </div>
-    <button onclick="cancelJob()" class="w-full bg-red-50 text-red-600 py-2 rounded-xl font-bold border border-red-200 text-sm mt-1">ยกเลิกงานนี้</button>
+    <button onclick="promptCancelJob()" class="w-full bg-red-50 text-red-600 py-2 rounded-xl font-bold border border-red-200 text-sm mt-1">ยกเลิกงานนี้</button>
   </div>
 
-  <div id="jobDetailModal" class="hidden fixed inset-0 z-[100] bg-black/40 flex flex-col justify-end pb-8 px-4">
-      <div class="bg-white rounded-3xl p-5 w-full max-w-md mx-auto shadow-2xl transform transition-all scale-100">
+  <div id="jobDetailModal" class="hidden fixed inset-0 z-[100] pointer-events-none flex flex-col justify-end pb-8 px-4">
+      <div class="bg-white rounded-3xl p-5 w-full max-w-md mx-auto shadow-2xl transform transition-all scale-100 pointer-events-auto">
           <div class="flex justify-between items-center border-b pb-3 mb-3">
               <h3 class="text-lg font-black text-gray-800">รายละเอียดงาน</h3>
               <div class="flex items-center gap-3">
@@ -114,6 +114,43 @@
       </div>
   </div>
 
+  <div id="driverCancelModal" class="hidden fixed inset-0 z-[110] bg-black/50 flex items-center justify-center p-4">
+      <div class="bg-white rounded-2xl p-6 w-full max-w-sm text-center shadow-xl">
+          <div class="w-16 h-16 bg-red-100 text-red-500 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl">
+              <i class="fas fa-exclamation-triangle"></i>
+          </div>
+          <h3 class="text-xl font-bold text-gray-800 mb-2">ยืนยันยกเลิกงานนี้?</h3>
+          <p class="text-sm text-gray-500 mb-6">หากยกเลิก ผู้โดยสารจะถูกแจ้งเตือนว่าคุณไม่สามารถไปรับได้ และงานจะถูกลบออก</p>
+          <div class="flex gap-3">
+              <button onclick="closeDriverCancelModal()" class="flex-1 py-3 bg-gray-100 text-gray-700 font-bold rounded-xl hover:bg-gray-200">ปิด</button>
+              <button onclick="executeCancelJob()" class="flex-1 py-3 bg-red-500 text-white font-bold rounded-xl shadow-md hover:bg-red-600">ยืนยันยกเลิก</button>
+          </div>
+      </div>
+  </div>
+
+  <div id="finishJobModal" class="hidden fixed inset-0 z-[110] bg-black/50 flex items-center justify-center p-4">
+      <div class="bg-white rounded-2xl p-6 w-full max-w-sm text-center shadow-xl">
+          <div class="w-16 h-16 bg-green-100 text-green-500 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl">
+              <i class="fas fa-check-circle"></i>
+          </div>
+          <h3 class="text-xl font-bold text-gray-800 mb-2">ยืนยันจบงานและรับเงิน?</h3>
+          <p class="text-sm text-gray-500 mb-6">คุณได้ส่งผู้โดยสารถึงจุดหมายปลายทางอย่างปลอดภัยแล้วใช่หรือไม่?</p>
+          <div class="flex gap-3">
+              <button onclick="closeFinishModal()" class="flex-1 py-3 bg-gray-100 text-gray-700 font-bold rounded-xl hover:bg-gray-200">ยังไม่จบ</button>
+              <button onclick="executeFinishJob()" class="flex-[2] py-3 bg-green-500 text-white font-bold rounded-xl shadow-md hover:bg-green-600">ยืนยันจบงาน!</button>
+          </div>
+      </div>
+  </div>
+
+  <div id="alertModal" class="hidden fixed inset-0 z-[120] bg-black/50 flex items-center justify-center p-4">
+      <div class="bg-white rounded-2xl p-6 w-full max-w-sm text-center shadow-xl">
+          <div id="alertIcon" class="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl"></div>
+          <h3 id="alertTitle" class="text-xl font-bold text-gray-800 mb-2">...</h3>
+          <p id="alertMessage" class="text-sm text-gray-500 mb-6 whitespace-pre-line">...</p>
+          <button onclick="closeAlertModal()" class="w-full py-3 bg-[#2B3A6F] text-white font-bold rounded-xl shadow-md">ตกลง</button>
+      </div>
+  </div>
+
   <script>
     const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwwdopAPESHRrHEYTSa-CzFMbh0JX9WHUa37PMEJmxDkah7ui67cVtOn68cnM-2DtmR/exec"; 
     
@@ -138,14 +175,39 @@
     let activeJobData = null;
     let selectedJobId = null; 
     let allBookings = null;
-    
-    // 🌟 แก้ไข: ใช้ตัวแปร Object เพื่อจำ Timestamp ของงาน แทนที่จะจำแค่ ID
     let hiddenJobs = {}; 
+
+    // 🌟 ระบบ Alert สวยงาม
+    function showAlert(title, message, type = 'info', callback = null) {
+        document.getElementById('alertTitle').innerText = title;
+        document.getElementById('alertMessage').innerText = message;
+        
+        let iconHtml = ''; let iconBg = ''; let iconColor = '';
+        if (type === 'error') {
+            iconHtml = '<i class="fas fa-times"></i>'; iconBg = 'bg-red-100'; iconColor = 'text-red-500';
+        } else if (type === 'success') {
+            iconHtml = '<i class="fas fa-check"></i>'; iconBg = 'bg-green-100'; iconColor = 'text-green-500';
+        } else {
+            iconHtml = '<i class="fas fa-info"></i>'; iconBg = 'bg-blue-100'; iconColor = 'text-blue-500';
+        }
+        
+        const iconDiv = document.getElementById('alertIcon');
+        iconDiv.innerHTML = iconHtml;
+        iconDiv.className = `w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl ${iconBg} ${iconColor}`;
+        document.getElementById('alertModal').classList.remove('hidden');
+        window.alertCloseCallback = typeof callback === 'function' ? callback : null;
+    }
+
+    function closeAlertModal() {
+        document.getElementById('alertModal').classList.add('hidden');
+        if (window.alertCloseCallback) window.alertCloseCallback();
+    }
 
     function initMap() {
       if (typeof google === 'undefined' || typeof google.maps === 'undefined') return;
+      // 🌟 เพิ่ม zoomControl: true เผื่อกรณีใช้สองนิ้วซูมไม่ถนัด
       map = new google.maps.Map(document.getElementById('map'), { 
-        zoom: 15, center: {lat: driverLat, lng: driverLng}, mapTypeId: 'hybrid', disableDefaultUI: true 
+        zoom: 15, center: {lat: driverLat, lng: driverLng}, mapTypeId: 'hybrid', disableDefaultUI: true, gestureHandling: 'greedy', zoomControl: true
       });
       directionsService = new google.maps.DirectionsService();
       directionsRenderer = new google.maps.DirectionsRenderer({ map: map, suppressMarkers: true, polylineOptions: {strokeColor:'#4285F4', strokeWeight:6} });
@@ -184,7 +246,7 @@
                     
                     let posObj = {lat: driverLat, lng: driverLng};
                     if(markerDriver) markerDriver.setPosition(posObj);
-                    if(!activeJobId && !selectedJobId) map.setCenter(posObj); // ไม่เด้งกลับถ้ากำลังดูพรีวิวอยู่
+                    if(!activeJobId && !selectedJobId) map.setCenter(posObj); 
 
                     db.ref('driver').update({ lat: driverLat, lng: driverLng });
                     gpsEl.innerText = `พิกัดอัปเดตล่าสุด: ${new Date().toLocaleTimeString()}`;
@@ -215,8 +277,9 @@
         if (!activeJobId) return;
         
         if (!allBookings || !allBookings[activeJobId]) {
-            alert("⚠️ ผู้โดยสารได้ยกเลิกงานนี้แล้ว");
-            resetToIdle();
+            showAlert("งานถูกยกเลิก", "ผู้โดยสารได้ทำการยกเลิกงานนี้แล้วครับ", "error", () => {
+                resetToIdle();
+            });
             return;
         }
 
@@ -244,8 +307,6 @@
 
         for (let key in allBookings) {
             let b = allBookings[key];
-            
-            // 🌟 ตรวจสอบว่างานนี้เคยกดซ่อนใน Timestamp เดิมหรือไม่ (ถ้าลูกค้าเรียกใหม่เวลาเปลี่ยน งานจะโผล่มาใหม่)
             let isHidden = hiddenJobs[key] && hiddenJobs[key] === b.timestamp;
 
             if (b.status === "รอผู้ขับขี่ตอบรับ" && !isHidden) {
@@ -270,7 +331,6 @@
         listContainer.innerHTML = html;
     }
 
-    // 🌟 ระบบเปิดหน้าต่าง และวาดพรีวิวเส้นทางลงแผนที่ทันที
     function openJobDetail(jobId) {
         selectedJobId = jobId;
         let job = allBookings[jobId];
@@ -282,7 +342,7 @@
         
         document.getElementById('jobDetailModal').classList.remove('hidden');
 
-        // วาดเส้นทางบนแผนที่แบบ Preview
+        // วาดเส้นทางพรีวิวบนแผนที่ และสามารถซูม/เลื่อนได้
         let origin = {lat: job.pLat, lng: job.pLng};
         let dest = {lat: job.dLat, lng: job.dLng};
         
@@ -293,7 +353,6 @@
             if(stat === 'OK') {
                 directionsRenderer.setDirections(res);
                 setTimeout(() => {
-                    // เว้นช่องว่างด้านล่างแผนที่ให้พ้นระยะป๊อปอัป (ป้องกันถูกบัง)
                     const mapPadding = { top: 80, right: 50, bottom: 420, left: 50 }; 
                     map.fitBounds(res.routes[0].bounds, mapPadding);
                 }, 100);
@@ -301,41 +360,41 @@
         });
     }
 
-    // 🌟 ปิดหน้าต่างพรีวิว และเคลียร์เส้นทางทิ้ง
+    // 🌟 ฟังก์ชันเคลียร์แผนที่ให้สะอาด
+    function clearMapRoutes() {
+        if(directionsRenderer) directionsRenderer.setDirections({routes: []});
+        if(markerPick) markerPick.setMap(null);
+        if(markerDrop) markerDrop.setMap(null);
+    }
+
     function closeJobDetail() {
         document.getElementById('jobDetailModal').classList.add('hidden');
         selectedJobId = null;
 
-        // ล้างแผนที่กลับสู่สภาวะปกติ (ถ้ายังไม่ได้กดรับงาน)
         if (!activeJobId) {
-            if(directionsRenderer) directionsRenderer.setDirections({routes: []});
-            if(markerPick) markerPick.setMap(null);
-            if(markerDrop) markerDrop.setMap(null);
+            clearMapRoutes();
             map.setZoom(15);
             map.setCenter({lat: driverLat, lng: driverLng});
         }
     }
 
-    // 🌟 กดปฏิเสธงาน (ซ่อนโดยใช้ Timestamp)
     function hideJob() {
         if(!selectedJobId) return;
-        
         let job = allBookings[selectedJobId];
-        hiddenJobs[selectedJobId] = job.timestamp; // จดจำเวลาของงานที่ปฏิเสธไว้
-        
+        hiddenJobs[selectedJobId] = job.timestamp; 
         closeJobDetail();
         renderJobList(); 
     }
 
     function acceptJob() {
         if(!selectedJobId || !allBookings[selectedJobId]) {
-            alert("ขออภัย งานนี้ถูกคนขับท่านอื่นรับไปแล้ว หรือถูกยกเลิก");
+            showAlert("ข้อผิดพลาด", "ขออภัย งานนี้ถูกคนขับท่านอื่นรับไปแล้ว หรือถูกยกเลิก", "error");
             closeJobDetail();
             return;
         }
 
         activeJobId = selectedJobId;
-        closeJobDetail();
+        closeJobDetail(); // หน้าต่างปิด แผนที่จะไม่เคลียร์เพราะ activeJobId ถูกเซ็ตแล้ว
         
         db.ref('bookings/' + activeJobId).update({ 
             status: "รับงานแล้ว กำลังเดินทางไปหา",
@@ -387,10 +446,45 @@
         updateRoute();
     }
 
-    function nextAction() {
+    // 🌟 ระบบจัดการปุ่ม Action 
+    function promptFinishOrNext() {
         if(!activeJobId || !activeJobData) return;
         let s = activeJobData.status;
         
+        if(s.includes("ออกเดินทาง") || s.includes("ไปยังจุดส่ง")) {
+            // ถ้าสถานะเป็นกำลังไปจุดส่ง ให้เด้งป๊อปอัปยืนยันการจบงาน
+            document.getElementById('finishJobModal').classList.remove('hidden');
+        } else {
+            // ถ้าเป็นสถานะอื่น (มาถึงจุดรับ, ขึ้นรถ) ให้ทำเลย
+            nextAction();
+        }
+    }
+
+    function closeFinishModal() {
+        document.getElementById('finishJobModal').classList.add('hidden');
+    }
+
+    function executeFinishJob() {
+        closeFinishModal();
+        let dist = activeJobData.distance || 0;
+        let dur = activeJobData.duration || 0;
+        let price = activeJobData.price || 0;
+        let pName = activeJobData.pName || "";
+        let dName = activeJobData.dName || "";
+
+        db.ref('bookings/' + activeJobId).update({ status: "ถึงที่หมายเรียบร้อยแล้ว" }).then(() => {
+            if(APPS_SCRIPT_URL) {
+                let msg = `🏁 การเดินทางสิ้นสุดลงแล้วเรียบร้อย!\n\n📍 จุดรับ: ${pName}\n🏁 จุดส่ง: ${dName}\n🛣️ ระยะทาง: ${dist} กม.\n⏱️ เวลาเดินทาง: ${dur} นาที\n💵 ราคาเหมาจ่าย: ${price} บาท\n\nขอบคุณที่ใช้บริการ F1 Driver ครับ!`;
+                fetch(`${APPS_SCRIPT_URL}?action=notify&type=status_update&userId=${activeJobId}&msg=${encodeURIComponent(msg)}`, {mode: 'no-cors'});
+            }
+            showAlert("สำเร็จ!", "ส่งผู้โดยสารเรียบร้อย รอรับงานถัดไป", "success", () => {
+                resetToIdle();
+            });
+        });
+    }
+
+    function nextAction() {
+        let s = activeJobData.status;
         if(s.includes("กำลังเดินทางไปหา") || s.includes("รับงานแล้ว")) {
             db.ref('bookings/' + activeJobId).update({ status: "มาถึงจุดรับแล้ว" }).then(() => {
                 if(APPS_SCRIPT_URL) {
@@ -407,37 +501,29 @@
                 }
             });
         } 
-        else if(s.includes("ออกเดินทาง") || s.includes("ไปยังจุดส่ง")) {
-            if(confirm("ยืนยันการจบงานและรับเงินใช่หรือไม่?")) {
-                let dist = activeJobData.distance || 0;
-                let dur = activeJobData.duration || 0;
-                let price = activeJobData.price || 0;
-                let pName = activeJobData.pName || "";
-                let dName = activeJobData.dName || "";
-
-                db.ref('bookings/' + activeJobId).update({ status: "ถึงที่หมายเรียบร้อยแล้ว" }).then(() => {
-                    if(APPS_SCRIPT_URL) {
-                        let msg = `🏁 การเดินทางสิ้นสุดลงแล้วเรียบร้อย!\n\n📍 จุดรับ: ${pName}\n🏁 จุดส่ง: ${dName}\n🛣️ ระยะทาง: ${dist} กม.\n⏱️ เวลาเดินทาง: ${dur} นาที\n💵 ราคาเหมาจ่าย: ${price} บาท\n\nขอบคุณที่ใช้บริการ F1 Driver ครับ!`;
-                        fetch(`${APPS_SCRIPT_URL}?action=notify&type=status_update&userId=${activeJobId}&msg=${encodeURIComponent(msg)}`, {mode: 'no-cors'});
-                    }
-                    alert("จบงานสำเร็จ! รอรับงานถัดไป");
-                    resetToIdle();
-                });
-            }
-        }
     }
 
-    function cancelJob() {
-        if(confirm("คุณต้องการยกเลิกงานนี้ใช่หรือไม่?")) {
-            if(activeJobId) {
-                let oldJobId = activeJobId;
-                db.ref('bookings/' + activeJobId).update({ status: "ยกเลิกโดยคนขับ" }).then(() => {
-                    if(APPS_SCRIPT_URL) {
-                        fetch(`${APPS_SCRIPT_URL}?action=notify&type=cancel_driver&userId=${oldJobId}`, {mode:'no-cors'});
-                    }
+    // 🌟 ระบบยกเลิกงานด้วยป๊อปอัป
+    function promptCancelJob() {
+        document.getElementById('driverCancelModal').classList.remove('hidden');
+    }
+
+    function closeDriverCancelModal() {
+        document.getElementById('driverCancelModal').classList.add('hidden');
+    }
+
+    function executeCancelJob() {
+        closeDriverCancelModal();
+        if(activeJobId) {
+            let oldJobId = activeJobId;
+            db.ref('bookings/' + activeJobId).update({ status: "ยกเลิกโดยคนขับ" }).then(() => {
+                if(APPS_SCRIPT_URL) {
+                    fetch(`${APPS_SCRIPT_URL}?action=notify&type=cancel_driver&userId=${oldJobId}`, {mode:'no-cors'});
+                }
+                showAlert("ยกเลิกงานแล้ว", "ระบบได้ทำการยกเลิกงานนี้เรียบร้อยแล้ว", "error", () => {
+                    resetToIdle();
                 });
-            }
-            resetToIdle();
+            });
         }
     }
 
@@ -447,9 +533,7 @@
         selectedJobId = null;
         document.getElementById('activeJobPanel').classList.add('hidden');
         document.getElementById('idlePanel').classList.remove('hidden');
-        if(directionsRenderer) directionsRenderer.setDirections({routes: []});
-        if(markerPick) markerPick.setMap(null);
-        if(markerDrop) markerDrop.setMap(null);
+        clearMapRoutes(); // เคลียร์แผนที่ให้สะอาดเอี่ยม
         map.setZoom(15);
         map.setCenter({lat: driverLat, lng: driverLng});
         renderJobList(); 
