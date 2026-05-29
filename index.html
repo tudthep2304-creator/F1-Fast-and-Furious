@@ -224,7 +224,6 @@
       });
     }
 
-    // เปิดปิดสถานะออนไลน์
     function toggleOnline() {
         isOnline = document.getElementById('onlineToggle').checked;
         const statusEl = document.getElementById('statusText');
@@ -265,56 +264,58 @@
         renderJobList();
     }
 
-    // 🌟 ติดตามการเปลี่ยนแปลงฐานข้อมูล และกู้คืนงานที่ทำค้างไว้จากความจำเครื่อง (localStorage)
+    // 🌟 ระบบตรวจสอบฐานข้อมูลแบบ Real-time และการกู้คืนงาน (Auto-Resume)
     db.ref('bookings').on('value', snap => {
         allBookings = snap.val();
         
-        let savedJobId = localStorage.getItem('activeJobId');
-        
-        // ถ้ามีความจำงานที่ค้างอยู่ ให้ดึงกลับมาทำต่อ
-        if (savedJobId) {
-            if (allBookings && allBookings[savedJobId]) {
-                let s = allBookings[savedJobId].status;
-                if (!s.includes("ถึงที่หมาย") && !s.includes("ยกเลิก")) {
-                    activeJobId = savedJobId;
-                    activeJobData = allBookings[activeJobId];
-                    document.getElementById('idlePanel').classList.add('hidden');
-                    document.getElementById('activeJobPanel').classList.remove('hidden');
-                    
-                    // บังคับให้แอปเข้าสู่โหมดออนไลน์เพื่อเปิด GPS ดึงข้อมูลงานต่อ
-                    if (!isOnline) {
-                        document.getElementById('onlineToggle').checked = true;
-                        isOnline = true; 
-                        toggleOnline(); 
-                    }
-                } else {
-                    localStorage.removeItem('activeJobId');
-                }
-            } else {
-                localStorage.removeItem('activeJobId');
-                if (activeJobId === savedJobId) {
-                    showAlert("งานถูกยกเลิก", "ผู้โดยสารได้ทำการยกเลิกงานนี้แล้วครับ", "error", () => { resetToIdle(); });
+        let foundActiveJob = false;
+
+        if (allBookings) {
+            // 🌟 1. ดึงงานที่ค้างอยู่จากฐานข้อมูลโดยตรง! (ถ้าคนขับเคยรับงานไว้ มันจะเด้งกลับมาทันที)
+            for (let key in allBookings) {
+                let s = allBookings[key].status;
+                if (s.includes("รับงานแล้ว") || s.includes("มาถึงจุดรับ") || s.includes("เริ่มออกเดินทาง")) {
+                    activeJobId = key;
+                    activeJobData = allBookings[key];
+                    localStorage.setItem('activeJobId', activeJobId);
+                    foundActiveJob = true;
+                    break;
                 }
             }
         }
 
-        checkActiveJobStatus(); 
-        renderJobList(); 
-    });
-
-    function checkActiveJobStatus() {
-        if (!activeJobId) return;
-        
-        if (!allBookings || !allBookings[activeJobId]) {
-            showAlert("งานถูกยกเลิก", "ผู้โดยสารได้ทำการยกเลิกงานนี้แล้วครับ", "error", () => {
+        if (foundActiveJob) {
+            // บังคับสลับหน้าจอไปที่งานที่ค้างอยู่
+            document.getElementById('idlePanel').classList.add('hidden');
+            document.getElementById('activeJobPanel').classList.remove('hidden');
+            
+            // เปิดสวิตช์ออนไลน์ให้อัตโนมัติถ้ายังไม่ได้เปิด
+            if (!isOnline) {
+                document.getElementById('onlineToggle').checked = true;
+                isOnline = true; 
+                toggleOnline(); 
+            }
+            updateActiveJobUI();
+        } else {
+            // 🌟 2. ถ้าไม่มีงานที่ Active แล้ว (อาจจะโดนลูกค้ากดยกเลิกไปแล้ว)
+            let savedJobId = localStorage.getItem('activeJobId');
+            if (savedJobId && activeJobId === savedJobId) {
+                // งานที่ค้างอยู่ในเครื่อง หายไปจากฐานข้อมูล หรือโดนยกเลิก
+                localStorage.removeItem('activeJobId');
+                showAlert("งานถูกยกเลิก", "ผู้โดยสารได้ทำการยกเลิกงานนี้แล้วครับ", "error", () => { resetToIdle(); });
+            } else if (activeJobId && !savedJobId) {
+                // กรณีทำงานอยู่แล้วงานหายไปดื้อๆ
+                showAlert("งานถูกยกเลิก", "ผู้โดยสารได้ทำการยกเลิกงานนี้แล้วครับ", "error", () => { resetToIdle(); });
+            }
+            
+            // เคลียร์หน้าจอให้กลับเป็นสถานะรองาน
+            if (activeJobId && !foundActiveJob) {
                 resetToIdle();
-            });
-            return;
+            }
         }
 
-        activeJobData = allBookings[activeJobId];
-        updateActiveJobUI();
-    }
+        renderJobList(); 
+    });
 
     function renderJobList() {
         const listContainer = document.getElementById('jobListContainer');
@@ -421,7 +422,6 @@
         }
 
         activeJobId = selectedJobId;
-        // 🌟 บันทึกงานเข้าความจำเครื่องกันแอปเด้งปิด
         localStorage.setItem('activeJobId', activeJobId);
 
         closeJobDetail(); 
@@ -553,9 +553,8 @@
         }
     }
 
-    // 🌟 ล้างระบบทั้งหมดเมื่อจบงานหรือยกเลิก
     function resetToIdle() {
-        localStorage.removeItem('activeJobId'); // ลบความจำงานเดิม
+        localStorage.removeItem('activeJobId');
         activeJobId = null;
         activeJobData = null;
         selectedJobId = null;
