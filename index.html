@@ -122,8 +122,20 @@
           </div>
 
           <div class="flex gap-2">
-              <button onclick="hideJob()" class="flex-1 py-3 bg-red-50 text-red-600 font-bold rounded-xl border border-red-200 hover:bg-red-100 transition-colors">ข้ามงานนี้</button>
+              <button onclick="promptRejectPendingJob()" class="flex-1 py-3 bg-red-50 text-red-600 font-bold rounded-xl border border-red-200 hover:bg-red-100 transition-colors">ยกเลิกงานนี้</button>
               <button onclick="promptAcceptJob()" class="flex-[2] py-3 bg-green-500 text-white font-bold rounded-xl shadow-md hover:bg-green-600 transition-colors">รับงานเลย!</button>
+          </div>
+      </div>
+  </div>
+
+  <div id="pendingCancelModal" class="hidden fixed inset-0 z-[110] bg-black/50 flex items-center justify-center p-4">
+      <div class="bg-white rounded-2xl p-6 w-full max-w-sm text-center shadow-xl">
+          <div class="w-16 h-16 bg-red-100 text-red-500 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl"><i class="fas fa-times-circle"></i></div>
+          <h3 class="text-xl font-bold text-gray-800 mb-2">ยืนยันปฏิเสธงานนี้?</h3>
+          <p class="text-sm text-gray-500 mb-6">หากยืนยัน ระบบจะยกเลิกการเรียกรถและแจ้งเตือนผู้โดยสารว่าไม่มีรถว่างทันที</p>
+          <div class="flex gap-3">
+              <button onclick="closePendingCancelModal()" class="flex-1 py-3 bg-gray-100 text-gray-700 font-bold rounded-xl hover:bg-gray-200">ปิด</button>
+              <button onclick="executeRejectPendingJob()" class="flex-1 py-3 bg-red-500 text-white font-bold rounded-xl shadow-md hover:bg-red-600">ยืนยันยกเลิก</button>
           </div>
       </div>
   </div>
@@ -220,26 +232,20 @@
     let activeJobData = null;
     let selectedJobId = null; 
     let allBookings = null;
-    let hiddenJobs = {}; 
     let isFinishingJob = false;
     let currentRouteBounds = null; 
 
     let knownPendingJobs = [];
-    let isAlarmRinging = false; // 🌟 เช็คว่าเสียงเตือนทำงานอยู่ไหม
+    let isAlarmRinging = false; 
 
-    // 🌟 ฟังก์ชันหยุดเสียงเตือนทันทีที่มีการสัมผัสหน้าจอ
     function stopAlarm() {
         if (isAlarmRinging) {
             let snd = document.getElementById('jobAlertSound');
-            if (snd) {
-                snd.pause();
-                snd.currentTime = 0; // รีเซ็ตเสียงกลับไปจุดเริ่มต้น
-            }
+            if (snd) { snd.pause(); snd.currentTime = 0; }
             isAlarmRinging = false;
         }
     }
 
-    // 🌟 ดักจับการแตะและคลิกทุกพื้นที่บนหน้าจอเพื่อปิดเสียง
     document.addEventListener('touchstart', stopAlarm);
     document.addEventListener('click', stopAlarm);
 
@@ -388,7 +394,7 @@
             releaseWakeLock(); 
             db.ref('driver').update({ status: "ออฟไลน์" });
             if(watchId) navigator.geolocation.clearWatch(watchId);
-            stopAlarm(); // ปิดเสียงเผื่อดังค้างอยู่
+            stopAlarm(); 
         }
         renderJobList();
     }
@@ -453,8 +459,7 @@
 
         for (let key in allBookings) {
             let b = allBookings[key];
-            let isHidden = hiddenJobs[key] && hiddenJobs[key] === b.timestamp;
-            if (b.status === "รอผู้ขับขี่ตอบรับ" && !isHidden) {
+            if (b.status === "รอผู้ขับขี่ตอบรับ") {
                 jobCount++;
                 currentPendingJobs.push(key);
                 
@@ -473,12 +478,9 @@
         if (jobCount === 0) html = '<p class="text-center text-gray-400 text-sm py-4">ยังไม่มีงานในขณะนี้...</p>';
         listContainer.innerHTML = html;
 
-        // 🌟 ถ้ามีงานใหม่ ให้ดังวนซ้ำ!
         if (hasNewJob && isOnline) {
             let snd = document.getElementById('jobAlertSound');
-            if (snd) {
-                snd.play().then(() => { isAlarmRinging = true; }).catch(e => console.log('Autoplay prevented'));
-            }
+            if (snd) { snd.play().then(() => { isAlarmRinging = true; }).catch(e => console.log('Autoplay prevented')); }
             if (navigator.vibrate) navigator.vibrate([500, 200, 500, 200, 500]); 
         }
 
@@ -514,10 +516,30 @@
         if (!activeJobId) { clearMapRoutes(); centerToDriver(); }
     }
 
-    function hideJob() {
+    // 🌟 ระบบปฏิเสธงาน (ยกเลิกก่อนรับ)
+    function promptRejectPendingJob() {
+        document.getElementById('pendingCancelModal').classList.remove('hidden');
+    }
+    
+    function closePendingCancelModal() {
+        document.getElementById('pendingCancelModal').classList.add('hidden');
+    }
+
+    function executeRejectPendingJob() {
+        closePendingCancelModal();
         if(!selectedJobId) return;
-        hiddenJobs[selectedJobId] = allBookings[selectedJobId].timestamp; 
-        closeJobDetail(); renderJobList(); 
+        
+        let jobIdToCancel = selectedJobId;
+        closeJobDetail(); 
+
+        db.ref('bookings/' + jobIdToCancel).update({ status: "ยกเลิกโดยคนขับ" }).then(() => {
+            if(APPS_SCRIPT_URL) {
+                fetch(`${APPS_SCRIPT_URL}?action=notify&type=cancel_driver&userId=${jobIdToCancel}`, {mode:'no-cors'});
+            }
+            showAlert("ยกเลิกสำเร็จ", "ปฏิเสธและยกเลิกงานเรียบร้อยแล้ว", "success", () => {
+                renderJobList(); 
+            });
+        });
     }
 
     function promptAcceptJob() { document.getElementById('confirmAcceptModal').classList.remove('hidden'); }
@@ -525,7 +547,7 @@
 
     function executeAcceptJob() {
         if(!selectedJobId || !allBookings[selectedJobId]) {
-            showAlert("ข้อผิดพลาด", "ขออภัย งานนี้ถูกคนขับท่านอื่นรับไปแล้ว หรือถูกยกเลิก", "error");
+            showAlert("ข้อผิดพลาด", "ขออภัย งานนี้ถูกยกเลิกไปแล้ว", "error");
             closeConfirmAcceptModal(); closeJobDetail(); return;
         }
         activeJobId = selectedJobId; localStorage.setItem('activeJobId', activeJobId);
