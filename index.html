@@ -13,17 +13,16 @@
     body { font-family: 'Kanit', sans-serif; background-color: #111827; }
     .map-container { position: fixed; inset: 0; width: 100vw; height: 100vh; z-index: 0; background: #1f2937; }
     
-    /* 🌟 UI แผงควบคุมดีไซน์ธีมสีดำเข้ม */
     .ui-panel { 
         position: fixed; 
         bottom: 0; 
         left: 0; 
         right: 0; 
-        background: #1f2937; /* สีเทาเข้ม */
+        background: #1f2937; 
         border-top-left-radius: 24px; 
         border-top-right-radius: 24px; 
         box-shadow: 0 -10px 30px rgba(0,0,0,0.5); 
-        border-top: 2px solid #22c55e; /* เส้นขอบบนสีเขียว */
+        border-top: 2px solid #22c55e; 
         z-index: 10; 
         display: flex; 
         flex-direction: column; 
@@ -58,7 +57,7 @@
       <button onclick="centerToDriver()" id="btnCrosshair" class="bg-gray-800 w-12 h-12 flex items-center justify-center rounded-full shadow-lg text-green-400 border border-green-500/30 active:bg-gray-700 transition">
           <i class="fas fa-crosshairs text-xl"></i>
       </button>
-      <button onclick="fitRouteBounds()" id="btnOverview" class="hidden bg-gray-800 w-12 h-12 flex items-center justify-center rounded-full shadow-lg text-emerald-400 border border-green-500/30 active:bg-gray-700 transition">
+      <button onclick="fitRouteBounds()" id="btnOverview" class="hidden bg-gray-800 w-12 h-12 flex items-center justify-center rounded-full shadow-lg text-gray-500 border border-green-500/30 active:bg-gray-700 transition">
           <i class="fas fa-route text-xl"></i>
       </button>
   </div>
@@ -80,14 +79,9 @@
         </div>
     </div>
     
-    <div class="bg-gray-900/60 p-2.5 rounded-xl border border-gray-700 mb-3 flex justify-between items-center">
-        <div class="text-left">
-            <p class="text-gray-400 text-[11px]" id="gpsStatus">รอเปิดระบบเพื่ออัปเดต GPS...</p>
-            <p class="text-[10px] text-green-400 hidden" id="wakeLockText"><i class="fas fa-sun"></i> หน้าจอจะเปิดค้างไว้ตลอดเวลา</p>
-        </div>
-        <button onclick="toggleWakeLockManual()" id="btnWakeLockToggle" class="bg-gray-800 text-gray-400 border border-gray-700 px-2.5 py-1 rounded-lg text-[10px] font-bold flex items-center gap-1 transition">
-            <i class="fas fa-lock"></i> กันจอดับ: ปิด
-        </button>
+    <div class="bg-gray-900/60 p-2.5 rounded-xl text-center border border-gray-700 mb-3">
+        <p class="text-gray-400 text-[11px]" id="gpsStatus">รอเปิดระบบเพื่ออัปเดต GPS...</p>
+        <p class="text-[10px] text-green-400 hidden mt-0.5" id="wakeLockStatus"><i class="fas fa-sun"></i> หน้าจอจะเปิดค้างไว้ตลอดเวลา</p>
     </div>
 
     <h3 class="text-sm font-bold text-gray-400 mb-2 flex items-center gap-2"><i class="fas fa-list-ul"></i> รายการงานที่รอรับ</h3>
@@ -270,7 +264,7 @@
           <h3 class="text-xl font-bold mb-2">ยืนยันยกเลิกงานนี้?</h3>
           <p class="text-sm text-gray-400 mb-6">หากยกเลิก ผู้โดยสารจะถูกแจ้งเตือนว่าคุณไม่สามารถไปรับได้ และงานจะถูกลบออก</p>
           <div class="flex gap-3">
-              <button onclick="closeDriverCancelModal()" class="flex-1 py-3 bg-gray-100 text-gray-700 font-bold rounded-xl hover:bg-gray-200">ปิด</button>
+              <button onclick="closeDriverCancelModal()" class="flex-1 py-3 bg-gray-700 text-gray-200 font-bold rounded-xl hover:bg-gray-600">ปิด</button>
               <button onclick="executeCancelJob()" class="flex-[2] py-3 bg-red-600 text-white font-bold rounded-xl shadow-md hover:bg-red-700">ยืนยันยกเลิก</button>
           </div>
       </div>
@@ -310,7 +304,6 @@
     let lastRouteUpdate = 0; 
     let isTrackingMode = true; 
     let wakeLock = null; 
-    let isWakeLockManualActive = false; // 🌟 สถานะสวิตช์กันจอดับแบบกำหนดเอง
     
     let activeJobId = null;
     let activeJobData = null;
@@ -319,9 +312,7 @@
     let hiddenJobs = {}; 
     let currentRouteBounds = null; 
 
-    let isProcessingAction = false;
     let lastNotifiedMsg = ""; 
-
     let knownPendingJobs = [];
     let isAlarmRinging = false; 
 
@@ -342,37 +333,6 @@
         const panel = document.getElementById(panelId);
         if (panel) panel.classList.remove('panel-collapsed');
         if (map) map.setOptions({ padding: { top: 80, bottom: 400, left: 0, right: 0 } });
-    }
-
-    // 🌟 ระบบควบคุมโหมดกันหน้าจอดับ (Wake Lock) ด้วยมือ
-    async function toggleWakeLockManual() {
-        const btn = document.getElementById('btnWakeLockToggle');
-        const txt = document.getElementById('wakeLockText');
-        
-        if (!isWakeLockManualActive) {
-            // สั่งเปิดระบบ
-            try {
-                if ('wakeLock' in navigator) {
-                    wakeLock = await navigator.wakeLock.request('screen');
-                    isWakeLockManualActive = true;
-                    btn.innerHTML = `<i class="fas fa-unlock"></i> กันจอดับ: เปิดอยู่`;
-                    btn.className = "bg-green-900 text-green-400 border border-green-500 px-2.5 py-1 rounded-lg text-[10px] font-bold flex items-center gap-1 transition";
-                    txt.classList.remove('hidden');
-                } else {
-                    alert("มือถือเครื่องนี้ไม่รองรับระบบกันหน้าจอดับผ่านเว็บครับ");
-                }
-            } catch (err) { console.log(err); }
-        } else {
-            // สั่งปิดระบบ
-            if (wakeLock !== null) {
-                await wakeLock.release();
-                wakeLock = null;
-            }
-            isWakeLockManualActive = false;
-            btn.innerHTML = `<i class="fas fa-lock"></i> กันจอดับ: ปิด`;
-            btn.className = "bg-gray-800 text-gray-400 border border-gray-700 px-2.5 py-1 rounded-lg text-[10px] font-bold flex items-center gap-1 transition";
-            txt.classList.add('hidden');
-        }
     }
 
     function sendLineNotify(userId, msg, type = 'status_update') {
@@ -398,6 +358,18 @@
     document.addEventListener('touchstart', stopAlarm);
     document.addEventListener('click', stopAlarm);
 
+    async function requestWakeLock() {
+        try {
+            if ('wakeLock' in navigator) {
+                wakeLock = await navigator.wakeLock.request('screen');
+            }
+        } catch (err) { console.log('Wake Lock Error:', err); }
+    }
+
+    function releaseWakeLock() {
+        if (wakeLock !== null) { wakeLock.release().then(() => { wakeLock = null; }); }
+    }
+
     window.onload = () => {
         let savedOnlineState = localStorage.getItem('isDriverOnline');
         if (savedOnlineState === 'true') {
@@ -408,9 +380,7 @@
 
     document.addEventListener("visibilitychange", () => {
         if (document.visibilityState === "visible" && isOnline) {
-            if (isWakeLockManualActive && 'wakeLock' in navigator) {
-                navigator.wakeLock.request('screen').then(lock => { wakeLock = lock; });
-            }
+            requestWakeLock();
             if(navigator.geolocation) {
                 navigator.geolocation.getCurrentPosition((pos) => {
                     driverLat = pos.coords.latitude;
@@ -423,7 +393,50 @@
         }
     });
 
-    // 🌟 ปรับแผนที่ให้เข้ากับโหมดมืด (Dark-styled satellite)
+    function showAlert(title, message, type = 'info', callback = null) {
+        document.getElementById('alertTitle').innerText = title;
+        document.getElementById('alertMessage').innerText = message;
+        let iconHtml = ''; let iconBg = ''; let iconColor = '';
+        if (type === 'error') { iconHtml = '<i class="fas fa-times"></i>'; iconBg = 'bg-red-950'; iconColor = 'text-red-400'; } 
+        else if (type === 'success') { iconHtml = '<i class="fas fa-check"></i>'; iconBg = 'bg-green-950'; iconColor = 'text-green-400'; } 
+        else { iconHtml = '<i class="fas fa-info"></i>'; iconBg = 'bg-blue-950'; iconColor = 'text-blue-400'; }
+        const iconDiv = document.getElementById('alertIcon');
+        iconDiv.innerHTML = iconHtml; iconDiv.className = `w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl ${iconBg} ${iconColor}`;
+        document.getElementById('alertModal').classList.remove('hidden');
+        window.alertCloseCallback = typeof callback === 'function' ? callback : null;
+    }
+    function closeAlertModal() {
+        document.getElementById('alertModal').classList.add('hidden');
+        if (window.alertCloseCallback) window.alertCloseCallback();
+    }
+
+    // 🌟 แก้บั๊กปุ่มเป้าเล็งพิกัดให้สลับสีตรงกับธีมมืด
+    function centerToDriver() {
+        isTrackingMode = true;
+        let btn = document.getElementById('btnCrosshair');
+        btn.classList.remove('text-gray-500');
+        btn.classList.add('text-green-400');
+
+        if(map && driverLat && driverLng) {
+            map.panTo({lat: driverLat, lng: driverLng});
+            map.setZoom(16);
+        }
+    }
+
+    // 🌟 แก้บั๊กปุ่ม Overview
+    function fitRouteBounds() {
+        isTrackingMode = false;
+        let btn = document.getElementById('btnCrosshair');
+        btn.classList.remove('text-green-400');
+        btn.classList.add('text-gray-500');
+
+        if (map && currentRouteBounds) {
+            map.fitBounds(currentRouteBounds, { top: 80, right: 50, bottom: 400, left: 50 });
+        } else {
+            centerToDriver();
+        }
+    }
+
     function initMap() {
       if (typeof google === 'undefined' || typeof google.maps === 'undefined') return;
       map = new google.maps.Map(document.getElementById('map'), { 
@@ -437,8 +450,12 @@
       });
 
       map.addListener('dragstart', () => {
-          isTrackingMode = false; document.getElementById('btnCrosshair').classList.replace('text-blue-600', 'text-green-400');
+          isTrackingMode = false; 
+          let btn = document.getElementById('btnCrosshair');
+          btn.classList.remove('text-green-400');
+          btn.classList.add('text-gray-500');
       });
+
       directionsService = new google.maps.DirectionsService();
       
       directionsRenderer = new google.maps.DirectionsRenderer({ 
@@ -497,15 +514,20 @@
             gpsEl.innerText = "กำลังค้นหาพิกัด GPS ของคุณ...";
             isFirstGps = true; 
             
-            // สั่งเปิดกันจอดับอัตโนมัติเมื่อออนไลน์เพื่อความสะดวก
-            if(!isWakeLockManualActive) toggleWakeLockManual();
+            requestWakeLock(); 
+            document.getElementById('wakeLockStatus').classList.remove('hidden');
 
             db.ref('driver').update({ status: "ออนไลน์" });
 
+            // 🌟 ปลดล็อกระบบเสียงเตือนอัตโนมัติ
             let snd = document.getElementById('jobAlertSound');
             if(snd) {
-                snd.volume = 0; 
-                snd.play().then(() => { snd.pause(); snd.volume = 1; }).catch(e => console.log('Audio init prevented'));
+                snd.muted = true; 
+                snd.play().then(() => { 
+                    snd.pause(); 
+                    snd.muted = false;
+                    snd.currentTime = 0;
+                }).catch(e => console.log('Audio init prevented'));
             }
 
             if (navigator.geolocation) {
@@ -540,8 +562,8 @@
             statusEl.className = "text-sm font-bold text-red-500";
             gpsEl.innerText = "ระบบถูกปิดชั่วคราว";
             
-            // สั่งปิดกันจอดับเมื่อออฟไลน์เพื่อประหยัดแบต
-            if(isWakeLockManualActive) toggleWakeLockManual();
+            releaseWakeLock(); 
+            document.getElementById('wakeLockStatus').classList.add('hidden');
 
             db.ref('driver').update({ status: "ออฟไลน์" });
             if(watchId) navigator.geolocation.clearWatch(watchId);
@@ -577,26 +599,16 @@
             }
             updateActiveJobUI();
         } else {
-            if (savedJobId && activeJobId === savedJobId && !isProcessingAction) {
+            if (savedJobId && activeJobId === savedJobId) {
                 localStorage.removeItem('activeJobId');
                 showAlert("งานถูกยกเลิก", "ผู้โดยสารได้ทำการยกเลิกงานนี้แล้วครับ", "error", () => { resetToIdle(); });
-            } else if (activeJobId && !savedJobId && !isProcessingAction) {
+            } else if (activeJobId && !savedJobId) {
                 showAlert("งานถูกยกเลิก", "ผู้โดยสารได้ทำการยกเลิกงานนี้แล้วครับ", "error", () => { resetToIdle(); });
             }
-            if (activeJobId && !foundActiveJob && !isProcessingAction) resetToIdle();
+            if (activeJobId && !foundActiveJob) resetToIdle();
         }
         renderJobList(); 
     });
-
-    function checkActiveJobStatus() {
-        if (!activeJobId || isProcessingAction) return; 
-        if (!allBookings || !allBookings[activeJobId]) {
-            showAlert("งานถูกยกเลิก", "ผู้โดยสารได้ทำการยกเลิกงานนี้แล้วครับ", "error", () => { resetToIdle(); });
-            return;
-        }
-        activeJobData = allBookings[activeJobId];
-        updateActiveJobUI();
-    }
 
     function renderJobList() {
         const listContainer = document.getElementById('jobListContainer');
@@ -621,8 +633,8 @@
 
                 html += `<div onclick="openJobDetail('${key}')" class="bg-gray-800 p-3 rounded-xl shadow-sm border border-gray-700 cursor-pointer active:bg-gray-700 hover:bg-gray-700/60 transition-colors">
                     <div class="flex justify-between items-center mb-1"><span class="font-bold text-sm text-green-400"><i class="fas fa-user-circle"></i> ${b.name || 'ลูกค้า'}</span><span class="font-black text-green-400 bg-green-950/50 px-2 py-0.5 rounded-lg border border-green-500/20">฿${b.price}</span></div>
-                    <p class="text-[11px] text-gray-400 truncate"><span class="text-blue-400 font-bold">รับ:</span> ${b.pName}</p>
-                    <p class="text-[11px] text-gray-400 truncate"><span class="text-red-400 font-bold">ส่ง:</span> ${b.dName}</p>
+                    <p class="text-[11px] text-gray-400 truncate"><span class="text-green-500 font-bold">รับ:</span> ${b.pName}</p>
+                    <p class="text-[11px] text-gray-400 truncate"><span class="text-blue-500 font-bold">ส่ง:</span> ${b.dName}</p>
                 </div>`;
             }
         }
@@ -632,7 +644,10 @@
 
         if (hasNewJob && isOnline) {
             let snd = document.getElementById('jobAlertSound');
-            if (snd) { snd.play().then(() => { isAlarmRinging = true; }).catch(e => console.log('Autoplay prevented')); }
+            if (snd) { 
+                snd.currentTime = 0;
+                snd.play().then(() => { isAlarmRinging = true; }).catch(e => console.log('Autoplay prevented')); 
+            }
             if (navigator.vibrate) navigator.vibrate([500, 200, 500, 200, 500]); 
         }
 
@@ -712,40 +727,32 @@
     function closePendingCancelModal() { document.getElementById('pendingCancelModal').classList.add('hidden'); }
 
     function executeRejectPendingJob() {
-        if(isProcessingAction) return; isProcessingAction = true;
         closePendingCancelModal();
-        if(!selectedJobId) { isProcessingAction = false; return; }
-        
+        if(!selectedJobId) return;
         let jobIdToCancel = selectedJobId;
         closeJobDetail(); 
 
         db.ref('bookings/' + jobIdToCancel).update({ status: "ยกเลิกโดยคนขับ" }).then(() => {
             sendLineNotify(jobIdToCancel, "", 'cancel_driver');
-            showAlert("ยกเลิกสำเร็จ", "ปฏิเสธและยกเลิกงานเรียบร้อยแล้ว", "success", () => {
-                isProcessingAction = false;
-                renderJobList(); 
-            });
-        }).catch(()=>{ isProcessingAction = false; });
+            showAlert("ยกเลิกสำเร็จ", "ปฏิเสธและยกเลิกงานเรียบร้อยแล้ว", "success", () => { renderJobList(); });
+        }).catch(e=>console.error(e));
     }
 
     function promptAcceptJob() { document.getElementById('confirmAcceptModal').classList.remove('hidden'); }
     function closeConfirmAcceptModal() { document.getElementById('confirmAcceptModal').classList.add('hidden'); }
 
     function executeAcceptJob() {
-        if(isProcessingAction) return; isProcessingAction = true;
-        
         if(!selectedJobId || !allBookings[selectedJobId]) {
             showAlert("ข้อผิดพลาด", "ขออภัย งานนี้ถูกยกเลิกไปแล้ว", "error");
             closeConfirmAcceptModal(); closeJobDetail(); 
-            isProcessingAction = false; return;
+            return;
         }
         activeJobId = selectedJobId; localStorage.setItem('activeJobId', activeJobId);
         closeConfirmAcceptModal(); closeJobDetail(); 
         
         db.ref('bookings/' + activeJobId).update({ status: "รับงานแล้ว กำลังเดินทางไปหา", driverPhone: "0946379669" }).then(() => {
             sendLineNotify(activeJobId, "🏎️ คนขับตอบรับงานของคุณแล้ว! กำลังรีบเดินทางไปหาคุณครับ");
-            isProcessingAction = false;
-        }).catch(()=>{ isProcessingAction = false; });
+        }).catch(e=>console.error(e));
         
         document.getElementById('idlePanel').classList.add('hidden'); document.getElementById('activeJobPanel').classList.remove('hidden');
         expandPanel('activeJobPanel'); 
@@ -768,15 +775,15 @@
         if(s.includes("กำลังเดินทางไปหา") || s.includes("รับงานแล้ว")) {
             statusText.innerText = "กำลังเดินทางไปรับ"; 
             etaEl.className = "text-[11px] text-green-400 font-bold mt-0.5 inline-block";
-            btnAction.innerText = "มาถึงจุดรับ"; btnAction.className = "w-full bg-green-600 text-white py-2.5 rounded-xl font-bold text-sm shadow-md hover:bg-green-700 transition";
+            btnAction.innerText = "มาถึงจุดรับ"; btnAction.className = "flex-[2] bg-green-600 text-white py-3 rounded-xl font-bold text-base shadow-md hover:bg-green-700 transition";
         } else if(s.includes("มาถึงจุดรับ") || s.includes("ถึงจุดรับแล้ว")) {
             statusText.innerText = "รอผู้โดยสารขึ้นรถ"; 
             etaEl.classList.add('hidden');
-            btnAction.innerText = "ผู้โดยสารขึ้นรถ"; btnAction.className = "w-full bg-yellow-500 text-gray-900 py-2.5 rounded-xl font-bold text-sm shadow-md hover:bg-yellow-600 transition";
+            btnAction.innerText = "ผู้โดยสารขึ้นรถ"; btnAction.className = "flex-[2] bg-yellow-500 text-gray-900 py-3 rounded-xl font-bold text-base shadow-md hover:bg-yellow-600 transition";
         } else if(s.includes("ออกเดินทาง") || s.includes("ไปยังจุดส่ง")) {
             statusText.innerText = "กำลังเดินทางไปจุดส่ง"; 
             etaEl.className = "text-[11px] text-blue-400 font-bold mt-0.5 inline-block";
-            btnAction.innerText = "ถึงที่หมาย (จบงาน)"; btnAction.className = "w-full bg-emerald-600 text-white py-2.5 rounded-xl font-bold text-sm shadow-md hover:bg-emerald-700 transition";
+            btnAction.innerText = "ถึงที่หมาย (จบงาน)"; btnAction.className = "flex-[2] bg-emerald-600 text-white py-3 rounded-xl font-bold text-base shadow-md hover:bg-emerald-700 transition";
         }
     }
 
@@ -792,27 +799,23 @@
     function closeBoardedModal() { document.getElementById('boardedModal').classList.add('hidden'); }
     function closeFinishModal() { document.getElementById('finishJobModal').classList.add('hidden'); }
 
+    // 🌟 ถอดระบบบล็อกปุ่มออก ให้กดทำงานได้ปกติ
     function executeArrive() {
-        if(isProcessingAction) return; isProcessingAction = true;
         closeArriveModal();
         db.ref('bookings/' + activeJobId).update({ status: "มาถึงจุดรับแล้ว" }).then(() => {
             sendLineNotify(activeJobId, "📍 คนขับเดินทางมาถึงจุดรับของคุณเรียบร้อยแล้วครับ!");
-            setTimeout(() => { isProcessingAction = false; }, 1500);
-        }).catch(()=>{ isProcessingAction = false; });
+        }).catch(e=>console.error(e));
     }
 
     function executeStartTrip() {
-        if(isProcessingAction) return; isProcessingAction = true;
         closeBoardedModal();
         db.ref('bookings/' + activeJobId).update({ status: "เริ่มออกเดินทาง ไปยังจุดส่ง", tripStartTime: firebase.database.ServerValue.TIMESTAMP }).then(() => {
             sendLineNotify(activeJobId, "✨ ผู้โดยสารขึ้นรถเรียบร้อยแล้ว! กำลังเริ่มออกเดินทางไปยังจุดส่ง");
             updateRoute(true); 
-            setTimeout(() => { isProcessingAction = false; }, 1500);
-        }).catch(()=>{ isProcessingAction = false; });
+        }).catch(e=>console.error(e));
     }
 
     function executeFinishJob() {
-        if(isProcessingAction) return; isProcessingAction = true;
         closeFinishModal(); 
         
         let dist = activeJobData.distance || 0; let price = activeJobData.price || 0; let pName = activeJobData.pName || ""; let dName = activeJobData.dName || "";
@@ -821,28 +824,23 @@
 
         sendLineNotify(activeJobId, `🏁 การเดินทางสิ้นสุดลงแล้วเรียบร้อย!\n\n📍 จุดรับ: ${pName}\n🏁 จุดส่ง: ${dName}\n🛣️ ระยะทาง: ${dist} กม.\n⏱️ เวลาเดินทางจริง: ${actualDur} นาที\n💵 ราคาเหมาจ่าย: ${price} บาท\n\nขอบคุณที่ใช้บริการ F1 Driver ครับ!`);
 
-        setTimeout(() => {
-            db.ref('bookings/' + activeJobId).update({ status: "ถึงที่หมายเรียบร้อยแล้ว" }).then(() => {
-                showAlert("สำเร็จ!", "ส่งผู้โดยสารเรียบร้อย รอรับงานถัดไป", "success", () => { isProcessingAction = false; resetToIdle(); });
-            }).catch(()=>{ isProcessingAction = false; });
-        }, 500);
+        db.ref('bookings/' + activeJobId).update({ status: "ถึงที่หมายเรียบร้อยแล้ว" }).then(() => {
+            showAlert("สำเร็จ!", "ส่งผู้โดยสารเรียบร้อย รอรับงานถัดไป", "success", () => { resetToIdle(); });
+        }).catch(e=>console.error(e));
     }
 
     function promptCancelJob() { document.getElementById('driverCancelModal').classList.remove('hidden'); }
     function closeDriverCancelModal() { document.getElementById('driverCancelModal').classList.add('hidden'); }
 
     function executeCancelJob() {
-        if(isProcessingAction) return; isProcessingAction = true;
         closeDriverCancelModal();
         if(activeJobId) {
             let oldJobId = activeJobId;
             db.ref('bookings/' + activeJobId).update({ status: "ยกเลิกโดยคนขับ" }).then(() => {
                 sendLineNotify(oldJobId, "", 'cancel_driver');
-                showAlert("ยกเลิกงานแล้ว", "ระบบได้ทำการยกเลิกงานนี้เรียบร้อยแล้ว", "error", () => { 
-                    isProcessingAction = false; resetToIdle(); 
-                });
-            }).catch(()=>{ isProcessingAction = false; });
-        } else { isProcessingAction = false; }
+                showAlert("ยกเลิกงานแล้ว", "ระบบได้ทำการยกเลิกงานนี้เรียบร้อยแล้ว", "error", () => { resetToIdle(); });
+            }).catch(e=>console.error(e));
+        }
     }
 
     function resetToIdle() {
@@ -888,7 +886,10 @@
                 }
                 
                 if (forceZoom) {
-                    isTrackingMode = false; document.getElementById('btnCrosshair').classList.replace('text-blue-600', 'text-green-400');
+                    isTrackingMode = false; 
+                    let btn = document.getElementById('btnCrosshair');
+                    btn.classList.remove('text-green-400');
+                    btn.classList.add('text-gray-500');
                     setTimeout(() => { map.fitBounds(currentRouteBounds, { top: 80, right: 50, bottom: 380, left: 50 }); }, 200);
                 }
             }
