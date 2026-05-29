@@ -81,7 +81,7 @@
     </div>
 
     <div class="flex gap-2 mb-2">
-        <button id="btnAction" onclick="promptFinishOrNext()" class="flex-[2] bg-[#2B3A6F] text-white py-3 rounded-xl font-bold text-base shadow-md transition-colors active:bg-blue-800">
+        <button id="btnAction" onclick="handleMainActionClick()" class="flex-[2] bg-[#2B3A6F] text-white py-3 rounded-xl font-bold text-base shadow-md transition-colors active:bg-blue-800">
             มาถึงจุดรับ
         </button>
         <button onclick="openDriverNavMap()" class="flex-1 bg-blue-100 text-blue-700 py-3 rounded-xl font-bold border border-blue-200 text-sm flex items-center justify-center gap-1">
@@ -125,16 +125,30 @@
       </div>
   </div>
 
-  <div id="driverCancelModal" class="hidden fixed inset-0 z-[110] bg-black/50 flex items-center justify-center p-4">
+  <div id="arriveModal" class="hidden fixed inset-0 z-[110] bg-black/50 flex items-center justify-center p-4">
       <div class="bg-white rounded-2xl p-6 w-full max-w-sm text-center shadow-xl">
-          <div class="w-16 h-16 bg-red-100 text-red-500 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl">
-              <i class="fas fa-exclamation-triangle"></i>
+          <div class="w-16 h-16 bg-blue-100 text-[#2B3A6F] rounded-full flex items-center justify-center mx-auto mb-4 text-3xl">
+              <i class="fas fa-map-marker-alt"></i>
           </div>
-          <h3 class="text-xl font-bold text-gray-800 mb-2">ยืนยันยกเลิกงานนี้?</h3>
-          <p class="text-sm text-gray-500 mb-6">หากยกเลิก ผู้โดยสารจะถูกแจ้งเตือนว่าคุณไม่สามารถไปรับได้ และงานจะถูกลบออก</p>
+          <h3 class="text-xl font-bold text-gray-800 mb-2">ยืนยันมาถึงจุดรับ?</h3>
+          <p class="text-sm text-gray-500 mb-6">คุณได้เดินทางมาถึงจุดรับผู้โดยสารเรียบร้อยแล้วใช่หรือไม่?</p>
           <div class="flex gap-3">
-              <button onclick="closeDriverCancelModal()" class="flex-1 py-3 bg-gray-100 text-gray-700 font-bold rounded-xl hover:bg-gray-200">ปิด</button>
-              <button onclick="executeCancelJob()" class="flex-1 py-3 bg-red-500 text-white font-bold rounded-xl shadow-md hover:bg-red-600">ยืนยันยกเลิก</button>
+              <button onclick="closeArriveModal()" class="flex-1 py-3 bg-gray-100 text-gray-700 font-bold rounded-xl hover:bg-gray-200">ยังไม่ถึง</button>
+              <button onclick="executeArrive()" class="flex-[2] py-3 bg-[#2B3A6F] text-white font-bold rounded-xl shadow-md hover:bg-blue-800">มาถึงแล้ว</button>
+          </div>
+      </div>
+  </div>
+
+  <div id="boardedModal" class="hidden fixed inset-0 z-[110] bg-black/50 flex items-center justify-center p-4">
+      <div class="bg-white rounded-2xl p-6 w-full max-w-sm text-center shadow-xl">
+          <div class="w-16 h-16 bg-yellow-100 text-yellow-500 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl">
+              <i class="fas fa-user-check"></i>
+          </div>
+          <h3 class="text-xl font-bold text-gray-800 mb-2">ผู้โดยสารขึ้นรถแล้ว?</h3>
+          <p class="text-sm text-gray-500 mb-6">ผู้โดยสารขึ้นรถเรียบร้อย และพร้อมออกเดินทางใช่หรือไม่?</p>
+          <div class="flex gap-3">
+              <button onclick="closeBoardedModal()" class="flex-1 py-3 bg-gray-100 text-gray-700 font-bold rounded-xl hover:bg-gray-200">ยังไม่ขึ้น</button>
+              <button onclick="executeStartTrip()" class="flex-[2] py-3 bg-yellow-500 text-white font-bold rounded-xl shadow-md hover:bg-yellow-600">ขึ้นรถแล้ว</button>
           </div>
       </div>
   </div>
@@ -149,6 +163,20 @@
           <div class="flex gap-3">
               <button onclick="closeFinishModal()" class="flex-1 py-3 bg-gray-100 text-gray-700 font-bold rounded-xl hover:bg-gray-200">ยังไม่จบ</button>
               <button onclick="executeFinishJob()" class="flex-[2] py-3 bg-green-500 text-white font-bold rounded-xl shadow-md hover:bg-green-600">ยืนยันจบงาน!</button>
+          </div>
+      </div>
+  </div>
+
+  <div id="driverCancelModal" class="hidden fixed inset-0 z-[110] bg-black/50 flex items-center justify-center p-4">
+      <div class="bg-white rounded-2xl p-6 w-full max-w-sm text-center shadow-xl">
+          <div class="w-16 h-16 bg-red-100 text-red-500 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl">
+              <i class="fas fa-exclamation-triangle"></i>
+          </div>
+          <h3 class="text-xl font-bold text-gray-800 mb-2">ยืนยันยกเลิกงานนี้?</h3>
+          <p class="text-sm text-gray-500 mb-6">หากยกเลิก ผู้โดยสารจะถูกแจ้งเตือนว่าคุณไม่สามารถไปรับได้ และงานจะถูกลบออก</p>
+          <div class="flex gap-3">
+              <button onclick="closeDriverCancelModal()" class="flex-1 py-3 bg-gray-100 text-gray-700 font-bold rounded-xl hover:bg-gray-200">ปิด</button>
+              <button onclick="executeCancelJob()" class="flex-1 py-3 bg-red-500 text-white font-bold rounded-xl shadow-md hover:bg-red-600">ยืนยันยกเลิก</button>
           </div>
       </div>
   </div>
@@ -554,22 +582,54 @@
         }
     }
 
-    function promptFinishOrNext() {
+    // 🌟 1. ดักจับปุ่ม Action หลัก เพื่อเด้งป๊อปอัปตามสถานะ
+    function handleMainActionClick() {
         if(!activeJobId || !activeJobData) return;
         let s = activeJobData.status;
         
-        if(s.includes("ออกเดินทาง") || s.includes("ไปยังจุดส่ง")) {
+        if(s.includes("กำลังเดินทางไปหา") || s.includes("รับงานแล้ว")) {
+            document.getElementById('arriveModal').classList.remove('hidden');
+        } 
+        else if(s.includes("มาถึงจุดรับ") || s.includes("ถึงจุดรับแล้ว")) {
+            document.getElementById('boardedModal').classList.remove('hidden');
+        } 
+        else if(s.includes("ออกเดินทาง") || s.includes("ไปยังจุดส่ง")) {
             document.getElementById('finishJobModal').classList.remove('hidden');
-        } else {
-            nextAction();
         }
     }
 
-    function closeFinishModal() {
-        document.getElementById('finishJobModal').classList.add('hidden');
+    // 🌟 2. ฟังก์ชันสำหรับปิดป๊อปอัปต่างๆ
+    function closeArriveModal() { document.getElementById('arriveModal').classList.add('hidden'); }
+    function closeBoardedModal() { document.getElementById('boardedModal').classList.add('hidden'); }
+    function closeFinishModal() { document.getElementById('finishJobModal').classList.add('hidden'); }
+
+    // 🌟 3. ฟังก์ชันกดยืนยันการมาถึงจุดรับ
+    function executeArrive() {
+        closeArriveModal();
+        db.ref('bookings/' + activeJobId).update({ status: "มาถึงจุดรับแล้ว" }).then(() => {
+            if(APPS_SCRIPT_URL) {
+                let msg = "📍 คนขับเดินทางมาถึงจุดรับของคุณเรียบร้อยแล้วครับ!";
+                fetch(`${APPS_SCRIPT_URL}?action=notify&type=status_update&userId=${activeJobId}&msg=${encodeURIComponent(msg)}`, {mode: 'no-cors'});
+            }
+        });
     }
 
-    // 🌟 ฟังก์ชันคำนวณและส่งข้อความจบงาน (พร้อมเวลาเดินทางจริง)
+    // 🌟 4. ฟังก์ชันกดยืนยันผู้โดยสารขึ้นรถ
+    function executeStartTrip() {
+        closeBoardedModal();
+        db.ref('bookings/' + activeJobId).update({ 
+            status: "เริ่มออกเดินทาง ไปยังจุดส่ง",
+            tripStartTime: firebase.database.ServerValue.TIMESTAMP 
+        }).then(() => {
+            if(APPS_SCRIPT_URL) {
+                let msg = "✨ ผู้โดยสารขึ้นรถเรียบร้อยแล้ว! กำลังเริ่มออกเดินทางไปยังจุดส่ง";
+                fetch(`${APPS_SCRIPT_URL}?action=notify&type=status_update&userId=${activeJobId}&msg=${encodeURIComponent(msg)}`, {mode: 'no-cors'});
+            }
+            updateRoute(true); 
+        });
+    }
+
+    // 🌟 5. ฟังก์ชันกดยืนยันจบงาน
     function executeFinishJob() {
         closeFinishModal();
         isFinishingJob = true; 
@@ -579,11 +639,10 @@
         let pName = activeJobData.pName || "";
         let dName = activeJobData.dName || "";
 
-        // 🌟 คำนวณเวลาเดินทางจริง (ถ้าไม่มี ให้ใช้เวลาประเมินแทน)
         let actualDur = activeJobData.duration || 0;
         if (activeJobData.tripStartTime) {
             let diffMs = Date.now() - activeJobData.tripStartTime;
-            actualDur = Math.max(1, Math.ceil(diffMs / 60000)); // เปลี่ยนเป็นนาทีและปัดขึ้น (อย่างน้อย 1 นาที)
+            actualDur = Math.max(1, Math.ceil(diffMs / 60000)); 
         }
 
         if(APPS_SCRIPT_URL) {
@@ -599,31 +658,6 @@
                 });
             });
         }, 500);
-    }
-
-    function nextAction() {
-        let s = activeJobData.status;
-        if(s.includes("กำลังเดินทางไปหา") || s.includes("รับงานแล้ว")) {
-            db.ref('bookings/' + activeJobId).update({ status: "มาถึงจุดรับแล้ว" }).then(() => {
-                if(APPS_SCRIPT_URL) {
-                    let msg = "📍 คนขับเดินทางมาถึงจุดรับของคุณเรียบร้อยแล้วครับ!";
-                    fetch(`${APPS_SCRIPT_URL}?action=notify&type=status_update&userId=${activeJobId}&msg=${encodeURIComponent(msg)}`, {mode: 'no-cors'});
-                }
-            });
-        } 
-        else if(s.includes("มาถึงจุดรับ")) {
-            // 🌟 ฝังเวลาเริ่มต้นเดินทาง (Trip Start Time) ลง Firebase
-            db.ref('bookings/' + activeJobId).update({ 
-                status: "เริ่มออกเดินทาง ไปยังจุดส่ง",
-                tripStartTime: firebase.database.ServerValue.TIMESTAMP 
-            }).then(() => {
-                if(APPS_SCRIPT_URL) {
-                    let msg = "✨ ผู้โดยสารขึ้นรถเรียบร้อยแล้ว! กำลังเริ่มออกเดินทางไปยังจุดส่ง";
-                    fetch(`${APPS_SCRIPT_URL}?action=notify&type=status_update&userId=${activeJobId}&msg=${encodeURIComponent(msg)}`, {mode: 'no-cors'});
-                }
-                updateRoute(true); 
-            });
-        } 
     }
 
     function promptCancelJob() {
