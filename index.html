@@ -94,36 +94,43 @@
     <button onclick="promptCancelJob()" class="w-full bg-red-50 text-red-600 py-2 rounded-xl font-bold border border-red-200 text-sm mt-1">ยกเลิกงานนี้</button>
   </div>
 
-  <div id="jobDetailModal" class="hidden fixed inset-0 z-[100] pointer-events-none flex flex-col justify-end pb-8 px-4">
-      <div class="bg-white rounded-3xl p-5 w-full max-w-md mx-auto shadow-2xl transform transition-all scale-100 pointer-events-auto">
-          <div class="flex justify-between items-center border-b pb-3 mb-3">
-              <h3 class="text-lg font-black text-gray-800">รายละเอียดงาน</h3>
-              <div class="flex items-center gap-3">
-                  <span class="font-black text-green-600 text-lg" id="detailPrice">฿0</span>
+  <div id="jobDetailModal" class="hidden fixed inset-0 z-[100] pointer-events-none flex flex-col justify-end pb-6 px-4">
+      <div class="bg-white rounded-2xl p-4 w-full max-w-sm mx-auto shadow-[0_-5px_25px_rgba(0,0,0,0.15)] pointer-events-auto border border-gray-100 transform transition-all scale-100">
+          
+          <div class="flex justify-between items-center mb-3">
+              <div class="flex items-center gap-2 overflow-hidden pr-2">
+                  <div class="w-8 h-8 rounded-full bg-[#2B3A6F] text-white flex items-center justify-center shrink-0 text-sm shadow-sm">
+                      <i class="fas fa-user"></i>
+                  </div>
+                  <h3 class="text-base font-bold text-gray-800 truncate" id="detailName">...</h3>
+              </div>
+              <div class="flex items-center gap-2 shrink-0">
+                  <span class="font-black text-green-600 text-lg bg-green-50 px-2 py-0.5 rounded-lg border border-green-100" id="detailPrice">฿0</span>
                   <button onclick="closeJobDetail()" class="text-gray-400 hover:text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-full w-8 h-8 flex items-center justify-center transition-colors">
                       <i class="fas fa-times"></i>
                   </button>
               </div>
           </div>
           
-          <div class="space-y-3 mb-5">
-              <div>
-                  <p class="text-xs text-gray-500 font-bold mb-1">ผู้โดยสาร</p>
-                  <p class="text-sm text-gray-800 font-medium" id="detailName">...</p>
-              </div>
-              <div>
-                  <p class="text-xs text-gray-500 font-bold mb-1"><i class="fas fa-map-marker-alt text-blue-500"></i> จุดรับ</p>
-                  <p class="text-sm text-gray-800 font-medium bg-blue-50 p-2 rounded-lg" id="detailPick">...</p>
-              </div>
-              <div>
-                  <p class="text-xs text-gray-500 font-bold mb-1"><i class="fas fa-flag-checkered text-red-500"></i> จุดส่ง</p>
-                  <p class="text-sm text-gray-800 font-medium bg-red-50 p-2 rounded-lg" id="detailDrop">...</p>
+          <div class="mb-4 bg-gray-50 p-3 rounded-xl border border-gray-100">
+              <div class="flex items-start gap-3">
+                  <div class="flex flex-col items-center mt-1">
+                      <i class="fas fa-circle text-[10px] text-blue-500"></i>
+                      <div class="border-l-2 border-dashed border-gray-300 h-4 my-0.5"></div>
+                      <i class="fas fa-square text-[10px] text-red-500"></i>
+                  </div>
+                  <div class="flex-1 overflow-hidden space-y-2">
+                      <p class="text-xs text-gray-700 truncate font-medium" id="detailPick">...</p>
+                      <p class="text-xs text-gray-700 truncate font-medium" id="detailDrop">...</p>
+                  </div>
               </div>
           </div>
 
           <div class="flex gap-2">
-              <button onclick="promptRejectPendingJob()" class="flex-1 py-3 bg-red-50 text-red-600 font-bold rounded-xl border border-red-200 hover:bg-red-100 transition-colors">ยกเลิกงานนี้</button>
-              <button onclick="promptAcceptJob()" class="flex-[2] py-3 bg-green-500 text-white font-bold rounded-xl shadow-md hover:bg-green-600 transition-colors">รับงานเลย!</button>
+              <button onclick="promptRejectPendingJob()" class="flex-1 py-2.5 bg-red-50 text-red-600 font-bold rounded-xl border border-red-200 hover:bg-red-100 transition-colors text-sm">ยกเลิก</button>
+              <button onclick="promptAcceptJob()" class="flex-[2] py-2.5 bg-green-500 text-white font-bold rounded-xl shadow-md hover:bg-green-600 transition-colors text-sm flex justify-center items-center gap-1.5">
+                  <i class="fas fa-bolt"></i> รับงานเลย!
+              </button>
           </div>
       </div>
   </div>
@@ -232,6 +239,7 @@
     let activeJobData = null;
     let selectedJobId = null; 
     let allBookings = null;
+    let hiddenJobs = {}; 
     let isFinishingJob = false;
     let currentRouteBounds = null; 
 
@@ -316,7 +324,8 @@
         isTrackingMode = false;
         document.getElementById('btnCrosshair').classList.replace('text-blue-600', 'text-gray-400');
         if (map && currentRouteBounds) {
-            map.fitBounds(currentRouteBounds, { top: 80, right: 50, bottom: 320, left: 50 });
+            // 🌟 ให้แผนที่ขยายกว้างขึ้นเพราะการ์ดใบเล็กลง (ลด Padding ล่างเหลือ 280)
+            map.fitBounds(currentRouteBounds, { top: 80, right: 50, bottom: 280, left: 50 });
         } else {
             centerToDriver();
         }
@@ -500,7 +509,8 @@
         directionsService.route({origin: origin, destination: dest, travelMode: 'DRIVING'}, (res, stat) => {
             if(stat === 'OK') {
                 directionsRenderer.setDirections(res);
-                setTimeout(() => { map.fitBounds(res.routes[0].bounds, { top: 80, right: 50, bottom: 420, left: 50 }); }, 100);
+                // 🌟 โชว์การ์ดแบบ Floating ทำให้ลด Padding ล่างได้ แผนที่จะเห็นกว้างขึ้น
+                setTimeout(() => { map.fitBounds(res.routes[0].bounds, { top: 80, right: 50, bottom: 280, left: 50 }); }, 100);
             }
         });
     }
@@ -516,7 +526,6 @@
         if (!activeJobId) { clearMapRoutes(); centerToDriver(); }
     }
 
-    // 🌟 ระบบปฏิเสธงาน (ยกเลิกก่อนรับ)
     function promptRejectPendingJob() {
         document.getElementById('pendingCancelModal').classList.remove('hidden');
     }
