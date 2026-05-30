@@ -61,8 +61,9 @@
       <div class="w-full max-w-xs space-y-4">
           <input type="password" id="pinInput" inputmode="numeric" maxlength="4" placeholder="••••" 
               class="pin-input w-full bg-gray-800 border-2 border-gray-700 focus:border-green-500 text-white rounded-2xl py-4 px-6 outline-none transition-colors shadow-inner placeholder-gray-600">
-          <button onclick="submitLogin()" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold text-lg py-4 rounded-2xl shadow-lg shadow-green-900/50 transition">
-              เข้าสู่ระบบ
+          <button onclick="submitLogin()" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold text-lg py-4 rounded-2xl shadow-lg shadow-green-900/50 transition flex items-center justify-center gap-2">
+              <span id="loginBtnText">เข้าสู่ระบบ</span>
+              <i id="loginSpinner" class="fas fa-spinner fa-spin hidden"></i>
           </button>
       </div>
       <p class="text-gray-600 text-[10px] mt-8 text-center max-w-xs">รหัสผ่าน 1 ชุด จะสามารถใช้งานได้เพียง 1 เครื่องเท่านั้น หากล็อกอินเครื่องใหม่ เครื่องเดิมจะถูกล็อกเอาท์อัตโนมัติ</p>
@@ -74,7 +75,7 @@
 
   <div class="fixed top-0 w-full h-16 bg-[#111827] flex items-center justify-between px-4 z-20 text-white shadow-md border-b border-green-500/30 pointer-events-auto">
     <div class="flex items-center gap-2">
-        <h1 class="text-lg font-bold text-green-400"><i class="fas fa-car-side"></i> F1 DRIVER</h1>
+        <h1 class="text-lg font-bold text-green-400"><i class="fas fa-car-side"></i> F1 DRIVER <span id="driverNameDisplay" class="text-xs text-gray-500 ml-2 font-normal hidden"></span></h1>
     </div>
     <button onclick="logoutDriver()" class="text-gray-400 hover:text-red-400 text-sm font-medium transition flex items-center gap-1.5 bg-gray-800 px-3 py-1.5 rounded-lg border border-gray-700">
         <i class="fas fa-sign-out-alt"></i> ออก
@@ -320,9 +321,10 @@
     });
     const db = firebase.database();
 
-    const ALLOWED_PINS = ['2304', '0604', '0105'];
+    // 🌟 ระบบดึงข้อมูลจาก Admin
     let driverPin = localStorage.getItem('driverPin');
     let driverSessionId = localStorage.getItem('driverSessionId');
+    let currentDriverProfile = null; // ตัวแปรเก็บข้อมูลคนขับคนปัจจุบัน
 
     let map, directionsService, directionsRenderer;
     let polylinePick = null;
@@ -353,16 +355,32 @@
         return Math.random().toString(36).substring(2) + Date.now().toString(36);
     }
 
+    // 🌟 ฟังก์ชันล็อกอินเชื่อมต่อ Firebase Admin
     function checkLogin() {
-        if (!driverPin || !ALLOWED_PINS.includes(driverPin)) {
+        if (!driverPin) {
             document.getElementById('loginModal').classList.remove('hidden');
         } else {
             document.getElementById('loginModal').classList.add('hidden');
-            db.ref('driver_sessions/' + driverPin).on('value', snap => {
-                if (snap.val() && snap.val() !== driverSessionId) {
-                    forceLogout("รหัสผ่านนี้ถูกใช้งานจากอุปกรณ์อื่น\nระบบจะทำการออกจากระบบโดยอัตโนมัติ");
-                } else if (!snap.val()) {
-                    db.ref('driver_sessions/' + driverPin).set(driverSessionId);
+            
+            // เช็คว่าโปรไฟล์นี้ยังมีอยู่ในระบบแอดมินหรือไม่
+            db.ref('drivers_profile/' + driverPin).once('value', snap => {
+                if (snap.exists()) {
+                    currentDriverProfile = snap.val();
+                    
+                    // แสดงชื่อคนขับที่แถบด้านบน
+                    let nameEl = document.getElementById('driverNameDisplay');
+                    nameEl.innerText = `| ${currentDriverProfile.name}`;
+                    nameEl.classList.remove('hidden');
+
+                    db.ref('driver_sessions/' + driverPin).on('value', sessionSnap => {
+                        if (sessionSnap.val() && sessionSnap.val() !== driverSessionId) {
+                            forceLogout("รหัสผ่านนี้ถูกใช้งานจากอุปกรณ์อื่น\nระบบจะทำการออกจากระบบโดยอัตโนมัติ");
+                        } else if (!sessionSnap.val()) {
+                            db.ref('driver_sessions/' + driverPin).set(driverSessionId);
+                        }
+                    });
+                } else {
+                    forceLogout("รหัสพนักงานถูกลบออกจากระบบ กรุณาติดต่อแอดมิน");
                 }
             });
         }
@@ -384,29 +402,39 @@
     function submitLogin() {
         let pin = document.getElementById('pinInput').value;
         if(pin.length !== 4) { alert("กรุณาระบุรหัส PIN 4 หลักให้ครบถ้วน"); return; }
-        if(!ALLOWED_PINS.includes(pin)) {
-            alert("รหัส PIN ไม่ถูกต้อง หรือไม่ได้รับอนุญาตให้เข้าระบบ");
-            document.getElementById('pinInput').value = '';
-            return;
-        }
         
-        unlockAudio(); // เรียกใช้งานการปลดล็อกเสียงเมื่อผู้ใช้สัมผัสปุ่ม
+        document.getElementById('loginBtnText').classList.add('hidden');
+        document.getElementById('loginSpinner').classList.remove('hidden');
 
-        driverPin = pin;
-        driverSessionId = generateUUID();
-        localStorage.setItem('driverPin', driverPin);
-        localStorage.setItem('driverSessionId', driverSessionId);
-        
-        db.ref('driver_sessions/' + driverPin).set(driverSessionId);
-        document.getElementById('loginModal').classList.add('hidden');
-        checkLogin();
-        
-        let savedOnlineState = localStorage.getItem('isDriverOnline');
-        if (savedOnlineState === 'true') {
-            document.getElementById('onlineToggle').checked = true;
-            toggleOnline();
-        }
-        processBookings(); 
+        unlockAudio(); // ปลดล็อกเสียง
+
+        // เช็ครหัสผ่านจากฐานข้อมูลแอดมินโดยตรง
+        db.ref('drivers_profile/' + pin).once('value', snap => {
+            document.getElementById('loginBtnText').classList.remove('hidden');
+            document.getElementById('loginSpinner').classList.add('hidden');
+
+            if(snap.exists()) {
+                currentDriverProfile = snap.val();
+                driverPin = pin;
+                driverSessionId = generateUUID();
+                localStorage.setItem('driverPin', driverPin);
+                localStorage.setItem('driverSessionId', driverSessionId);
+                
+                db.ref('driver_sessions/' + driverPin).set(driverSessionId);
+                document.getElementById('loginModal').classList.add('hidden');
+                checkLogin();
+                
+                let savedOnlineState = localStorage.getItem('isDriverOnline');
+                if (savedOnlineState === 'true') {
+                    document.getElementById('onlineToggle').checked = true;
+                    toggleOnline();
+                }
+                processBookings(); 
+            } else {
+                alert("รหัส PIN ไม่ถูกต้อง หรือยังไม่ได้ลงทะเบียนในระบบ");
+                document.getElementById('pinInput').value = '';
+            }
+        });
     }
 
     function forceLogout(msg) {
@@ -437,20 +465,21 @@
         }
     });
 
-    // สำรองให้เสียงปลดล็อกได้ถ้าเผลอคลิกตรงไหนของจอ
     document.body.addEventListener('click', function unlockAudioFallback() {
         unlockAudio();
         document.body.removeEventListener('click', unlockAudioFallback);
     }, { once: true });
 
     window.onload = () => {
-        checkLogin();
         if (driverPin) {
+            checkLogin();
             let savedOnlineState = localStorage.getItem('isDriverOnline');
             if (savedOnlineState === 'true') {
                 document.getElementById('onlineToggle').checked = true;
                 toggleOnline();
             }
+        } else {
+            document.getElementById('loginModal').classList.remove('hidden');
         }
     };
 
@@ -696,7 +725,13 @@
                         updateRoute(false); 
                     }
 
-                    db.ref('driver').update({ lat: driverLat, lng: driverLng });
+                    // 🌟 ส่งข้อมูลเบอร์โทรปัจจุบันของคนขับเข้าไปในพิกัดด้วย เพื่อให้แอดมินเห็น
+                    db.ref('driver').update({ 
+                        lat: driverLat, 
+                        lng: driverLng,
+                        driverPhone: currentDriverProfile ? currentDriverProfile.phone : "0946379669",
+                        pin: driverPin
+                    });
                     gpsEl.innerText = `พิกัดอัปเดตล่าสุด: ${new Date().toLocaleTimeString()}`;
                     
                 }, 
@@ -799,7 +834,6 @@
         if (jobCount === 0) html = '<p class="text-center text-gray-500 text-sm py-4">ยังไม่มีงานในขณะนี้...</p>';
         listContainer.innerHTML = html;
 
-        // 🌟 ระบบเล่นเสียงเมื่อมีงานใหม่ (ที่ถูกปลดล็อกแล้ว)
         if (hasNewJob && isOnline) {
             let snd = document.getElementById('jobAlertSound');
             if (snd) { 
@@ -832,6 +866,8 @@
         document.getElementById('detailEtaToPick').innerHTML = `<i class="fas fa-car-side"></i> ห่างจากคุณ: กำลังคำนวณ...`;
         document.getElementById('detailEtaToDrop').innerHTML = `<i class="fas fa-road"></i> ระยะทางไปส่ง: กำลังคำนวณ...`;
         
+        // 🌟 แสดงปุ่ม Overview ในหน้าดูงานด้วย
+        document.getElementById('btnOverview').classList.remove('hidden');
         document.getElementById('jobDetailModal').classList.remove('hidden');
 
         let origin = {lat: driverLat, lng: driverLng}; 
@@ -853,6 +889,9 @@
                 directionsRenderer.setDirections(res);
                 drawCustomPolylines(res, true, true); 
                 
+                // 🌟 บันทึก Bounds เพื่อให้ปุ่ม Overview ทำงานได้ตอนกดดูงาน
+                currentRouteBounds = res.routes[0].bounds;
+
                 let legPick = res.routes[0].legs[0]; 
                 let legDrop = res.routes[0].legs[1]; 
                 
@@ -863,7 +902,7 @@
                 document.getElementById('detailEtaToPick').innerHTML = `<i class="fas fa-car-side"></i> ห่างจากคุณ: ${legPick.distance.text} • ${legPick.duration.text}`;
                 document.getElementById('detailEtaToDrop').innerHTML = `<i class="fas fa-road"></i> ระยะทางไปส่ง: ${legDrop.distance.text} • ${legDrop.duration.text}`;
 
-                setTimeout(() => { map.fitBounds(res.routes[0].bounds, { top: 80, right: 50, bottom: 420, left: 50 }); }, 100);
+                setTimeout(() => { map.fitBounds(currentRouteBounds, { top: 80, right: 50, bottom: 420, left: 50 }); }, 100);
             }
         });
     }
@@ -878,7 +917,11 @@
 
     function closeJobDetail() {
         document.getElementById('jobDetailModal').classList.add('hidden'); selectedJobId = null;
-        if (!activeJobId) { clearMapRoutes(); centerToDriver(); }
+        if (!activeJobId) { 
+            clearMapRoutes(); 
+            document.getElementById('btnOverview').classList.add('hidden'); // ซ่อนปุ่มกลับไป
+            centerToDriver(); 
+        }
     }
 
     function promptRejectPendingJob() { document.getElementById('pendingCancelModal').classList.remove('hidden'); }
@@ -915,17 +958,16 @@
         activeJobId = selectedJobId; localStorage.setItem('activeJobId', activeJobId);
         closeConfirmAcceptModal(); closeJobDetail(); 
         
+        // 🌟 ดึงข้อมูลจากคนขับที่ล็อกอินมาใช้อัปเดตสถานะงาน
+        let phoneNumber = currentDriverProfile ? currentDriverProfile.phone : "ไม่ระบุเบอร์โทร";
+
         db.ref('bookings/' + activeJobId).update({ 
             status: "รับงานแล้ว กำลังเดินทางไปหา", 
-            driverPhone: "0946379669",
+            driverPhone: phoneNumber,
             driverPin: driverPin 
         }).then(() => {
             sendLineNotify(activeJobId, "🏎️ คนขับตอบรับงานของคุณแล้ว! กำลังรีบเดินทางไปหาคุณครับ");
             isProcessingAction = false;
-            
-            // 🌟 ใช้งานปุ่ม Overview เมื่อเริ่มงาน
-            document.getElementById('btnOverview').classList.remove('hidden');
-
         }).catch(()=>{ isProcessingAction = false; });
         
         document.getElementById('idlePanel').classList.add('hidden'); document.getElementById('activeJobPanel').classList.remove('hidden');
@@ -1056,7 +1098,7 @@
                 let etaEl = document.getElementById('etaDisplay');
                 etaEl.innerText = `ระยะทาง ${leg.distance.text} • ${leg.duration.text}`; etaEl.classList.remove('hidden');
 
-                // 🌟 ระบบหน่วงเวลาแจ้งเตือนเข้า LINE (กันวิ่งแข่งกับข้อความรับงาน)
+                // 🌟 ระบบหน่วงเวลาแจ้งเตือนเข้า LINE (หน่วง 3 วินาที)
                 if(isGoingToPickup && distKm <= 2.0 && activeJobData.notifiedPick !== true) {
                     activeJobData.notifiedPick = true; 
                     db.ref('bookings/' + activeJobId).update({ notifiedPick: true });
