@@ -107,9 +107,9 @@
         </div>
     </div>
     
-    <div class="bg-gray-900/60 p-2.5 rounded-xl text-center border border-gray-700 mb-3 space-y-1">
-        <p class="text-gray-400 text-[11px]" id="gpsStatus">รอเปิดระบบเพื่ออัปเดต GPS...</p>
-        <p class="text-[10px] text-green-400 hidden" id="wakeLockStatus"><i class="fas fa-sun"></i> หน้าจอจะเปิดค้างไว้ตลอดเวลา</p>
+    <div class="bg-gray-900/60 p-3 rounded-xl text-center border border-gray-700 mb-3 space-y-1">
+        <p class="text-gray-400 text-xs" id="gpsStatus">รอเปิดระบบเพื่ออัปเดต GPS...</p>
+        <p class="text-[11px] text-green-400 hidden" id="wakeLockStatus"><i class="fas fa-cog fa-spin"></i> หน้าจอจะเปิดค้างไว้ตลอดเวลา</p>
     </div>
 
     <h3 class="text-sm font-bold text-gray-400 mb-2 flex items-center gap-2"><i class="fas fa-list-ul"></i> รายการงานที่รอรับ</h3>
@@ -492,7 +492,6 @@
         }
     }
 
-    // 🌟 พระเอกกู้ชีพ! เซ็นเซอร์จับชีพจรเน็ต ถ้าเน็ตติดแล้วเราเปิดแอปอยู่ มันจะเด้งออนไลน์ให้อัตโนมัติ
     db.ref('.info/connected').on('value', function(snap) {
         if (snap.val() === true) {
             if (isOnline && driverPin) {
@@ -505,7 +504,6 @@
     document.addEventListener("visibilitychange", () => {
         if (document.visibilityState === "visible" && isOnline) {
             requestWakeLock();
-            // ย้ำสถานะออนไลน์ตอนตื่นจากพักจอ
             if(driverPin) {
                 db.ref('driver/status').onDisconnect().set("ออฟไลน์");
                 db.ref('driver').update({ status: "ออนไลน์" });
@@ -649,7 +647,6 @@
             
             requestWakeLock(); 
 
-            // สร้างคำสั่งรอเตะออฟไลน์อัตโนมัติหากเน็ตหลุด
             db.ref('driver/status').onDisconnect().set("ออฟไลน์");
             db.ref('driver').update({ status: "ออนไลน์" });
 
@@ -697,7 +694,6 @@
             
             releaseWakeLock(); 
             
-            // ยกเลิกคำสั่งเตะออกอัตโนมัติ แล้วสั่งเป็นออฟไลน์ทันที
             db.ref('driver/status').onDisconnect().cancel();
             db.ref('driver').update({ status: "ออฟไลน์" });
             
@@ -1039,14 +1035,19 @@
                 let etaEl = document.getElementById('etaDisplay');
                 etaEl.innerText = `ระยะทาง ${leg.distance.text} • ${leg.duration.text}`; etaEl.classList.remove('hidden');
 
+                // 🌟 หน่วงเวลาแจ้งเตือนระยะทาง (Delay 3 วิ) ให้รับงานไปถึงก่อน
                 if(isGoingToPickup && distKm <= 2.0 && activeJobData.notifiedPick !== true) {
                     activeJobData.notifiedPick = true; 
                     db.ref('bookings/' + activeJobId).update({ notifiedPick: true });
-                    sendLineNotify(activeJobId, `⚡ คนขับใกล้ถึงจุดรับแล้วครับ! (ระยะห่างอีกประมาณ ${distKm.toFixed(1)} กม.)`);
+                    setTimeout(() => {
+                        sendLineNotify(activeJobId, `⚡ คนขับใกล้ถึงจุดรับแล้วครับ! (ระยะห่างอีกประมาณ ${distKm.toFixed(1)} กม.)`);
+                    }, 3000);
                 } else if(isGoingToDropoff && distKm <= 2.0 && activeJobData.notifiedDrop !== true) {
                     activeJobData.notifiedDrop = true; 
                     db.ref('bookings/' + activeJobId).update({ notifiedDrop: true });
-                    sendLineNotify(activeJobId, `⚡ ใกล้ถึงจุดหมายปลายทางแล้วครับ! (ระยะห่างอีกประมาณ ${distKm.toFixed(1)} กม.)`);
+                    setTimeout(() => {
+                        sendLineNotify(activeJobId, `⚡ ใกล้ถึงจุดหมายปลายทางแล้วครับ! (ระยะห่างอีกประมาณ ${distKm.toFixed(1)} กม.)`);
+                    }, 3000);
                 }
                 
                 if (forceZoom) {
