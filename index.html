@@ -225,7 +225,7 @@
 
           <div class="flex gap-2">
               <button onclick="promptRejectPendingJob()" class="flex-1 py-3 bg-red-950/40 text-red-400 font-bold rounded-xl border border-red-900/50 hover:bg-red-950/80 transition text-sm">ยกเลิกงานนี้</button>
-              <button onclick="promptAcceptJob()" class="flex-[2] py-3 bg-green-600 text-white font-bold rounded-xl shadow-md hover:bg-green-700 transition text-sm flex justify-center items-center gap-1.5">
+              <button onclick="executeAcceptJob()" class="flex-[2] py-3 bg-green-600 text-white font-bold rounded-xl shadow-md hover:bg-green-700 transition text-sm flex justify-center items-center gap-1.5">
                   <i class="fas fa-bolt"></i> รับงานเลย!
               </button>
           </div>
@@ -240,17 +240,6 @@
           <div class="flex gap-3">
               <button onclick="closePendingCancelModal()" class="flex-1 py-3 bg-gray-700 text-gray-200 font-bold rounded-xl hover:bg-gray-600">ปิด</button>
               <button onclick="executeRejectPendingJob()" class="flex-1 py-3 bg-red-600 text-white font-bold rounded-xl shadow-md hover:bg-red-700">ยืนยันยกเลิก</button>
-          </div>
-      </div>
-  </div>
-  <div id="confirmAcceptModal" class="hidden fixed inset-0 z-[110] bg-black/70 flex items-center justify-center p-4 pointer-events-auto">
-      <div class="bg-gray-800 rounded-3xl p-6 w-full max-w-sm text-center shadow-xl text-gray-100 border border-gray-700">
-          <div class="w-16 h-16 bg-green-950 text-green-400 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl"><i class="fas fa-car-side"></i></div>
-          <h3 class="text-xl font-bold mb-2">ยืนยันรับงานนี้?</h3>
-          <p class="text-sm text-gray-400 mb-6">คุณต้องการรับงานนี้และเดินทางไปรับผู้โดยสารใช่หรือไม่?</p>
-          <div class="flex gap-3">
-              <button onclick="closeConfirmAcceptModal()" class="flex-1 py-3 bg-gray-700 text-gray-200 font-bold rounded-xl hover:bg-gray-600">ยกเลิก</button>
-              <button onclick="executeAcceptJob()" class="flex-[2] py-3 bg-green-600 text-white font-bold rounded-xl shadow-md hover:bg-green-700">ยืนยันรับงาน</button>
           </div>
       </div>
   </div>
@@ -321,10 +310,9 @@
     });
     const db = firebase.database();
 
-    // 🌟 ระบบดึงข้อมูลจาก Admin
     let driverPin = localStorage.getItem('driverPin');
     let driverSessionId = localStorage.getItem('driverSessionId');
-    let currentDriverProfile = null; // ตัวแปรเก็บข้อมูลคนขับคนปัจจุบัน
+    let currentDriverProfile = null; 
 
     let map, directionsService, directionsRenderer;
     let polylinePick = null;
@@ -355,19 +343,16 @@
         return Math.random().toString(36).substring(2) + Date.now().toString(36);
     }
 
-    // 🌟 ฟังก์ชันล็อกอินเชื่อมต่อ Firebase Admin
     function checkLogin() {
         if (!driverPin) {
             document.getElementById('loginModal').classList.remove('hidden');
         } else {
             document.getElementById('loginModal').classList.add('hidden');
             
-            // เช็คว่าโปรไฟล์นี้ยังมีอยู่ในระบบแอดมินหรือไม่
             db.ref('drivers_profile/' + driverPin).once('value', snap => {
                 if (snap.exists()) {
                     currentDriverProfile = snap.val();
                     
-                    // แสดงชื่อคนขับที่แถบด้านบน
                     let nameEl = document.getElementById('driverNameDisplay');
                     nameEl.innerText = `| ${currentDriverProfile.name}`;
                     nameEl.classList.remove('hidden');
@@ -386,7 +371,7 @@
         }
     }
 
-    // 🌟 ระบบปลดล็อกเสียงบนเบราว์เซอร์อัตโนมัติเมื่อกดเข้าสู่ระบบ
+    // 🌟 ฟังก์ชันปลดล็อกระบบเสียงแบบสมบูรณ์
     function unlockAudio() {
         let snd = document.getElementById('jobAlertSound');
         if (snd) {
@@ -406,9 +391,8 @@
         document.getElementById('loginBtnText').classList.add('hidden');
         document.getElementById('loginSpinner').classList.remove('hidden');
 
-        unlockAudio(); // ปลดล็อกเสียง
+        unlockAudio(); // 🌟 ปลดล็อกระบบเสียงทันทีเมื่อกดปุ่ม
 
-        // เช็ครหัสผ่านจากฐานข้อมูลแอดมินโดยตรง
         db.ref('drivers_profile/' + pin).once('value', snap => {
             document.getElementById('loginBtnText').classList.remove('hidden');
             document.getElementById('loginSpinner').classList.add('hidden');
@@ -513,6 +497,7 @@
         fetch(url, {mode: 'no-cors'}).catch(e=>console.log(e));
     }
 
+    // 🌟 ระบบควบคุมเสียงที่เสถียรขึ้น
     function stopAlarm() {
         if (isAlarmRinging) {
             let snd = document.getElementById('jobAlertSound');
@@ -587,7 +572,6 @@
         if (window.alertCloseCallback) window.alertCloseCallback();
     }
 
-    // 🌟 ระบบสลับสีปุ่ม เล็งตำแหน่ง / โอเวอร์วิว
     function centerToDriver() {
         isTrackingMode = true;
         let btnC = document.getElementById('btnCrosshair');
@@ -725,7 +709,6 @@
                         updateRoute(false); 
                     }
 
-                    // 🌟 ส่งข้อมูลเบอร์โทรปัจจุบันของคนขับเข้าไปในพิกัดด้วย เพื่อให้แอดมินเห็น
                     db.ref('driver').update({ 
                         lat: driverLat, 
                         lng: driverLng,
@@ -756,7 +739,6 @@
 
     db.ref('bookings').on('value', snap => {
         if(!driverPin) return; 
-
         allBookings = snap.val();
         processBookings(); 
     });
@@ -834,11 +816,20 @@
         if (jobCount === 0) html = '<p class="text-center text-gray-500 text-sm py-4">ยังไม่มีงานในขณะนี้...</p>';
         listContainer.innerHTML = html;
 
+        // 🌟 ระบบเล่นเสียงแบบบังคับล้างความจำและโหลดใหม่ทุกครั้งที่มีงานใหม่
         if (hasNewJob && isOnline) {
             let snd = document.getElementById('jobAlertSound');
             if (snd) { 
-                snd.currentTime = 0;
-                snd.play().then(() => { isAlarmRinging = true; }).catch(e => console.log('Autoplay prevented')); 
+                snd.muted = false;
+                snd.volume = 1;
+                snd.load(); // 🌟 บังคับเคลียร์สถานะเครื่องเล่นเสียงที่ค้างอยู่
+                
+                let playPromise = snd.play();
+                if (playPromise !== undefined) {
+                    playPromise.then(() => {
+                        isAlarmRinging = true;
+                    }).catch(err => console.log('Audio Autoplay Blocked:', err));
+                }
             }
             if (navigator.vibrate) navigator.vibrate([500, 200, 500, 200, 500]); 
         }
@@ -866,7 +857,6 @@
         document.getElementById('detailEtaToPick').innerHTML = `<i class="fas fa-car-side"></i> ห่างจากคุณ: กำลังคำนวณ...`;
         document.getElementById('detailEtaToDrop').innerHTML = `<i class="fas fa-road"></i> ระยะทางไปส่ง: กำลังคำนวณ...`;
         
-        // 🌟 แสดงปุ่ม Overview ในหน้าดูงานด้วย
         document.getElementById('btnOverview').classList.remove('hidden');
         document.getElementById('jobDetailModal').classList.remove('hidden');
 
@@ -889,7 +879,6 @@
                 directionsRenderer.setDirections(res);
                 drawCustomPolylines(res, true, true); 
                 
-                // 🌟 บันทึก Bounds เพื่อให้ปุ่ม Overview ทำงานได้ตอนกดดูงาน
                 currentRouteBounds = res.routes[0].bounds;
 
                 let legPick = res.routes[0].legs[0]; 
@@ -919,7 +908,7 @@
         document.getElementById('jobDetailModal').classList.add('hidden'); selectedJobId = null;
         if (!activeJobId) { 
             clearMapRoutes(); 
-            document.getElementById('btnOverview').classList.add('hidden'); // ซ่อนปุ่มกลับไป
+            document.getElementById('btnOverview').classList.add('hidden');
             centerToDriver(); 
         }
     }
@@ -944,9 +933,7 @@
         }).catch(()=>{ isProcessingAction = false; });
     }
 
-    function promptAcceptJob() { document.getElementById('confirmAcceptModal').classList.remove('hidden'); }
-    function closeConfirmAcceptModal() { document.getElementById('confirmAcceptModal').classList.add('hidden'); }
-
+    // 🌟 เปลี่ยนการรับงานจาก update เป็น transaction เพื่อล็อกข้อมูลป้องกันแย่งงาน
     function executeAcceptJob() {
         if(isProcessingAction) return; isProcessingAction = true;
         
@@ -957,24 +944,20 @@
         let jobIdToAccept = selectedJobId;
         let phoneNumber = currentDriverProfile ? currentDriverProfile.phone : "ไม่ระบุเบอร์โทร";
 
-        // 🌟 ปิดป๊อปอัปยืนยันก่อนเลยเพื่อไม่ให้กดซ้ำได้อีก
-        closeConfirmAcceptModal(); 
+        // ปิดป๊อปอัปยืนยันก่อนเลย
+        document.getElementById('jobDetailModal').classList.add('hidden');
         
-        // 🌟 ใช้ Transaction แทน Update เพื่อล็อกข้อมูลป้องกันการแย่งงานกัน 100%
         db.ref('bookings/' + jobIdToAccept).transaction(function(currentData) {
-            // 1. ถ้างานถูกลูกค้ายกเลิกไปแล้ว (ข้อมูลเป็น null)
             if (currentData === null) {
-                return null;
+                return null; // งานโดนยกเลิกไปแล้ว
             }
-            // 2. ถ้างายยังว่างอยู่ (สถานะเป็น รอผู้ขับขี่ตอบรับ) ให้ทำการจอง
             if (currentData.status === "รอผู้ขับขี่ตอบรับ") {
                 currentData.status = "รับงานแล้ว กำลังเดินทางไปหา";
                 currentData.driverPhone = phoneNumber;
                 currentData.driverPin = driverPin;
-                return currentData; // ยืนยันการเปลี่ยนแปลงข้อมูล
+                return currentData; 
             } else {
-                // 3. ถ้าสถานะเปลี่ยนไปแล้ว (มีคนกดรับไปก่อนแล้วแค่เสี้ยววินาที) ให้ยกเลิกการเขียนข้อมูล
-                return;
+                return; // สถานะเปลี่ยนไปแล้ว (มีคนกดรับไปก่อน)
             }
         }, function(error, committed, snapshot) {
             if (error) {
@@ -982,15 +965,16 @@
                 isProcessingAction = false;
                 closeJobDetail();
             } else if (!committed) {
-                // 🌟 กรณีที่ 1: โดนแย่งงาน (Transaction ถูกยกเลิกเพราะเงื่อนไขไม่ตรง)
+                // 🌟 โดนแย่งงาน
                 showAlert("ไม่ทันแล้ว!", "เสียใจด้วยครับ งานนี้ถูกคนขับท่านอื่นรับไปแล้ว 🥲", "error");
                 closeJobDetail();
                 isProcessingAction = false;
                 selectedJobId = null;
-                renderJobList(); // รีเฟรชกระดานงาน
+                renderJobList(); 
             } else {
-                // 🌟 กรณีที่ 2: รับงานสำเร็จ (ไม่มีใครแย่ง)
+                // 🌟 รับงานสำเร็จ
                 activeJobId = jobIdToAccept;
+                activeJobData = snapshot.val();
                 localStorage.setItem('activeJobId', activeJobId);
                 closeJobDetail(); 
                 
@@ -1129,7 +1113,6 @@
                 let etaEl = document.getElementById('etaDisplay');
                 etaEl.innerText = `ระยะทาง ${leg.distance.text} • ${leg.duration.text}`; etaEl.classList.remove('hidden');
 
-                // 🌟 ระบบหน่วงเวลาแจ้งเตือนเข้า LINE (หน่วง 3 วินาที)
                 if(isGoingToPickup && distKm <= 2.0 && activeJobData.notifiedPick !== true) {
                     activeJobData.notifiedPick = true; 
                     db.ref('bookings/' + activeJobId).update({ notifiedPick: true });
