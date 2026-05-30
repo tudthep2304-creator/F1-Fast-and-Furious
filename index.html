@@ -368,6 +368,19 @@
         }
     }
 
+    // 🌟 ระบบปลดล็อกเสียงบนเบราว์เซอร์อัตโนมัติเมื่อกดเข้าสู่ระบบ
+    function unlockAudio() {
+        let snd = document.getElementById('jobAlertSound');
+        if (snd) {
+            snd.muted = true;
+            snd.play().then(() => {
+                snd.pause();
+                snd.muted = false;
+                snd.currentTime = 0;
+            }).catch(e => console.log('Audio unlock prevented'));
+        }
+    }
+
     function submitLogin() {
         let pin = document.getElementById('pinInput').value;
         if(pin.length !== 4) { alert("กรุณาระบุรหัส PIN 4 หลักให้ครบถ้วน"); return; }
@@ -377,6 +390,8 @@
             return;
         }
         
+        unlockAudio(); // เรียกใช้งานการปลดล็อกเสียงเมื่อผู้ใช้สัมผัสปุ่ม
+
         driverPin = pin;
         driverSessionId = generateUUID();
         localStorage.setItem('driverPin', driverPin);
@@ -421,6 +436,12 @@
             db.ref('driver').update({ status: "ออฟไลน์" });
         }
     });
+
+    // สำรองให้เสียงปลดล็อกได้ถ้าเผลอคลิกตรงไหนของจอ
+    document.body.addEventListener('click', function unlockAudioFallback() {
+        unlockAudio();
+        document.body.removeEventListener('click', unlockAudioFallback);
+    }, { once: true });
 
     window.onload = () => {
         checkLogin();
@@ -537,11 +558,14 @@
         if (window.alertCloseCallback) window.alertCloseCallback();
     }
 
+    // 🌟 ระบบสลับสีปุ่ม เล็งตำแหน่ง / โอเวอร์วิว
     function centerToDriver() {
         isTrackingMode = true;
-        let btn = document.getElementById('btnCrosshair');
-        btn.classList.remove('text-gray-500');
-        btn.classList.add('text-green-400');
+        let btnC = document.getElementById('btnCrosshair');
+        let btnO = document.getElementById('btnOverview');
+        
+        btnC.classList.remove('text-gray-500'); btnC.classList.add('text-green-400');
+        btnO.classList.remove('text-green-400'); btnO.classList.add('text-gray-500');
 
         if(map && driverLat && driverLng) {
             map.panTo({lat: driverLat, lng: driverLng});
@@ -551,9 +575,11 @@
 
     function fitRouteBounds() {
         isTrackingMode = false;
-        let btn = document.getElementById('btnCrosshair');
-        btn.classList.remove('text-green-400');
-        btn.classList.add('text-gray-500');
+        let btnC = document.getElementById('btnCrosshair');
+        let btnO = document.getElementById('btnOverview');
+        
+        btnC.classList.remove('text-green-400'); btnC.classList.add('text-gray-500');
+        btnO.classList.remove('text-gray-500'); btnO.classList.add('text-green-400');
 
         if (map && currentRouteBounds) {
             map.fitBounds(currentRouteBounds, { top: 80, right: 50, bottom: 400, left: 50 });
@@ -649,16 +675,6 @@
 
             db.ref('driver/status').onDisconnect().set("ออฟไลน์");
             db.ref('driver').update({ status: "ออนไลน์" });
-
-            let snd = document.getElementById('jobAlertSound');
-            if(snd) {
-                snd.volume = 0; 
-                snd.play().then(() => { 
-                    snd.pause(); 
-                    snd.volume = 1;
-                    snd.currentTime = 0;
-                }).catch(e => console.log('Audio init prevented'));
-            }
 
             if (navigator.geolocation) {
                 watchId = navigator.geolocation.watchPosition((pos) => {
@@ -783,6 +799,7 @@
         if (jobCount === 0) html = '<p class="text-center text-gray-500 text-sm py-4">ยังไม่มีงานในขณะนี้...</p>';
         listContainer.innerHTML = html;
 
+        // 🌟 ระบบเล่นเสียงเมื่อมีงานใหม่ (ที่ถูกปลดล็อกแล้ว)
         if (hasNewJob && isOnline) {
             let snd = document.getElementById('jobAlertSound');
             if (snd) { 
@@ -905,6 +922,10 @@
         }).then(() => {
             sendLineNotify(activeJobId, "🏎️ คนขับตอบรับงานของคุณแล้ว! กำลังรีบเดินทางไปหาคุณครับ");
             isProcessingAction = false;
+            
+            // 🌟 ใช้งานปุ่ม Overview เมื่อเริ่มงาน
+            document.getElementById('btnOverview').classList.remove('hidden');
+
         }).catch(()=>{ isProcessingAction = false; });
         
         document.getElementById('idlePanel').classList.add('hidden'); document.getElementById('activeJobPanel').classList.remove('hidden');
@@ -1035,7 +1056,7 @@
                 let etaEl = document.getElementById('etaDisplay');
                 etaEl.innerText = `ระยะทาง ${leg.distance.text} • ${leg.duration.text}`; etaEl.classList.remove('hidden');
 
-                // 🌟 หน่วงเวลาแจ้งเตือนระยะทาง (Delay 3 วิ) ให้รับงานไปถึงก่อน
+                // 🌟 ระบบหน่วงเวลาแจ้งเตือนเข้า LINE (กันวิ่งแข่งกับข้อความรับงาน)
                 if(isGoingToPickup && distKm <= 2.0 && activeJobData.notifiedPick !== true) {
                     activeJobData.notifiedPick = true; 
                     db.ref('bookings/' + activeJobId).update({ notifiedPick: true });
@@ -1052,9 +1073,10 @@
                 
                 if (forceZoom) {
                     isTrackingMode = false; 
-                    let btn = document.getElementById('btnCrosshair');
-                    btn.classList.remove('text-green-400');
-                    btn.classList.add('text-gray-500');
+                    let btnC = document.getElementById('btnCrosshair');
+                    let btnO = document.getElementById('btnOverview');
+                    btnC.classList.remove('text-green-400'); btnC.classList.add('text-gray-500');
+                    btnO.classList.remove('text-gray-500'); btnO.classList.add('text-green-400');
                     setTimeout(() => { map.fitBounds(currentRouteBounds, { top: 80, right: 50, bottom: 400, left: 50 }); }, 200);
                 }
             }
