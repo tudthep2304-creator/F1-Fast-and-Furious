@@ -950,29 +950,60 @@
     function executeAcceptJob() {
         if(isProcessingAction) return; isProcessingAction = true;
         
-        if(!selectedJobId || !allBookings[selectedJobId]) {
-            showAlert("ข้อผิดพลาด", "ขออภัย งานนี้ถูกยกเลิกไปแล้ว", "error");
-            closeConfirmAcceptModal(); closeJobDetail(); 
+        if(!selectedJobId) {
             isProcessingAction = false; return;
         }
-        activeJobId = selectedJobId; localStorage.setItem('activeJobId', activeJobId);
-        closeConfirmAcceptModal(); closeJobDetail(); 
-        
-        // 🌟 ดึงข้อมูลจากคนขับที่ล็อกอินมาใช้อัปเดตสถานะงาน
+
+        let jobIdToAccept = selectedJobId;
         let phoneNumber = currentDriverProfile ? currentDriverProfile.phone : "ไม่ระบุเบอร์โทร";
 
-        db.ref('bookings/' + activeJobId).update({ 
-            status: "รับงานแล้ว กำลังเดินทางไปหา", 
-            driverPhone: phoneNumber,
-            driverPin: driverPin 
-        }).then(() => {
-            sendLineNotify(activeJobId, "🏎️ คนขับตอบรับงานของคุณแล้ว! กำลังรีบเดินทางไปหาคุณครับ");
-            isProcessingAction = false;
-        }).catch(()=>{ isProcessingAction = false; });
+        // 🌟 ปิดป๊อปอัปยืนยันก่อนเลยเพื่อไม่ให้กดซ้ำได้อีก
+        closeConfirmAcceptModal(); 
         
-        document.getElementById('idlePanel').classList.add('hidden'); document.getElementById('activeJobPanel').classList.remove('hidden');
-        expandPanel('activeJobPanel'); 
-        updateRoute(true); updateActiveJobUI();
+        // 🌟 ใช้ Transaction แทน Update เพื่อล็อกข้อมูลป้องกันการแย่งงานกัน 100%
+        db.ref('bookings/' + jobIdToAccept).transaction(function(currentData) {
+            // 1. ถ้างานถูกลูกค้ายกเลิกไปแล้ว (ข้อมูลเป็น null)
+            if (currentData === null) {
+                return null;
+            }
+            // 2. ถ้างายยังว่างอยู่ (สถานะเป็น รอผู้ขับขี่ตอบรับ) ให้ทำการจอง
+            if (currentData.status === "รอผู้ขับขี่ตอบรับ") {
+                currentData.status = "รับงานแล้ว กำลังเดินทางไปหา";
+                currentData.driverPhone = phoneNumber;
+                currentData.driverPin = driverPin;
+                return currentData; // ยืนยันการเปลี่ยนแปลงข้อมูล
+            } else {
+                // 3. ถ้าสถานะเปลี่ยนไปแล้ว (มีคนกดรับไปก่อนแล้วแค่เสี้ยววินาที) ให้ยกเลิกการเขียนข้อมูล
+                return;
+            }
+        }, function(error, committed, snapshot) {
+            if (error) {
+                showAlert("ข้อผิดพลาด", "การเชื่อมต่อมีปัญหา กรุณาลองใหม่", "error");
+                isProcessingAction = false;
+                closeJobDetail();
+            } else if (!committed) {
+                // 🌟 กรณีที่ 1: โดนแย่งงาน (Transaction ถูกยกเลิกเพราะเงื่อนไขไม่ตรง)
+                showAlert("ไม่ทันแล้ว!", "เสียใจด้วยครับ งานนี้ถูกคนขับท่านอื่นรับไปแล้ว 🥲", "error");
+                closeJobDetail();
+                isProcessingAction = false;
+                selectedJobId = null;
+                renderJobList(); // รีเฟรชกระดานงาน
+            } else {
+                // 🌟 กรณีที่ 2: รับงานสำเร็จ (ไม่มีใครแย่ง)
+                activeJobId = jobIdToAccept;
+                localStorage.setItem('activeJobId', activeJobId);
+                closeJobDetail(); 
+                
+                sendLineNotify(activeJobId, "🏎️ คนขับตอบรับงานของคุณแล้ว! กำลังรีบเดินทางไปหาคุณครับ");
+                isProcessingAction = false;
+                
+                document.getElementById('idlePanel').classList.add('hidden'); 
+                document.getElementById('activeJobPanel').classList.remove('hidden');
+                expandPanel('activeJobPanel'); 
+                updateRoute(true); 
+                updateActiveJobUI();
+            }
+        });
     }
 
     function updateActiveJobUI() {
