@@ -12,8 +12,8 @@
     @import url('https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;700&display=swap');
     body { font-family: 'Kanit', sans-serif; background-color: #111827; }
     
-    /* ปรับขอบเขตแผนที่ไม่ให้ทับ Bottom Nav */
-    .map-container { position: fixed; top: 0; left: 0; right: 0; bottom: 70px; z-index: 0; background: #1f2937; }
+    /* แก้ไขขนาดแผนที่ให้ชัดเจน ป้องกันปัญหาแผนที่โหลดไม่ขึ้น (จอดำ) */
+    .map-container { position: fixed; top: 0; left: 0; width: 100vw; height: calc(100vh - 70px); z-index: 0; background: #1f2937; }
     
     /* ปรับ Panel ให้อยู่เหนือ Bottom Nav */
     .ui-panel { 
@@ -100,7 +100,7 @@
 
   <div id="mapControls" class="fixed top-[76px] right-4 z-30 flex flex-col gap-3 pointer-events-auto transition-all duration-300">
       <button onclick="toggleMapStyle()" id="btnMapStyle" class="glass-box w-12 h-12 flex items-center justify-center rounded-full shadow-lg text-gray-300 hover:bg-white/10 transition" title="สลับโหมดแผนที่">
-          <i class="fas fa-layer-group text-[18px]"></i>
+          <i class="fas fa-satellite text-[18px]"></i>
       </button>
       <button onclick="centerToDriver()" id="btnCrosshair" class="glass-box w-12 h-12 flex items-center justify-center rounded-full shadow-lg text-green-400 hover:bg-white/10 transition">
           <i class="fas fa-crosshairs text-[18px] drop-shadow-md"></i>
@@ -460,7 +460,12 @@
     let lastNotifiedMsg = ""; 
     let knownPendingJobs = [];
     let isAlarmRinging = false; 
-    let isSatelliteMode = true; 
+    let isSatelliteMode = false; // เปลี่ยนค่าเริ่มต้นให้ใช้แผนที่แบบถนน(สีเข้ม) เพื่อความรวดเร็ว
+
+    // ฟังก์ชันช่วยคำนวณระยะขอบเขตแผนที่ล่างสุด ป้องกันแผนที่บั๊กในหน้าจอเล็ก
+    function getSafeBottomPadding() {
+        return Math.min(350, window.innerHeight * 0.45);
+    }
 
     function initDatePickers() {
         let today = new Date();
@@ -473,14 +478,11 @@
         document.getElementById('histEndDate').value = dateString;
     }
 
-    // ฟังก์ชันจัดการ 4 แท็บแบบใหม่ (ไม่ซ่อนแผนที่)
     function switchDriverTab(tabIndex) {
-        // รีเซ็ตปุ่มทั้งหมด
         for(let i=1; i<=4; i++) {
             let btn = document.getElementById('navBtn'+i);
             if(btn) btn.className = "flex-1 flex flex-col items-center justify-center text-gray-500 hover:text-green-400 transition-colors";
         }
-        // แอคทีฟปุ่มที่เลือก
         document.getElementById('navBtn'+tabIndex).className = "flex-1 flex flex-col items-center justify-center text-green-400 transition-colors";
 
         let idleP = document.getElementById('idlePanel');
@@ -490,33 +492,41 @@
         let tab3 = document.getElementById('tab3-History');
         let tab4 = document.getElementById('tab4-Profile');
 
-        // ซ่อนพาเนลทั้งหมดก่อน
         idleP.classList.add('hidden');
         actP.classList.add('hidden');
         tab3.classList.add('hidden');
         tab4.classList.add('hidden');
 
-        if(tabIndex === 1) { // หน้าแรก
+        if(tabIndex === 1) { 
             idleP.classList.remove('hidden');
-            if(map) map.setOptions({ padding: { top: 80, bottom: 350, left: 0, right: 0 } });
+            if(map) {
+                google.maps.event.trigger(map, 'resize');
+                map.setOptions({ padding: { top: 80, bottom: getSafeBottomPadding(), left: 0, right: 0 } });
+            }
             clearMapRoutes(); 
             centerToDriver();
-        } else if (tabIndex === 2) { // งานปัจจุบัน
+        } else if (tabIndex === 2) { 
             actP.classList.remove('hidden');
             if(activeJobId) {
                 actContent.classList.remove('hidden');
                 noActState.classList.add('hidden');
-                if(map) map.setOptions({ padding: { top: 80, bottom: 350, left: 0, right: 0 } });
+                if(map) {
+                    google.maps.event.trigger(map, 'resize');
+                    map.setOptions({ padding: { top: 80, bottom: getSafeBottomPadding(), left: 0, right: 0 } });
+                }
                 updateRoute(true); 
             } else {
                 actContent.classList.add('hidden');
                 noActState.classList.remove('hidden');
-                if(map) map.setOptions({ padding: { top: 80, bottom: 350, left: 0, right: 0 } });
+                if(map) {
+                    google.maps.event.trigger(map, 'resize');
+                    map.setOptions({ padding: { top: 80, bottom: getSafeBottomPadding(), left: 0, right: 0 } });
+                }
             }
-        } else if (tabIndex === 3) { // ประวัติ
+        } else if (tabIndex === 3) { 
             tab3.classList.remove('hidden');
             renderHistory();
-        } else if (tabIndex === 4) { // โปรไฟล์
+        } else if (tabIndex === 4) { 
             tab4.classList.remove('hidden');
             if(currentDriverProfile) {
                 document.getElementById('profName').innerText = currentDriverProfile.name;
@@ -662,7 +672,7 @@
             if (panel.classList.contains('panel-collapsed')) {
                 map.setOptions({ padding: { top: 80, bottom: 120, left: 0, right: 0 } });
             } else {
-                map.setOptions({ padding: { top: 80, bottom: 350, left: 0, right: 0 } });
+                map.setOptions({ padding: { top: 80, bottom: getSafeBottomPadding(), left: 0, right: 0 } });
             }
         }
     }
@@ -670,7 +680,7 @@
     function expandPanel(panelId) {
         const panel = document.getElementById(panelId);
         if (panel) panel.classList.remove('panel-collapsed');
-        if (map) map.setOptions({ padding: { top: 80, bottom: 350, left: 0, right: 0 } });
+        if (map) map.setOptions({ padding: { top: 80, bottom: getSafeBottomPadding(), left: 0, right: 0 } });
     }
 
     function sendLineNotify(userId, msg, type = 'status_update') {
@@ -786,7 +796,7 @@
         if(btnO) { btnO.classList.remove('text-gray-300'); btnO.classList.add('text-green-400'); }
 
         if (map && currentRouteBounds) {
-            map.fitBounds(currentRouteBounds, { top: 80, right: 50, bottom: 350, left: 50 });
+            map.fitBounds(currentRouteBounds, { top: 80, right: 50, bottom: getSafeBottomPadding(), left: 50 });
         } else {
             centerToDriver();
         }
@@ -859,11 +869,12 @@
       map = new google.maps.Map(document.getElementById('map'), { 
         zoom: 16, 
         center: {lat: driverLat, lng: driverLng}, 
-        mapTypeId: 'hybrid', 
+        mapTypeId: 'roadmap', 
+        styles: darkMapStyle,
         disableDefaultUI: true, 
         gestureHandling: 'greedy', 
         zoomControl: true, 
-        padding: { top: 80, bottom: 350, left: 0, right: 0 } 
+        padding: { top: 80, bottom: getSafeBottomPadding(), left: 0, right: 0 } 
       });
 
       map.addListener('dragstart', () => {
@@ -1209,7 +1220,7 @@
                     if(eD) eD.innerHTML = `<i class="fas fa-road"></i> ระยะทางไปส่ง: ${legDrop.distance.text} • ${legDrop.duration.text}`;
 
                     if(map) {
-                        setTimeout(() => { map.fitBounds(currentRouteBounds, { top: 80, right: 50, bottom: 420, left: 50 }); }, 100);
+                        setTimeout(() => { map.fitBounds(currentRouteBounds, { top: 80, right: 50, bottom: getSafeBottomPadding(), left: 50 }); }, 100);
                     }
                 }
             });
@@ -1515,7 +1526,7 @@
                     let btnO = document.getElementById('btnOverview');
                     if(btnC) { btnC.classList.remove('text-green-400'); btnC.classList.add('text-gray-300'); }
                     if(btnO) { btnO.classList.remove('text-gray-300'); btnO.classList.add('text-green-400'); }
-                    setTimeout(() => { map.fitBounds(currentRouteBounds, { top: 80, right: 50, bottom: 350, left: 50 }); }, 200);
+                    setTimeout(() => { map.fitBounds(currentRouteBounds, { top: 80, right: 50, bottom: getSafeBottomPadding(), left: 50 }); }, 200);
                 }
             }
         });
