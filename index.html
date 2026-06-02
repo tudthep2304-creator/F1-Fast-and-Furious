@@ -37,14 +37,13 @@
 
     /* 🌟 คลาสเสริมสำหรับทำ Glass Box */
     .glass-box {
-        background: rgba(31, 41, 55, 0.85); /* bg-gray-800 แบบโปร่งแสง */
+        background: rgba(31, 41, 55, 0.85); 
         backdrop-filter: blur(12px);
         -webkit-backdrop-filter: blur(12px);
         border: 1px solid rgba(255, 255, 255, 0.1);
         box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
     }
 
-    /* หดแผงลงให้เหลือเฉพาะส่วนหัว */
     .panel-collapsed {
         transform: translateY(calc(100% - 100px)) !important;
     }
@@ -170,30 +169,39 @@
     
     <div class="job-scroll flex-1">
         
-        <div class="glass-box p-2.5 rounded-xl mb-3 flex justify-between items-center border border-gray-700 shadow-sm">
-            <div class="flex items-center gap-3 overflow-hidden pr-2 w-full min-w-0">
+        <div class="glass-box p-3 rounded-xl mb-3 flex justify-between items-center border border-gray-700 shadow-sm">
+            <div class="flex items-center gap-3 overflow-hidden w-full min-w-0">
                 <div class="w-10 h-10 rounded-full bg-gray-800 text-green-500 flex items-center justify-center shrink-0 border border-gray-600 shadow-inner">
                     <i class="fas fa-user"></i>
                 </div>
-                <div class="flex-1 min-w-0">
-                    <p class="text-[10px] text-gray-400 font-bold mb-0.5 tracking-wide">ผู้โดยสาร</p>
-                    <p class="font-bold text-gray-200 text-[13px] truncate leading-tight drop-shadow-md" id="passengerName">...</p>
+                <div class="flex-1 min-w-0 flex justify-between items-center">
+                    <div class="flex flex-col min-w-0">
+                        <p class="text-[10px] text-gray-400 font-bold mb-0.5 tracking-wide flex items-center">ผู้โดยสาร 
+                            <span id="activePromoBadge" class="hidden ml-1.5 bg-green-900/50 text-green-400 border border-green-500/30 px-1.5 py-0.5 rounded text-[8px]">ใช้โค้ดส่วนลด</span>
+                        </p>
+                        <p class="font-bold text-gray-200 text-[14px] truncate leading-tight drop-shadow-md" id="passengerName">...</p>
+                    </div>
+                    <div class="flex gap-2 shrink-0 ml-2" id="activeContactButtons">
+                        <button onclick="openLineOA()" class="bg-gray-800 text-green-400 w-9 h-9 rounded-full flex items-center justify-center border border-gray-600 shadow-sm hover:bg-gray-700 transition">
+                            <i class="fab fa-line text-lg drop-shadow-md"></i>
+                        </button>
+                        <a href="#" id="btnCallPassenger" class="bg-green-600/90 text-white w-9 h-9 rounded-full flex items-center justify-center border border-green-500/50 shadow-sm hover:bg-green-500 transition backdrop-blur-xl">
+                            <i class="fas fa-phone-alt text-[14px] drop-shadow-md"></i>
+                        </a>
+                    </div>
                 </div>
             </div>
-            <a href="#" id="btnCallPassenger" class="bg-green-600/90 text-white px-3 py-2 rounded-lg font-bold text-xs shadow-md border border-green-500/50 flex gap-1.5 items-center shrink-0 hover:bg-green-500 transition backdrop-blur-xl">
-                <i class="fas fa-phone-alt"></i> โทร
-            </a>
         </div>
 
-        <div class="mb-3 glass-box py-2.5 px-3.5 rounded-xl border border-gray-700 relative shadow-sm">
+        <div class="mb-3 glass-box py-3 px-3.5 rounded-xl border border-gray-700 relative shadow-sm">
             <div class="absolute left-[1.4rem] top-6 bottom-6 w-0.5 border-l-[1.5px] border-dashed border-gray-600 z-0"></div>
-            <div class="flex items-center gap-3 mb-2.5 relative z-10 w-full">
-                <div class="shrink-0"><i class="fas fa-map-marker-alt text-[15px] text-green-500"></i></div>
-                <p class="text-[13px] text-gray-200 truncate font-medium flex-1 leading-tight min-w-0" id="jobPick">...</p>
+            <div class="flex items-center gap-3 mb-3 relative z-10 w-full">
+                <div class="shrink-0"><i class="fas fa-circle text-[10px] text-green-500"></i></div>
+                <p class="text-[14px] text-gray-200 font-medium flex-1 leading-snug min-w-0" id="jobPick">...</p>
             </div>
             <div class="flex items-center gap-3 relative z-10 w-full">
-                <div class="shrink-0"><i class="fas fa-map-marker-alt text-[15px] text-red-500"></i></div>
-                <p class="text-[13px] text-gray-200 truncate font-medium flex-1 leading-tight min-w-0" id="jobDrop">...</p>
+                <div class="shrink-0"><i class="fas fa-circle text-[10px] text-red-500"></i></div>
+                <p class="text-[14px] text-gray-200 font-medium flex-1 leading-snug min-w-0" id="jobDrop">...</p>
             </div>
         </div>
 
@@ -232,36 +240,29 @@
                   <div class="w-10 h-10 rounded-full bg-gray-800 text-green-500 flex items-center justify-center shrink-0 border border-gray-600 shadow-inner">
                       <i class="fas fa-user"></i>
                   </div>
-                  <div class="flex-1 min-w-0">
-                      <p class="text-[10px] text-gray-400 font-bold mb-0.5 tracking-wide">ผู้โดยสาร</p>
-                      <p class="font-bold text-gray-200 text-[13px] truncate leading-tight drop-shadow-md" id="detailName">...</p>
+                  <div class="flex-1 min-w-0 flex flex-col">
+                      <p class="text-[10px] text-gray-400 font-bold mb-0.5 tracking-wide flex items-center">ผู้โดยสาร
+                          <span id="detailPromoBadge" class="hidden ml-1.5 bg-green-900/50 text-green-400 border border-green-500/30 px-1.5 py-0.5 rounded text-[8px]">ใช้โค้ดส่วนลด</span>
+                      </p>
+                      <p class="font-bold text-gray-200 text-[14px] truncate leading-tight drop-shadow-md" id="detailName">...</p>
                   </div>
               </div>
-              <a href="#" id="btnCallDetail" class="hidden bg-green-600/90 text-white px-3 py-2 rounded-lg font-bold text-xs shadow-md border border-green-500/50 flex gap-1.5 items-center shrink-0 hover:bg-green-500 transition">
-                  <i class="fas fa-phone-alt"></i> โทร
-              </a>
           </div>
 
-          <div class="mb-4 glass-box p-3.5 rounded-2xl border border-gray-700 relative shadow-sm">
-              <div class="absolute left-[1.4rem] top-6 bottom-6 w-0.5 border-l-[1.5px] border-dashed border-gray-600 z-0"></div>
+          <div class="mb-4 glass-box p-4 rounded-2xl border border-gray-700 relative shadow-sm">
+              <div class="absolute left-[1.45rem] top-6 bottom-6 w-0.5 border-l-[1.5px] border-dashed border-gray-600 z-0"></div>
               
-              <div class="flex items-start gap-3 mb-3 relative z-10 w-full min-w-0">
-                  <div class="shrink-0 mt-0.5"><i class="fas fa-map-marker-alt text-[15px] text-green-500"></i></div>
+              <div class="flex items-start gap-3 mb-4 relative z-10 w-full min-w-0">
+                  <div class="shrink-0 mt-1"><i class="fas fa-circle text-[10px] text-green-500"></i></div>
                   <div class="flex-1 overflow-hidden min-w-0">
-                      <p class="text-[13px] text-gray-200 truncate font-medium leading-tight mb-1" id="detailPick">...</p>
-                      <p class="text-[10px] font-bold text-green-400 bg-gray-800 border border-gray-700 inline-block px-2 py-0.5 rounded shadow-inner" id="detailEtaToPick">
-                          <i class="fas fa-car-side"></i> ห่างจากคุณ: กำลังคำนวณ...
-                      </p>
+                      <p class="text-[14px] text-gray-200 font-medium leading-snug" id="detailPick">...</p>
                   </div>
               </div>
 
               <div class="flex items-start gap-3 relative z-10 w-full min-w-0">
-                  <div class="shrink-0 mt-0.5"><i class="fas fa-map-marker-alt text-[15px] text-red-500"></i></div>
+                  <div class="shrink-0 mt-1"><i class="fas fa-circle text-[10px] text-red-500"></i></div>
                   <div class="flex-1 overflow-hidden min-w-0">
-                      <p class="text-[13px] text-gray-200 truncate font-medium leading-tight mb-1" id="detailDrop">...</p>
-                      <p class="text-[10px] font-bold text-blue-400 bg-gray-800 border border-gray-700 inline-block px-2 py-0.5 rounded shadow-inner" id="detailEtaToDrop">
-                          <i class="fas fa-road"></i> ระยะทางไปส่ง: กำลังคำนวณ...
-                      </p>
+                      <p class="text-[14px] text-gray-200 font-medium leading-snug" id="detailDrop">...</p>
                   </div>
               </div>
           </div>
@@ -381,7 +382,7 @@
     let lastNotifiedMsg = ""; 
     let knownPendingJobs = [];
     let isAlarmRinging = false; 
-    let isSatelliteMode = true; // 🌟 เปิดแอปมาเป็นดาวเทียม
+    let isSatelliteMode = true; // เริ่มต้นเป็นดาวเทียม
 
     function generateUUID() {
         return Math.random().toString(36).substring(2) + Date.now().toString(36);
@@ -629,7 +630,6 @@
             map.panTo({lat: driverLat, lng: driverLng});
             map.setZoom(16);
             
-            // 🌟 ซูมที่รถแล้วเด้งแผงขึ้นมาด้วย
             const panel = document.getElementById('activeJobPanel');
             if(panel && panel.classList.contains('panel-collapsed')) {
                 panel.classList.remove('panel-collapsed');
@@ -716,7 +716,6 @@
     function initMap() {
       if (typeof google === 'undefined' || typeof google.maps === 'undefined') return;
       
-      // 🌟 เริ่มต้นด้วยโหมดดาวเทียม (Hybrid)
       map = new google.maps.Map(document.getElementById('map'), { 
         zoom: 16, 
         center: {lat: driverLat, lng: driverLng}, 
@@ -843,7 +842,6 @@
                 { enableHighAccuracy: true, maximumAge: 0, timeout: 5000 });
             }
             
-            // โชว์แถบสแกน (เรดาร์) ตอนเปิดออนไลน์
             let pBar = document.getElementById('searchProgressBar');
             if(pBar && !activeJobId) pBar.classList.remove('hidden');
 
@@ -862,7 +860,6 @@
             if(watchId) navigator.geolocation.clearWatch(watchId);
             stopAlarm(); 
             
-            // ซ่อนแถบสแกน (เรดาร์) ตอนออฟไลน์
             let pBar = document.getElementById('searchProgressBar');
             if(pBar) pBar.classList.add('hidden');
         }
@@ -935,7 +932,7 @@
             return; 
         }
         
-        if(pBar) pBar.classList.remove('hidden'); // โชว์เรดาร์ตอนสแกนหางาน
+        if(pBar) pBar.classList.remove('hidden'); 
 
         if (!allBookings) { 
             listContainer.innerHTML = '<p class="text-center text-gray-500 text-[12px] font-bold py-6">ยังไม่มีงานในขณะนี้...</p>'; 
@@ -978,11 +975,9 @@
         if (jobCount === 0) {
             html = '<p class="text-center text-gray-500 text-[12px] font-bold py-6">ยังไม่มีงานในขณะนี้...</p>';
         } else {
-            // ถอดข้อความเปล่าๆ ทิ้ง แล้วใส่ html ต่อเลย
             listContainer.innerHTML = '';
         }
         
-        // เติม html ที่มีกล่องเรดาร์เสมอ
         listContainer.innerHTML = html + `<div id="searchProgressBar" class="absolute bottom-0 left-0 w-full h-[2px] bg-gray-700/50">
             <div class="h-full bg-blue-500 w-1/3 rounded-full animate-loading-scan"></div>
         </div>`;
@@ -1016,31 +1011,30 @@
         let pk = document.getElementById('detailPick');
         let dp = document.getElementById('detailDrop');
         let pr = document.getElementById('detailPrice');
+        let promoBadge = document.getElementById('detailPromoBadge'); // ป้ายโปรตอนดูงาน
+
         if(n) n.innerText = job.name || "ลูกค้า";
         if(pk) pk.innerText = job.pName;
         if(dp) dp.innerText = job.dName;
         if(pr) pr.innerText = "฿" + job.price;
-        
-        let bC = document.getElementById('btnCallDetail');
-        if(job.phone && bC) {
-            bC.href = "tel:" + job.phone;
-            // ตอนดูงานยังรับงานไม่ได้ ไม่ต้องโชว์ปุ่มโทร
-            // bC.classList.remove('hidden');
+
+        if(job.promoCode) {
+            if(promoBadge) promoBadge.classList.remove('hidden');
+        } else {
+            if(promoBadge) promoBadge.classList.add('hidden');
         }
+        
+        // เราซ่อนปุ่มโทรในหน้านี้ไว้ เพราะยังไม่ได้กดรับงาน
 
         let tE = document.getElementById('detailTotalEta');
-        let eP = document.getElementById('detailEtaToPick');
-        let eD = document.getElementById('detailEtaToDrop');
         if(tE) tE.innerText = `ระยะทางรวม: กำลังคำนวณ...`;
-        if(eP) eP.innerHTML = `<i class="fas fa-car-side"></i> ห่างจากคุณ: กำลังคำนวณ...`;
-        if(eD) eD.innerHTML = `<i class="fas fa-road"></i> ระยะทางไปส่ง: กำลังคำนวณ...`;
         
         let bO = document.getElementById('btnOverview');
         let mod = document.getElementById('jobDetailModal');
         if(bO) bO.classList.remove('hidden');
         if(mod) mod.classList.remove('hidden');
 
-        // 🌟 ซูมให้เห็น 2 จุดรับส่ง (Smart Overview แบบแรก)
+        // โฟกัสจุดรับ - จุดส่ง
         let origin = {lat: driverLat, lng: driverLng}; 
         let pickup = {lat: job.pLat, lng: job.pLng};
         let dest = {lat: job.dLat, lng: job.dLng};
@@ -1070,8 +1064,6 @@
                     let totalMins = Math.round((legPick.duration.value + legDrop.duration.value) / 60);
 
                     if(tE) tE.innerText = `ระยะทางรวม: ${totalDist.toFixed(1)} กม. • เวลาประเมิน: ${totalMins} นาที`;
-                    if(eP) eP.innerHTML = `<i class="fas fa-car-side"></i> ห่างจากคุณ: ${legPick.distance.text} • ${legPick.duration.text}`;
-                    if(eD) eD.innerHTML = `<i class="fas fa-road"></i> ระยะทางไปส่ง: ${legDrop.distance.text} • ${legDrop.duration.text}`;
 
                     if(map) {
                         setTimeout(() => { map.fitBounds(currentRouteBounds, { top: 80, right: 50, bottom: 420, left: 50 }); }, 100);
@@ -1192,12 +1184,19 @@
         let jP = document.getElementById('jobPick');
         let jD = document.getElementById('jobDrop');
         let pC = document.getElementById('jobPrice');
+        let pBadge = document.getElementById('activePromoBadge');
         
         if(pN) pN.innerText = activeJobData.name || "ลูกค้า";
         if(bC) bC.href = "tel:" + activeJobData.phone;
         if(jP) jP.innerText = activeJobData.pName;
         if(jD) jD.innerText = activeJobData.dName;
         if(pC) pC.innerText = "฿" + activeJobData.price;
+
+        if(activeJobData.promoCode) {
+            if(pBadge) pBadge.classList.remove('hidden');
+        } else {
+            if(pBadge) pBadge.classList.add('hidden');
+        }
 
         let statusText = document.getElementById('jobStatusHeader'); 
         let btnAction = document.getElementById('btnAction');
@@ -1212,9 +1211,10 @@
             if(etaEl) { etaEl.className = "text-[11px] text-green-400 font-bold mt-0.5 inline-block truncate"; etaEl.classList.remove('hidden'); }
             if(btnAction) { btnAction.innerText = "มาถึงจุดรับ"; btnAction.className = "flex-[2] bg-green-600/90 backdrop-blur-xl border border-green-500/50 text-white py-3 rounded-xl font-bold text-sm shadow-[0_0_15px_rgba(34,197,94,0.3)] hover:bg-green-500 transition drop-shadow-md"; }
             
-            // 🌟 ซ่อนปุ่มยกเลิกงานตอนรับงานแล้ว
             let cjb = document.getElementById('btnCancelJob');
             if(cjb) cjb.classList.remove('hidden');
+            let acb = document.getElementById('activeContactButtons');
+            if(acb) acb.classList.remove('hidden');
         } else if(s.includes("มาถึงจุดรับ") || s.includes("ถึงจุดรับแล้ว")) {
             if(statusText) statusText.innerText = "รอผู้โดยสารขึ้นรถ"; 
             if(etaEl) etaEl.classList.add('hidden');
@@ -1222,15 +1222,18 @@
             
             let cjb = document.getElementById('btnCancelJob');
             if(cjb) cjb.classList.remove('hidden');
+            let acb = document.getElementById('activeContactButtons');
+            if(acb) acb.classList.remove('hidden');
         } else if(s.includes("ออกเดินทาง") || s.includes("ไปยังจุดส่ง")) {
             if(statusText) statusText.innerText = "กำลังเดินทางไปจุดส่ง"; 
             if(etaEl) { etaEl.className = "text-[11px] text-blue-400 font-bold mt-0.5 inline-block truncate"; etaEl.classList.remove('hidden'); }
             if(btnAction) { btnAction.innerText = "ถึงที่หมาย (จบงาน)"; btnAction.className = "flex-[2] bg-emerald-600/90 backdrop-blur-xl border border-emerald-500/50 text-white py-3 rounded-xl font-bold text-sm shadow-[0_0_15px_rgba(16,185,129,0.3)] hover:bg-emerald-500 transition drop-shadow-md"; }
             
-            // 🌟 ขึ้นรถแล้ว ซ่อนปุ่มยกเลิกงาน และโทร 
+            // ซ่อนปุ่มยกเลิกงาน และแชท/โทร 
             let cjb = document.getElementById('btnCancelJob');
             if(cjb) cjb.classList.add('hidden');
-            if(bC) bC.classList.add('hidden'); // ซ่อนปุ่มโทร
+            let acb = document.getElementById('activeContactButtons');
+            if(acb) acb.classList.add('hidden'); 
         }
     }
 
@@ -1328,17 +1331,16 @@
         if(!activeJobData || !directionsService) return;
         let origin = {lat: driverLat, lng: driverLng}; let dest; let isGoingToPickup = false; let isGoingToDropoff = false;
 
-        // 🌟 Smart Overview: ถ้ายังไม่รับ หรือกำลังไปรับ ให้โฟกัสรถ+จุดรับ
+        // 🌟 แผนที่โฟกัสอัจฉริยะ (Smart Overview)
         if(activeJobData.status.includes("กำลังเดินทางไปหา") || activeJobData.status.includes("รับงานแล้ว") || activeJobData.status.includes("มาถึงจุดรับ")) {
             dest = {lat: activeJobData.pLat, lng: activeJobData.pLng};
             if(markerPick) { markerPick.setPosition(dest); markerPick.setMap(map); }
-            if(markerDrop) markerDrop.setMap(null); // ซ่อนจุดส่งไปก่อน
+            if(markerDrop) markerDrop.setMap(null); 
             isGoingToPickup = true;
         } else {
-            // 🌟 Smart Overview: ถ้าออกเดินทางแล้ว ให้โฟกัสรถ+จุดส่ง
             dest = {lat: activeJobData.dLat, lng: activeJobData.dLng};
             if(markerDrop) { markerDrop.setPosition(dest); markerDrop.setMap(map); }
-            if(markerPick) markerPick.setMap(null); // ซ่อนจุดรับ
+            if(markerPick) markerPick.setMap(null); 
             isGoingToDropoff = true;
         }
 
@@ -1374,8 +1376,8 @@
                     isTrackingMode = false; 
                     let btnC = document.getElementById('btnCrosshair');
                     let btnO = document.getElementById('btnOverview');
-                    if(btnC) { btnC.classList.remove('text-green-400'); btnC.classList.add('text-gray-500'); }
-                    if(btnO) { btnO.classList.remove('text-gray-500'); btnO.classList.add('text-green-400'); }
+                    if(btnC) { btnC.classList.remove('text-green-400'); btnC.classList.add('text-gray-300'); }
+                    if(btnO) { btnO.classList.remove('text-gray-300'); btnO.classList.add('text-green-400'); }
                     setTimeout(() => { map.fitBounds(currentRouteBounds, { top: 80, right: 50, bottom: 400, left: 50 }); }, 200);
                 }
             }
