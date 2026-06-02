@@ -11,11 +11,14 @@
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;700&display=swap');
     body { font-family: 'Kanit', sans-serif; background-color: #111827; }
-    .map-container { position: fixed; inset: 0; width: 100vw; height: 100vh; z-index: 0; background: #1f2937; }
     
+    /* ปรับขอบเขตแผนที่ไม่ให้ทับ Bottom Nav */
+    .map-container { position: fixed; top: 0; left: 0; right: 0; bottom: 70px; z-index: 0; background: #1f2937; }
+    
+    /* ปรับ Panel ให้อยู่เหนือ Bottom Nav */
     .ui-panel { 
         position: fixed; 
-        bottom: 70px; /* เว้นที่ให้ Bottom Nav */
+        bottom: 70px; 
         left: 0; 
         right: 0; 
         background: #111827; 
@@ -87,16 +90,16 @@
 
   <audio id="jobAlertSound" src="https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3" preload="auto" loop></audio>
 
-  <div id="tab1-ReceiveJobs" class="w-full h-full">
+  <div id="mapContainer" class="block">
       <div id="map" class="map-container"></div>
-
-      <div class="fixed top-0 w-full h-16 bg-gray-900 border-b border-gray-800 flex items-center justify-between px-4 z-20 text-white shadow-md pointer-events-auto">
+      
+      <div id="topBar" class="fixed top-0 w-full h-16 bg-gray-900 border-b border-gray-800 flex items-center justify-between px-4 z-20 text-white shadow-md pointer-events-auto">
         <div class="flex items-center gap-2">
             <h1 class="text-lg font-black text-green-500 tracking-wide"><i class="fas fa-car-side"></i> F1 Fast and Furious <span id="driverNameDisplay" class="text-xs text-gray-500 ml-2 font-normal hidden"></span></h1>
         </div>
       </div>
 
-      <div class="fixed top-[76px] right-4 z-30 flex flex-col gap-3 pointer-events-auto transition-all duration-300">
+      <div id="mapControls" class="fixed top-[76px] right-4 z-30 flex flex-col gap-3 pointer-events-auto transition-all duration-300">
           <button onclick="toggleMapStyle()" id="btnMapStyle" class="glass-box w-12 h-12 flex items-center justify-center rounded-full shadow-lg text-gray-300 hover:bg-white/10 transition" title="สลับโหมดแผนที่">
               <i class="fas fa-layer-group text-[18px]"></i>
           </button>
@@ -107,42 +110,44 @@
               <i class="fas fa-route text-[18px] drop-shadow-md"></i>
           </button>
       </div>
+  </div>
 
-      <div id="idlePanel" class="ui-panel text-gray-100">
-        <div class="cursor-pointer" onclick="togglePanel('idlePanel')">
-            <div class="w-full flex justify-center pb-3">
-                <div class="w-12 h-1.5 bg-gray-600 rounded-full"></div>
-            </div>
-            <div class="flex justify-between items-center mb-3">
-              <div>
-                <h2 class="font-black text-[15px] leading-tight text-white drop-shadow-md">โหมดรับงาน</h2>
-                <p class="text-[11px] font-bold mt-0.5 text-red-500 drop-shadow-md" id="statusText">🔴 ออฟไลน์</p>
-              </div>
-              <label class="relative inline-flex items-center cursor-pointer" onclick="event.stopPropagation()">
-                <input type="checkbox" id="onlineToggle" class="sr-only peer" onchange="toggleOnline()">
-                <div class="w-14 h-7 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-gray-800 after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-gray-200 after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-green-500 border border-gray-600"></div>
-              </label>
-            </div>
+  <div id="idlePanel" class="ui-panel text-gray-100">
+    <div class="cursor-pointer" onclick="togglePanel('idlePanel')">
+        <div class="w-full flex justify-center pb-3">
+            <div class="w-12 h-1.5 bg-gray-600 rounded-full"></div>
         </div>
-        
-        <div class="border-b border-gray-700 mb-3 w-full opacity-50"></div>
-
-        <div class="glass-box p-3 rounded-xl text-center border-gray-700 mb-3 space-y-1 shadow-sm">
-            <p class="text-gray-400 text-xs font-bold" id="gpsStatus">รอเปิดระบบเพื่ออัปเดต GPS...</p>
-            <p class="text-[10px] text-green-400 hidden" id="wakeLockStatus"><i class="fas fa-cog fa-spin"></i> หน้าจอจะเปิดค้างไว้ตลอดเวลา</p>
+        <div class="flex justify-between items-center mb-3">
+          <div>
+            <h2 class="font-black text-[15px] leading-tight text-white drop-shadow-md">กระดานรับงาน (Home)</h2>
+            <p class="text-[11px] font-bold mt-0.5 text-red-500 drop-shadow-md" id="statusText">🔴 ออฟไลน์</p>
+          </div>
+          <label class="relative inline-flex items-center cursor-pointer" onclick="event.stopPropagation()">
+            <input type="checkbox" id="onlineToggle" class="sr-only peer" onchange="toggleOnline()">
+            <div class="w-14 h-7 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-gray-800 after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-gray-200 after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-green-500 border border-gray-600"></div>
+          </label>
         </div>
+    </div>
+    
+    <div class="border-b border-gray-700 mb-3 w-full opacity-50"></div>
 
-        <h3 class="text-xs font-black text-blue-400 mb-2 flex items-center gap-1.5 tracking-widest"><i class="fas fa-list-ul"></i> รายการงานที่รอรับ</h3>
-        
-        <div id="jobListContainer" class="job-scroll space-y-2 flex-1 max-h-[35vh] glass-box !bg-gray-900/50 p-2 rounded-xl border border-gray-800 shadow-inner relative overflow-hidden">
-            <p class="text-center text-gray-500 text-[12px] font-bold py-6">กรุณาเปิดออนไลน์เพื่อดูงาน</p>
-            <div id="searchProgressBar" class="absolute bottom-0 left-0 w-full h-[2px] bg-gray-700/50 hidden">
-                <div class="h-full bg-blue-500 w-1/3 rounded-full animate-loading-scan"></div>
-            </div>
+    <div class="glass-box p-3 rounded-xl text-center border-gray-700 mb-3 space-y-1 shadow-sm">
+        <p class="text-gray-400 text-xs font-bold" id="gpsStatus">รอเปิดระบบเพื่ออัปเดต GPS...</p>
+        <p class="text-[10px] text-green-400 hidden" id="wakeLockStatus"><i class="fas fa-cog fa-spin"></i> หน้าจอจะเปิดค้างไว้ตลอดเวลา</p>
+    </div>
+
+    <h3 class="text-xs font-black text-blue-400 mb-2 flex items-center gap-1.5 tracking-widest"><i class="fas fa-list-ul"></i> งานใหม่ที่รอรับ</h3>
+    
+    <div id="jobListContainer" class="job-scroll space-y-2 flex-1 max-h-[35vh] glass-box !bg-gray-900/50 p-2 rounded-xl border border-gray-800 shadow-inner relative overflow-hidden">
+        <p class="text-center text-gray-500 text-[12px] font-bold py-6">กรุณาเปิดออนไลน์เพื่อดูงาน</p>
+        <div id="searchProgressBar" class="absolute bottom-0 left-0 w-full h-[2px] bg-gray-700/50 hidden">
+            <div class="h-full bg-blue-500 w-1/3 rounded-full animate-loading-scan"></div>
         </div>
-      </div>
+    </div>
+  </div>
 
-      <div id="activeJobPanel" class="ui-panel hidden text-gray-100 transition-transform duration-300">
+  <div id="activeJobPanel" class="ui-panel hidden text-gray-100 transition-transform duration-300">
+    <div id="activeJobContent" class="hidden h-full flex flex-col">
         <div class="cursor-pointer" onclick="togglePanel('activeJobPanel')">
             <div class="w-full flex justify-center pb-3">
                 <div class="w-12 h-1.5 bg-gray-600 rounded-full"></div>
@@ -206,10 +211,15 @@
                 <i class="fas fa-times"></i> ยกเลิกงานนี้
             </button>
         </div>
-      </div>
+    </div>
+    <div id="noActiveJobState" class="h-full flex flex-col items-center justify-center py-10 opacity-70">
+        <i class="fas fa-car-side text-6xl text-gray-600 mb-4"></i>
+        <h3 class="text-lg font-bold text-gray-400">ยังไม่มีงานที่กำลังดำเนินการ</h3>
+        <p class="text-xs text-gray-500 mt-2">ไปที่แท็บ "หน้าแรก" เพื่อดูงานที่รอรับ</p>
+    </div>
   </div>
 
-  <div id="tab2-History" class="hidden fixed inset-0 z-10 bg-gray-900 pt-8 pb-24 overflow-y-auto px-4 text-white">
+  <div id="tab3-History" class="hidden fixed inset-0 z-10 bg-gray-900 pt-8 pb-24 overflow-y-auto px-4 text-white">
       <h2 class="text-xl font-black text-green-400 mb-4 tracking-wide"><i class="fas fa-history"></i> ประวัติงานวิ่ง</h2>
       
       <div class="glass-box p-4 rounded-xl border border-gray-700 mb-4">
@@ -234,10 +244,10 @@
 
       <h3 class="text-xs font-black text-gray-400 mb-2 uppercase tracking-widest">รายการล่าสุด</h3>
       <div id="historyListContainer" class="space-y-3 pb-6">
-          </div>
+      </div>
   </div>
 
-  <div id="tab3-Profile" class="hidden fixed inset-0 z-10 bg-gray-900 pt-8 pb-24 overflow-y-auto px-4 text-white flex flex-col items-center">
+  <div id="tab4-Profile" class="hidden fixed inset-0 z-10 bg-gray-900 pt-8 pb-24 overflow-y-auto px-4 text-white flex flex-col items-center">
       <h2 class="text-xl font-black text-green-400 mb-6 w-full tracking-wide"><i class="fas fa-user-circle"></i> โปรไฟล์คนขับ</h2>
       
       <div class="w-24 h-24 bg-gray-800 text-green-500 rounded-full flex items-center justify-center text-5xl shadow-inner border-2 border-green-500/50 mb-4">
@@ -271,25 +281,28 @@
 
   <div id="bottomNav" class="fixed bottom-0 w-full h-[70px] bg-gray-900 border-t border-gray-800 flex items-center justify-around z-[100] pb-2 pt-1 shadow-[0_-5px_20px_rgba(0,0,0,0.5)]">
       <button onclick="switchDriverTab(1)" id="navBtn1" class="flex-1 flex flex-col items-center justify-center text-green-400 transition-colors">
-          <i class="fas fa-car text-xl mb-1"></i>
-          <span class="text-[10px] font-bold">รับงาน</span>
+          <i class="fas fa-home text-[20px] mb-1"></i>
+          <span class="text-[10px] font-bold">หน้าแรก</span>
       </button>
       <button onclick="switchDriverTab(2)" id="navBtn2" class="flex-1 flex flex-col items-center justify-center text-gray-500 hover:text-green-400 transition-colors">
-          <i class="fas fa-history text-xl mb-1"></i>
-          <span class="text-[10px] font-bold">ประวัติ</span>
+          <i class="fas fa-car-side text-[20px] mb-1"></i>
+          <span class="text-[10px] font-bold">งานปัจจุบัน</span>
       </button>
       <button onclick="switchDriverTab(3)" id="navBtn3" class="flex-1 flex flex-col items-center justify-center text-gray-500 hover:text-green-400 transition-colors">
-          <i class="fas fa-user text-xl mb-1"></i>
+          <i class="fas fa-history text-[20px] mb-1"></i>
+          <span class="text-[10px] font-bold">ประวัติ</span>
+      </button>
+      <button onclick="switchDriverTab(4)" id="navBtn4" class="flex-1 flex flex-col items-center justify-center text-gray-500 hover:text-green-400 transition-colors">
+          <i class="fas fa-user-circle text-[20px] mb-1"></i>
           <span class="text-[10px] font-bold">โปรไฟล์</span>
       </button>
   </div>
 
   <div id="jobDetailModal" class="hidden fixed inset-0 z-[110] pointer-events-none flex flex-col justify-end transition-transform">
       <div class="bg-gray-900 rounded-t-[24px] p-4 w-full mx-auto shadow-[0_-10px_40px_rgba(0,0,0,0.8)] pointer-events-auto border-t border-gray-700 pb-[80px] text-gray-100">
-          
           <div class="flex justify-between items-center mb-3">
               <div>
-                  <h3 class="text-lg font-black text-blue-400 leading-tight drop-shadow-md">รายละเอียดงานใหม่</h3>
+                  <h3 class="text-lg font-black text-blue-400 leading-tight drop-shadow-md">รายละเอียดงาน</h3>
                   <p class="text-[11px] text-gray-400 font-bold mt-0.5" id="detailTotalEta">ระยะทางรวม: กำลังคำนวณ...</p>
               </div>
               <div class="flex items-center gap-2 shrink-0 text-right">
@@ -318,24 +331,18 @@
 
           <div class="mb-4 glass-box p-3.5 rounded-2xl border border-gray-700 relative shadow-sm">
               <div class="absolute left-[1.35rem] top-6 bottom-6 w-0.5 border-l-[1.5px] border-dashed border-gray-700"></div>
-              
               <div class="flex items-start gap-3 mb-3 relative z-10 w-full min-w-0">
                   <div class="shrink-0 mt-1"><i class="fas fa-circle text-[10px] text-green-500 border border-gray-800 rounded-full"></i></div>
                   <div class="flex-1 overflow-hidden min-w-0">
                       <p class="text-[13px] text-gray-200 truncate font-medium leading-tight mb-1" id="detailPick">...</p>
-                      <p class="text-[12px] font-bold text-green-400 mt-1 block" id="detailEtaToPick">
-                          <i class="fas fa-car-side"></i> ห่างจากคุณ: กำลังคำนวณ...
-                      </p>
+                      <p class="text-[12px] font-bold text-green-400 mt-1 block" id="detailEtaToPick"><i class="fas fa-car-side"></i> ห่างจากคุณ: กำลังคำนวณ...</p>
                   </div>
               </div>
-
               <div class="flex items-start gap-3 relative z-10 w-full min-w-0">
                   <div class="shrink-0 mt-1"><i class="fas fa-circle text-[10px] text-red-500 border border-gray-800 rounded-full"></i></div>
                   <div class="flex-1 overflow-hidden min-w-0">
                       <p class="text-[13px] text-gray-200 truncate font-medium leading-tight mb-1" id="detailDrop">...</p>
-                      <p class="text-[12px] font-bold text-blue-400 mt-1 block" id="detailEtaToDrop">
-                          <i class="fas fa-road"></i> ระยะทางไปส่ง: กำลังคำนวณ...
-                      </p>
+                      <p class="text-[12px] font-bold text-blue-400 mt-1 block" id="detailEtaToDrop"><i class="fas fa-road"></i> ระยะทางไปส่ง: กำลังคำนวณ...</p>
                   </div>
               </div>
           </div>
@@ -457,11 +464,10 @@
     let isAlarmRinging = false; 
     let isSatelliteMode = true; 
 
-    // ตั้งค่าเริ่มต้นวันที่ในหน้าประวัติให้เป็นวันนี้
     function initDatePickers() {
         let today = new Date();
         let dd = String(today.getDate()).padStart(2, '0');
-        let mm = String(today.getMonth() + 1).padStart(2, '0'); // มกราคมคือ 0
+        let mm = String(today.getMonth() + 1).padStart(2, '0');
         let yyyy = today.getFullYear();
         let dateString = yyyy + '-' + mm + '-' + dd;
         
@@ -469,35 +475,69 @@
         document.getElementById('histEndDate').value = dateString;
     }
 
-    // ฟังก์ชันสลับแท็บเมนูด้านล่าง
+    // ฟังก์ชันจัดการ 4 แท็บ
     function switchDriverTab(tabIndex) {
-        document.getElementById('tab1-ReceiveJobs').classList.add('hidden');
-        document.getElementById('tab2-History').classList.add('hidden');
-        document.getElementById('tab3-Profile').classList.add('hidden');
-        
-        document.getElementById('navBtn1').className = "flex-1 flex flex-col items-center justify-center text-gray-500 hover:text-green-400 transition-colors";
-        document.getElementById('navBtn2').className = "flex-1 flex flex-col items-center justify-center text-gray-500 hover:text-green-400 transition-colors";
-        document.getElementById('navBtn3').className = "flex-1 flex flex-col items-center justify-center text-gray-500 hover:text-green-400 transition-colors";
+        // รีเซ็ตปุ่มทั้งหมด
+        for(let i=1; i<=4; i++) {
+            let btn = document.getElementById('navBtn'+i);
+            if(btn) btn.className = "flex-1 flex flex-col items-center justify-center text-gray-500 hover:text-green-400 transition-colors";
+        }
+        // แอคทีฟปุ่มที่เลือก
+        document.getElementById('navBtn'+tabIndex).className = "flex-1 flex flex-col items-center justify-center text-green-400 transition-colors";
 
-        if(tabIndex === 1) {
-            document.getElementById('tab1-ReceiveJobs').classList.remove('hidden');
-            document.getElementById('navBtn1').classList.replace('text-gray-500', 'text-green-400');
-            document.getElementById('navBtn1').classList.remove('hover:text-green-400');
-        } else if (tabIndex === 2) {
-            document.getElementById('tab2-History').classList.remove('hidden');
-            document.getElementById('navBtn2').classList.replace('text-gray-500', 'text-green-400');
-            document.getElementById('navBtn2').classList.remove('hover:text-green-400');
-            renderHistory();
-        } else if (tabIndex === 3) {
-            document.getElementById('tab3-Profile').classList.remove('hidden');
-            document.getElementById('navBtn3').classList.replace('text-gray-500', 'text-green-400');
-            document.getElementById('navBtn3').classList.remove('hover:text-green-400');
+        let mapContainer = document.getElementById('mapContainer');
+        let topBar = document.getElementById('topBar');
+        let mapControls = document.getElementById('mapControls');
+        
+        let idleP = document.getElementById('idlePanel');
+        let actP = document.getElementById('activeJobPanel');
+        let actContent = document.getElementById('activeJobContent');
+        let noActState = document.getElementById('noActiveJobState');
+        let tab3 = document.getElementById('tab3-History');
+        let tab4 = document.getElementById('tab4-Profile');
+
+        // ซ่อนพาเนลทั้งหมดก่อน
+        idleP.classList.add('hidden');
+        actP.classList.add('hidden');
+        tab3.classList.add('hidden');
+        tab4.classList.add('hidden');
+
+        // ตรวจสอบว่าจะโชว์แผนที่ไหม (เฉพาะแท็บ 1 และ 2)
+        if(tabIndex === 1 || tabIndex === 2) {
+            mapContainer.classList.remove('hidden');
             
-            if(currentDriverProfile) {
-                document.getElementById('profName').innerText = currentDriverProfile.name;
-                document.getElementById('profPin').innerText = "รหัส PIN: " + currentDriverProfile.pin;
-                document.getElementById('profCar').innerText = `${currentDriverProfile.brand || '-'} ${currentDriverProfile.color || ''} (${currentDriverProfile.plate || '-'})`;
-                document.getElementById('profPhone').innerText = currentDriverProfile.phone;
+            if(tabIndex === 1) { // กระดานรับงาน (Home)
+                idleP.classList.remove('hidden');
+                if(map) map.setOptions({ padding: { top: 80, bottom: 350, left: 0, right: 0 } });
+                clearMapRoutes(); // ซ่อนเส้นทางเวลามาส่องงานใหม่
+                centerToDriver();
+            } else if (tabIndex === 2) { // งานปัจจุบัน (Active Job)
+                actP.classList.remove('hidden');
+                if(activeJobId) {
+                    actContent.classList.remove('hidden');
+                    noActState.classList.add('hidden');
+                    if(map) map.setOptions({ padding: { top: 80, bottom: 350, left: 0, right: 0 } });
+                    updateRoute(true); // วาดเส้นทางใหม่สำหรับงานที่ทำอยู่
+                } else {
+                    actContent.classList.add('hidden');
+                    noActState.classList.remove('hidden');
+                    if(map) map.setOptions({ padding: { top: 80, bottom: 350, left: 0, right: 0 } });
+                }
+            }
+        } else {
+            // แท็บ 3 และ 4 ไม่ต้องใช้แผนที่
+            mapContainer.classList.add('hidden');
+            if(tabIndex === 3) {
+                tab3.classList.remove('hidden');
+                renderHistory();
+            } else if(tabIndex === 4) {
+                tab4.classList.remove('hidden');
+                if(currentDriverProfile) {
+                    document.getElementById('profName').innerText = currentDriverProfile.name;
+                    document.getElementById('profPin').innerText = "รหัส PIN: " + currentDriverProfile.pin;
+                    document.getElementById('profCar').innerText = `${currentDriverProfile.brand || '-'} ${currentDriverProfile.color || ''} (${currentDriverProfile.plate || '-'})`;
+                    document.getElementById('profPhone').innerText = currentDriverProfile.phone;
+                }
             }
         }
     }
@@ -511,11 +551,9 @@
             document.getElementById('loginModal').classList.remove('hidden');
         } else {
             document.getElementById('loginModal').classList.add('hidden');
-            
             db.ref('drivers_profile/' + driverPin).once('value', snap => {
                 if (snap.exists()) {
                     currentDriverProfile = snap.val();
-                    
                     let nameEl = document.getElementById('driverNameDisplay');
                     nameEl.innerText = `| ${currentDriverProfile.name}`;
                     nameEl.classList.remove('hidden');
@@ -625,6 +663,7 @@
                 document.getElementById('onlineToggle').checked = true;
                 toggleOnline();
             }
+            switchDriverTab(1); // เริ่มต้นที่หน้าแรก
         } else {
             document.getElementById('loginModal').classList.remove('hidden');
         }
@@ -638,7 +677,7 @@
             if (panel.classList.contains('panel-collapsed')) {
                 map.setOptions({ padding: { top: 80, bottom: 120, left: 0, right: 0 } });
             } else {
-                map.setOptions({ padding: { top: 80, bottom: 400, left: 0, right: 0 } });
+                map.setOptions({ padding: { top: 80, bottom: 350, left: 0, right: 0 } });
             }
         }
     }
@@ -646,7 +685,7 @@
     function expandPanel(panelId) {
         const panel = document.getElementById(panelId);
         if (panel) panel.classList.remove('panel-collapsed');
-        if (map) map.setOptions({ padding: { top: 80, bottom: 400, left: 0, right: 0 } });
+        if (map) map.setOptions({ padding: { top: 80, bottom: 350, left: 0, right: 0 } });
     }
 
     function sendLineNotify(userId, msg, type = 'status_update') {
@@ -712,7 +751,10 @@
                     driverLng = pos.coords.longitude;
                     db.ref('driver').update({ lat: driverLat, lng: driverLng });
                     if(markerDriver) markerDriver.setPosition({lat: driverLat, lng: driverLng});
-                    if(activeJobId) updateRoute(false);
+                    // ไม่บังคับอัปเดตเส้นทางถ้าอยู่หน้าโฮม
+                    if(activeJobId && !document.getElementById('activeJobPanel').classList.contains('hidden')) {
+                        updateRoute(false);
+                    }
                 }, null, { enableHighAccuracy: true });
             }
         }
@@ -748,12 +790,6 @@
         if(map && driverLat && driverLng) {
             map.panTo({lat: driverLat, lng: driverLng});
             map.setZoom(16);
-            
-            const panel = document.getElementById('activeJobPanel');
-            if(panel && panel.classList.contains('panel-collapsed')) {
-                panel.classList.remove('panel-collapsed');
-                map.setOptions({ padding: { top: 80, bottom: 400, left: 0, right: 0 } });
-            }
         }
     }
 
@@ -765,7 +801,7 @@
         if(btnO) { btnO.classList.remove('text-gray-300'); btnO.classList.add('text-green-400'); }
 
         if (map && currentRouteBounds) {
-            map.fitBounds(currentRouteBounds, { top: 80, right: 50, bottom: 400, left: 50 });
+            map.fitBounds(currentRouteBounds, { top: 80, right: 50, bottom: 350, left: 50 });
         } else {
             centerToDriver();
         }
@@ -842,7 +878,7 @@
         disableDefaultUI: true, 
         gestureHandling: 'greedy', 
         zoomControl: true, 
-        padding: { top: 60, bottom: 400, left: 0, right: 0 } 
+        padding: { top: 80, bottom: 350, left: 0, right: 0 } 
       });
 
       map.addListener('dragstart', () => {
@@ -935,15 +971,19 @@
                     
                     let posObj = {lat: driverLat, lng: driverLng};
                     if(markerDriver) markerDriver.setPosition(posObj);
-                    if(isTrackingMode && map && !selectedJobId) map.panTo(posObj);
+                    
+                    // ให้แผนที่เลื่อนตามตัวคนขับตลอด ยกเว้นตอนดูกระดานที่ไม่ได้เลือกงาน
+                    if(isTrackingMode && map && !selectedJobId && !document.getElementById('activeJobPanel').classList.contains('hidden')) {
+                        map.panTo(posObj);
+                    }
                     
                     if(isFirstGps) {
                         if(!activeJobId && !selectedJobId && isTrackingMode && map) map.setZoom(16);
-                        if(activeJobId) updateRoute(true); 
+                        if(activeJobId && !document.getElementById('activeJobPanel').classList.contains('hidden')) updateRoute(true); 
                         isFirstGps = false;
                     }
 
-                    if(activeJobId && (Date.now() - lastRouteUpdate > 10000)) {
+                    if(activeJobId && (Date.now() - lastRouteUpdate > 10000) && !document.getElementById('activeJobPanel').classList.contains('hidden')) {
                         lastRouteUpdate = Date.now();
                         updateRoute(false); 
                     }
@@ -989,8 +1029,7 @@
         if(!driverPin) return; 
         allBookings = snap.val();
         processBookings(); 
-        // อัปเดตประวัติแบบเรียลไทม์ถ้ากำลังเปิดแท็บประวัติอยู่
-        if(!document.getElementById('tab2-History').classList.contains('hidden')) {
+        if(!document.getElementById('tab3-History').classList.contains('hidden')) {
             renderHistory();
         }
     });
@@ -1017,15 +1056,6 @@
         }
 
         if (foundActiveJob) {
-            let iP = document.getElementById('idlePanel');
-            let aP = document.getElementById('activeJobPanel');
-            if(iP) iP.classList.add('hidden');
-            if(aP) aP.classList.remove('hidden');
-            
-            if (!isOnline) {
-                let oT = document.getElementById('onlineToggle');
-                if(oT) { oT.checked = true; toggleOnline(); }
-            }
             updateActiveJobUI();
         } else {
             if (savedJobId && activeJobId === savedJobId && !isProcessingAction) {
@@ -1036,6 +1066,8 @@
             }
             if (activeJobId && !foundActiveJob && !isProcessingAction) resetToIdle();
         }
+        
+        // ถ้ารับงานอยู่ แต่ผู้ขับดันไปสลับแท็บอื่นๆ จะไม่มีการ force เด้งหน้า แต่ข้อมูลจะอัปเดตเบื้องหลัง
         renderJobList(); 
     }
 
@@ -1046,11 +1078,6 @@
         
         if (!isOnline) { 
             listContainer.innerHTML = '<p class="text-center text-gray-500 text-[12px] font-bold py-6">กรุณาเปิดออนไลน์เพื่อดูงาน</p>'; 
-            if(pBar) pBar.classList.add('hidden');
-            return; 
-        }
-        
-        if (activeJobId) {
             if(pBar) pBar.classList.add('hidden');
             return; 
         }
@@ -1163,9 +1190,7 @@
         if(eP) eP.innerHTML = `<i class="fas fa-car-side"></i> ห่างจากคุณ: กำลังคำนวณ...`;
         if(eD) eD.innerHTML = `<i class="fas fa-road"></i> ระยะทางไปส่ง: กำลังคำนวณ...`;
         
-        let bO = document.getElementById('btnOverview');
         let mod = document.getElementById('jobDetailModal');
-        if(bO) bO.classList.remove('hidden');
         if(mod) mod.classList.remove('hidden');
 
         let origin = {lat: driverLat, lng: driverLng}; 
@@ -1220,10 +1245,12 @@
         let md = document.getElementById('jobDetailModal');
         if(md) md.classList.add('hidden'); 
         selectedJobId = null;
-        if (!activeJobId) { 
+        
+        // ถ้าดูจบแล้วปิดโมดอล จะกลับไปให้แผนที่โฟกัสงานปัจจุบัน (ถ้ามี) หรือโฟกัสตัวเอง(ถ้าไม่มีงาน)
+        if (activeJobId && !document.getElementById('activeJobPanel').classList.contains('hidden')) {
+            updateRoute(true);
+        } else {
             clearMapRoutes(); 
-            let bo = document.getElementById('btnOverview');
-            if(bo) bo.classList.add('hidden');
             centerToDriver(); 
         }
     }
@@ -1268,9 +1295,7 @@
         if(jd) jd.classList.add('hidden');
         
         db.ref('bookings/' + jobIdToAccept).transaction(function(currentData) {
-            if (currentData === null) {
-                return null; 
-            }
+            if (currentData === null) return null; 
             if (currentData.status === "รอผู้ขับขี่ตอบรับ") {
                 currentData.status = "รับงานแล้ว กำลังเดินทางไปหา";
                 currentData.driverPhone = phoneNumber;
@@ -1299,20 +1324,22 @@
                 sendLineNotify(activeJobId, "🏎️ คนขับตอบรับงานของคุณแล้ว! กำลังรีบเดินทางไปหาคุณครับ");
                 isProcessingAction = false;
                 
-                let idp = document.getElementById('idlePanel');
-                let acp = document.getElementById('activeJobPanel');
-                if(idp) idp.classList.add('hidden'); 
-                if(acp) acp.classList.remove('hidden');
-                
-                expandPanel('activeJobPanel'); 
-                updateRoute(true); 
+                // ถ้ารับงานสำเร็จให้สลับมาแท็บที่ 2 ทันที
+                switchDriverTab(2);
                 updateActiveJobUI();
             }
         });
     }
 
     function updateActiveJobUI() {
-        if(!activeJobData) return;
+        if(!activeJobData) {
+            document.getElementById('activeJobContent').classList.add('hidden');
+            document.getElementById('noActiveJobState').classList.remove('hidden');
+            return;
+        } else {
+            document.getElementById('activeJobContent').classList.remove('hidden');
+            document.getElementById('noActiveJobState').classList.add('hidden');
+        }
         
         let pN = document.getElementById('passengerName');
         let bC = document.getElementById('btnCallPassenger');
@@ -1443,19 +1470,19 @@
 
     function resetToIdle() {
         localStorage.removeItem('activeJobId'); activeJobId = null; activeJobData = null; selectedJobId = null;
-        let acp = document.getElementById('activeJobPanel');
-        let idp = document.getElementById('idlePanel');
-        if(acp) acp.classList.add('hidden'); 
-        if(idp) idp.classList.remove('hidden');
+        
+        updateActiveJobUI(); // รีเฟรชให้เห็น State ไม่มีงาน
         
         let bo = document.getElementById('btnOverview');
         let ed = document.getElementById('etaDisplay');
         if(bo) bo.classList.add('hidden'); 
         if(ed) ed.classList.add('hidden'); 
         
-        expandPanel('idlePanel'); 
         lastNotifiedMsg = ""; 
         clearMapRoutes(); centerToDriver(); renderJobList(); 
+        
+        // เมื่อจบงานสลับกลับมาหน้าแรก
+        switchDriverTab(1);
     }
 
     function updateRoute(forceZoom = false) {
@@ -1508,7 +1535,7 @@
                     let btnO = document.getElementById('btnOverview');
                     if(btnC) { btnC.classList.remove('text-green-400'); btnC.classList.add('text-gray-300'); }
                     if(btnO) { btnO.classList.remove('text-gray-300'); btnO.classList.add('text-green-400'); }
-                    setTimeout(() => { map.fitBounds(currentRouteBounds, { top: 80, right: 50, bottom: 400, left: 50 }); }, 200);
+                    setTimeout(() => { map.fitBounds(currentRouteBounds, { top: 80, right: 50, bottom: 350, left: 50 }); }, 200);
                 }
             }
         });
@@ -1522,7 +1549,6 @@
         window.open(`https://www.google.com/maps/dir/?api=1&origin=${driverLat},${driverLng}&destination=${lat},${lng}&travelmode=driving`, '_blank');
     }
 
-    // ฟังก์ชันคำนวณและดึงประวัติงาน
     function renderHistory() {
         if(!allBookings || !driverPin) return;
         
@@ -1531,7 +1557,6 @@
         
         if(!startInput || !endInput) return;
 
-        // คำนวณเป็น Milliseconds
         let startMs = new Date(startInput + "T00:00:00").getTime();
         let endMs = new Date(endInput + "T23:59:59").getTime();
 
@@ -1539,7 +1564,6 @@
         let totalJobs = 0;
         let jobsArray = [];
 
-        // กรองเฉพาะงานที่จบแล้ว + เป็นของคนขับคนนี้ + อยู่ในช่วงเวลา
         for(let key in allBookings) {
             let b = allBookings[key];
             if(b.driverPin === driverPin && (b.status.includes("ถึงที่หมาย") || b.status.includes("เสร็จสิ้น"))) {
@@ -1550,7 +1574,6 @@
             }
         }
 
-        // เรียงจากงานล่าสุดไปเก่า
         jobsArray.sort((a, b) => b.data.timestamp - a.data.timestamp);
 
         let html = '';
