@@ -12,10 +12,8 @@
     @import url('https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;700&display=swap');
     body { font-family: 'Kanit', sans-serif; background-color: #111827; }
     
-    /* แก้ไขขนาดแผนที่ให้ชัดเจน ป้องกันปัญหาแผนที่โหลดไม่ขึ้น (จอดำ) */
     .map-container { position: fixed; top: 0; left: 0; width: 100vw; height: calc(100vh - 70px); z-index: 0; background: #1f2937; }
     
-    /* ปรับ Panel ให้อยู่เหนือ Bottom Nav */
     .ui-panel { 
         position: fixed; 
         bottom: 70px; 
@@ -98,6 +96,21 @@
     </div>
   </div>
 
+  <div id="floatingStatusBox" class="hidden fixed top-[76px] left-4 right-4 z-30 glass-box p-4 rounded-2xl flex justify-between items-center shadow-lg transition-all duration-300 border-l-4 border-green-500 pointer-events-auto">
+      <div class="min-w-0 flex-1 pr-2">
+          <p class="text-[10px] font-black text-gray-400 mb-0.5 tracking-widest" id="unifiedStatusLabel"><i class="fas fa-info-circle text-blue-400"></i> STATUS</p>
+          <h2 class="font-black text-[16px] leading-tight text-green-400 drop-shadow-md truncate" id="jobStatusHeader">กำลังเดินทางไปหา</h2>
+          <p class="text-[11px] font-bold mt-0.5 text-blue-300 drop-shadow-md truncate" id="etaDisplay">ระยะทาง -- กม. • -- นาที</p>
+      </div>
+      <div class="text-right shrink-0 flex items-center gap-2">
+          <div id="activePromoBox" class="hidden flex-col items-end">
+              <span id="activeOldPrice" class="text-[10px] text-gray-500 line-through leading-none"></span>
+              <span id="activePromoTag" class="text-[9px] text-green-400 font-bold leading-none mt-1"></span>
+          </div>
+          <span class="bg-gray-800 border border-gray-600 px-3 py-2 rounded-xl font-black text-green-400 text-lg inline-block shadow-sm" id="jobPrice">฿0</span>
+      </div>
+  </div>
+
   <div id="mapControls" class="fixed top-[76px] right-4 z-30 flex flex-col gap-3 pointer-events-auto transition-all duration-300">
       <button onclick="toggleMapStyle()" id="btnMapStyle" class="glass-box w-12 h-12 flex items-center justify-center rounded-full shadow-lg text-gray-300 hover:bg-white/10 transition" title="สลับโหมดแผนที่">
           <i class="fas fa-satellite text-[18px]"></i>
@@ -146,25 +159,17 @@
 
   <div id="activeJobPanel" class="ui-panel hidden text-gray-100 transition-transform duration-300 z-10">
     <div id="activeJobContent" class="hidden h-full flex flex-col">
-        <div class="cursor-pointer" onclick="togglePanel('activeJobPanel')">
-            <div class="w-full flex justify-center pb-3">
-                <div class="w-12 h-1.5 bg-gray-600 rounded-full"></div>
-            </div>
-            
-            <div id="unifiedStatusBox" class="flex justify-between items-center mb-3">
-              <div class="min-w-0 flex-1 pr-2">
-                  <p class="text-[10px] font-black text-gray-400 mb-0.5 tracking-widest" id="unifiedStatusLabel"><i class="fas fa-info-circle text-blue-400"></i> STATUS</p>
-                  <h2 class="font-black text-[15px] leading-tight text-green-400 drop-shadow-md truncate" id="jobStatusHeader">กำลังเดินทางไปหา</h2>
-                  <p class="text-[11px] font-bold mt-0.5 text-blue-300 drop-shadow-md truncate" id="etaDisplay">ระยะทาง -- กม. • -- นาที</p>
-              </div>
-              <div class="text-right shrink-0 flex items-center gap-2">
-                  <div id="activePromoBox" class="hidden flex-col items-end">
-                      <span id="activeOldPrice" class="text-[10px] text-gray-500 line-through leading-none"></span>
-                      <span id="activePromoTag" class="text-[9px] text-green-400 font-bold leading-none mt-1"></span>
-                  </div>
-                  <span class="bg-gray-800 border border-gray-600 px-3 py-1.5 rounded-xl font-black text-green-400 text-sm inline-block shadow-sm" id="jobPrice">฿0</span>
-              </div>
-            </div>
+        <div class="w-full flex justify-center pb-3 cursor-pointer" onclick="togglePanel('activeJobPanel')">
+            <div class="w-12 h-1.5 bg-gray-600 rounded-full"></div>
+        </div>
+
+        <div class="flex gap-2 mb-3">
+            <button id="btnAction" onclick="handleMainActionClick()" class="flex-[2] bg-green-600/90 backdrop-blur-xl border border-green-500/50 text-white py-3 rounded-xl font-bold text-sm shadow-[0_0_15px_rgba(34,197,94,0.3)] hover:bg-green-500 transition drop-shadow-md">
+                มาถึงจุดรับ
+            </button>
+            <button onclick="openDriverNavMap()" class="flex-1 glass-box text-blue-400 py-3 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 hover:bg-white/10 transition shadow-sm">
+                <i class="fas fa-location-arrow drop-shadow-md"></i> นำทาง
+            </button>
         </div>
 
         <div class="border-b border-gray-700 mb-3 w-full opacity-50"></div>
@@ -197,14 +202,6 @@
                 </div>
             </div>
 
-            <div class="flex gap-2 mb-2">
-                <button id="btnAction" onclick="handleMainActionClick()" class="flex-[2] bg-green-600/90 backdrop-blur-xl border border-green-500/50 text-white py-3 rounded-xl font-bold text-sm shadow-[0_0_15px_rgba(34,197,94,0.3)] hover:bg-green-500 transition drop-shadow-md">
-                    มาถึงจุดรับ
-                </button>
-                <button onclick="openDriverNavMap()" class="flex-1 glass-box text-blue-400 py-3 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 hover:bg-white/10 transition shadow-sm">
-                    <i class="fas fa-location-arrow drop-shadow-md"></i> นำทาง
-                </button>
-            </div>
             <button id="btnCancelJob" onclick="promptCancelJob()" class="w-full glass-box !border-red-500/30 text-red-400 py-2.5 rounded-xl font-bold text-[11px] mt-1 hover:bg-white/10 transition shadow-sm flex justify-center items-center gap-1.5">
                 <i class="fas fa-times"></i> ยกเลิกงานนี้
             </button>
@@ -460,9 +457,8 @@
     let lastNotifiedMsg = ""; 
     let knownPendingJobs = [];
     let isAlarmRinging = false; 
-    let isSatelliteMode = false; // เปลี่ยนค่าเริ่มต้นให้ใช้แผนที่แบบถนน(สีเข้ม) เพื่อความรวดเร็ว
+    let isSatelliteMode = false;
 
-    // ฟังก์ชันช่วยคำนวณระยะขอบเขตแผนที่ล่างสุด ป้องกันแผนที่บั๊กในหน้าจอเล็ก
     function getSafeBottomPadding() {
         return Math.min(350, window.innerHeight * 0.45);
     }
@@ -491,11 +487,18 @@
         let noActState = document.getElementById('noActiveJobState');
         let tab3 = document.getElementById('tab3-History');
         let tab4 = document.getElementById('tab4-Profile');
+        let floatStatus = document.getElementById('floatingStatusBox');
+        let mapCtrl = document.getElementById('mapControls');
 
         idleP.classList.add('hidden');
         actP.classList.add('hidden');
         tab3.classList.add('hidden');
         tab4.classList.add('hidden');
+        floatStatus.classList.add('hidden');
+        
+        // คืนค่าปุ่มควบคุมแผนที่ไว้ตำแหน่งปกติ
+        mapCtrl.classList.remove('top-[170px]');
+        mapCtrl.classList.add('top-[76px]');
 
         if(tabIndex === 1) { 
             idleP.classList.remove('hidden');
@@ -510,9 +513,15 @@
             if(activeJobId) {
                 actContent.classList.remove('hidden');
                 noActState.classList.add('hidden');
+                
+                // โชว์กล่องสถานะด้านบน และดันกล่องควบคุมแผนที่ลงมา
+                floatStatus.classList.remove('hidden');
+                mapCtrl.classList.remove('top-[76px]');
+                mapCtrl.classList.add('top-[170px]');
+
                 if(map) {
                     google.maps.event.trigger(map, 'resize');
-                    map.setOptions({ padding: { top: 80, bottom: getSafeBottomPadding(), left: 0, right: 0 } });
+                    map.setOptions({ padding: { top: 160, bottom: getSafeBottomPadding(), left: 0, right: 0 } });
                 }
                 updateRoute(true); 
             } else {
@@ -668,11 +677,16 @@
         const panel = document.getElementById(panelId);
         if(!panel) return;
         panel.classList.toggle('panel-collapsed');
+        
+        let activeTab = document.getElementById('navBtn2').classList.contains('text-green-400') ? 2 : 1;
+
         if (map) {
             if (panel.classList.contains('panel-collapsed')) {
-                map.setOptions({ padding: { top: 80, bottom: 120, left: 0, right: 0 } });
+                let pTop = activeTab === 2 ? 160 : 80;
+                map.setOptions({ padding: { top: pTop, bottom: 120, left: 0, right: 0 } });
             } else {
-                map.setOptions({ padding: { top: 80, bottom: getSafeBottomPadding(), left: 0, right: 0 } });
+                let pTop = activeTab === 2 ? 160 : 80;
+                map.setOptions({ padding: { top: pTop, bottom: getSafeBottomPadding(), left: 0, right: 0 } });
             }
         }
     }
@@ -680,7 +694,9 @@
     function expandPanel(panelId) {
         const panel = document.getElementById(panelId);
         if (panel) panel.classList.remove('panel-collapsed');
-        if (map) map.setOptions({ padding: { top: 80, bottom: getSafeBottomPadding(), left: 0, right: 0 } });
+        let activeTab = document.getElementById('navBtn2').classList.contains('text-green-400') ? 2 : 1;
+        let pTop = activeTab === 2 ? 160 : 80;
+        if (map) map.setOptions({ padding: { top: pTop, bottom: getSafeBottomPadding(), left: 0, right: 0 } });
     }
 
     function sendLineNotify(userId, msg, type = 'status_update') {
@@ -795,8 +811,11 @@
         if(btnC) { btnC.classList.remove('text-green-400'); btnC.classList.add('text-gray-300'); }
         if(btnO) { btnO.classList.remove('text-gray-300'); btnO.classList.add('text-green-400'); }
 
+        let activeTab = document.getElementById('navBtn2').classList.contains('text-green-400') ? 2 : 1;
+        let pTop = activeTab === 2 ? 160 : 80;
+
         if (map && currentRouteBounds) {
-            map.fitBounds(currentRouteBounds, { top: 80, right: 50, bottom: getSafeBottomPadding(), left: 50 });
+            map.fitBounds(currentRouteBounds, { top: pTop, right: 50, bottom: getSafeBottomPadding(), left: 50 });
         } else {
             centerToDriver();
         }
@@ -968,7 +987,7 @@
                     let posObj = {lat: driverLat, lng: driverLng};
                     if(markerDriver) markerDriver.setPosition(posObj);
                     
-                    if(isTrackingMode && map && !selectedJobId && !document.getElementById('activeJobPanel').classList.contains('hidden')) {
+                    if(isTrackingMode && map && !selectedJobId && (!document.getElementById('activeJobPanel').classList.contains('hidden') || !document.getElementById('idlePanel').classList.contains('hidden'))) {
                         map.panTo(posObj);
                     }
                     
@@ -1318,19 +1337,38 @@
                 isProcessingAction = false;
                 
                 switchDriverTab(2);
-                updateActiveJobUI();
             }
         });
     }
 
     function updateActiveJobUI() {
+        let actContent = document.getElementById('activeJobContent');
+        let noActState = document.getElementById('noActiveJobState');
+        let floatStatus = document.getElementById('floatingStatusBox');
+        let mapCtrl = document.getElementById('mapControls');
+
         if(!activeJobData) {
-            document.getElementById('activeJobContent').classList.add('hidden');
-            document.getElementById('noActiveJobState').classList.remove('hidden');
+            if(actContent) actContent.classList.add('hidden');
+            if(noActState) noActState.classList.remove('hidden');
+            if(floatStatus) floatStatus.classList.add('hidden');
+            
+            if(mapCtrl && !document.getElementById('tab2-History')?.classList.contains('hidden') === false) { // ถ้าไม่ใช่ tab2 ก็ให้มันกลับที่เดิม
+                mapCtrl.classList.remove('top-[170px]');
+                mapCtrl.classList.add('top-[76px]');
+            }
             return;
         } else {
-            document.getElementById('activeJobContent').classList.remove('hidden');
-            document.getElementById('noActiveJobState').classList.add('hidden');
+            if(actContent) actContent.classList.remove('hidden');
+            if(noActState) noActState.classList.add('hidden');
+            
+            // โชว์แค่เมื่ออยู่ Tab 2
+            if(document.getElementById('navBtn2').classList.contains('text-green-400')) {
+                if(floatStatus) floatStatus.classList.remove('hidden');
+                if(mapCtrl) {
+                    mapCtrl.classList.remove('top-[76px]');
+                    mapCtrl.classList.add('top-[170px]');
+                }
+            }
         }
         
         let pN = document.getElementById('passengerName');
@@ -1520,13 +1558,13 @@
                     }, 3000);
                 }
                 
-                if (forceZoom && map) {
+                if (forceZoom && map && document.getElementById('navBtn2').classList.contains('text-green-400')) {
                     isTrackingMode = false; 
                     let btnC = document.getElementById('btnCrosshair');
                     let btnO = document.getElementById('btnOverview');
                     if(btnC) { btnC.classList.remove('text-green-400'); btnC.classList.add('text-gray-300'); }
                     if(btnO) { btnO.classList.remove('text-gray-300'); btnO.classList.add('text-green-400'); }
-                    setTimeout(() => { map.fitBounds(currentRouteBounds, { top: 80, right: 50, bottom: getSafeBottomPadding(), left: 50 }); }, 200);
+                    setTimeout(() => { map.fitBounds(currentRouteBounds, { top: 160, right: 50, bottom: getSafeBottomPadding(), left: 50 }); }, 200);
                 }
             }
         });
