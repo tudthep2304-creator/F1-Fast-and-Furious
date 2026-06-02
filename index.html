@@ -13,17 +13,19 @@
     body { font-family: 'Kanit', sans-serif; background-color: #111827; }
     .map-container { position: fixed; inset: 0; width: 100vw; height: 100vh; z-index: 0; background: #1f2937; }
     
-    /* 🌟 UI Panel เปลี่ยนเป็น Dark Glass เข้ากับแอปผู้โดยสาร */
+    /* 🌟 UI Panel (Dark Glass) */
     .ui-panel { 
         position: fixed; 
         bottom: 0; 
         left: 0; 
         right: 0; 
-        background: #111827; 
+        background: rgba(17, 24, 39, 0.85); 
+        backdrop-filter: blur(24px); 
+        -webkit-backdrop-filter: blur(24px);
+        border-top: 1px solid rgba(255, 255, 255, 0.1);
         border-top-left-radius: 30px; 
         border-top-right-radius: 30px; 
         box-shadow: 0 -10px 40px rgba(0,0,0,0.8); 
-        border-top: 1px solid rgba(255, 255, 255, 0.15); 
         z-index: 10; 
         display: flex; 
         flex-direction: column; 
@@ -35,17 +37,17 @@
         pointer-events: auto;
     }
 
-    /* 🌟 คลาสเสริมสำหรับทำ Glass Box */
+    /* 🌟 คลาสเสริม Glass Box */
     .glass-box {
-        background: rgba(31, 41, 55, 0.85); 
-        backdrop-filter: blur(12px);
-        -webkit-backdrop-filter: blur(12px);
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+        background: rgba(30, 41, 59, 0.7);
+        backdrop-filter: blur(16px);
+        -webkit-backdrop-filter: blur(16px);
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        box-shadow: 0 5px 20px rgba(0, 0, 0, 0.4);
     }
 
     .panel-collapsed {
-        transform: translateY(calc(100% - 100px)) !important;
+        transform: translateY(calc(100% - 90px)) !important;
     }
 
     .job-scroll { overflow-y: auto; }
@@ -58,7 +60,6 @@
         font-size: 2rem;
     }
 
-    /* แถบเรดาร์ตอนสแกนหางาน */
     @keyframes loading-scan {
         0% { transform: translateX(-100%); }
         100% { transform: translateX(300%); }
@@ -79,7 +80,7 @@
       
       <div class="w-full max-w-xs space-y-4">
           <input type="password" id="pinInput" inputmode="numeric" maxlength="4" placeholder="••••" 
-              class="pin-input w-full glass-box border-2 border-gray-700 focus:border-green-500 text-white rounded-2xl py-4 px-6 outline-none transition-colors shadow-inner placeholder-gray-600">
+              class="pin-input w-full glass-box focus:border-green-500 text-white rounded-2xl py-4 px-6 outline-none transition-colors shadow-inner placeholder-gray-600">
           <button onclick="submitLogin()" class="w-full bg-green-600/90 hover:bg-green-500 text-white font-bold text-lg py-4 rounded-2xl shadow-[0_0_20px_rgba(34,197,94,0.3)] transition flex items-center justify-center gap-2 border border-green-500/50">
               <span id="loginBtnText">เข้าสู่ระบบ</span>
               <i id="loginSpinner" class="fas fa-spinner fa-spin hidden"></i>
@@ -92,9 +93,9 @@
 
   <div id="map" class="map-container"></div>
 
-  <div class="fixed top-0 w-full h-16 bg-gray-900 border-b border-gray-800 flex items-center justify-between px-4 z-20 text-white shadow-md pointer-events-auto">
+  <div class="fixed top-0 w-full h-16 bg-gray-900/90 backdrop-blur-xl border-b border-gray-700 flex items-center justify-between px-4 z-20 text-white shadow-md pointer-events-auto">
     <div class="flex items-center gap-2">
-        <h1 class="text-lg font-black text-green-500 tracking-wide"><i class="fas fa-car-side"></i> F1 Fast and Furious <span id="driverNameDisplay" class="text-xs text-gray-500 ml-2 font-normal hidden"></span></h1>
+        <h1 class="text-lg font-black text-green-500 tracking-wide drop-shadow-md"><i class="fas fa-car-side"></i> F1 Fast and Furious <span id="driverNameDisplay" class="text-xs text-gray-500 ml-2 font-normal hidden"></span></h1>
     </div>
     <button onclick="logoutDriver()" class="text-gray-400 hover:text-red-400 text-sm font-medium transition flex items-center gap-1.5 glass-box !py-1.5 !px-3 rounded-xl border-gray-700">
         <i class="fas fa-sign-out-alt"></i> ออก
@@ -102,13 +103,13 @@
   </div>
 
   <div class="fixed top-[76px] right-4 z-30 flex flex-col gap-3 pointer-events-auto transition-all duration-300">
-      <button onclick="toggleMapStyle()" id="btnMapStyle" class="glass-box w-12 h-12 flex items-center justify-center rounded-full shadow-lg text-gray-300 hover:bg-white/10 transition" title="สลับโหมดแผนที่">
+      <button onclick="toggleMapStyle()" id="btnMapStyle" class="glass-box w-11 h-11 flex items-center justify-center rounded-full shadow-lg text-gray-300 hover:bg-white/10 transition" title="สลับโหมดแผนที่">
           <i class="fas fa-layer-group text-[18px]"></i>
       </button>
-      <button onclick="centerToDriver()" id="btnCrosshair" class="glass-box w-12 h-12 flex items-center justify-center rounded-full shadow-lg text-green-400 hover:bg-white/10 transition">
+      <button onclick="centerToDriver()" id="btnCrosshair" class="glass-box w-11 h-11 flex items-center justify-center rounded-full shadow-lg text-green-400 hover:bg-white/10 transition">
           <i class="fas fa-crosshairs text-[18px] drop-shadow-md"></i>
       </button>
-      <button onclick="fitRouteBounds()" id="btnOverview" class="hidden glass-box w-12 h-12 flex items-center justify-center rounded-full shadow-lg text-gray-300 hover:bg-white/10 transition">
+      <button onclick="fitRouteBounds()" id="btnOverview" class="hidden glass-box w-11 h-11 flex items-center justify-center rounded-full shadow-lg text-gray-300 hover:bg-white/10 transition">
           <i class="fas fa-route text-[18px] drop-shadow-md"></i>
       </button>
   </div>
@@ -148,60 +149,53 @@
   </div>
 
   <div id="activeJobPanel" class="ui-panel hidden text-gray-100 transition-transform duration-300">
-    <div class="cursor-pointer" onclick="togglePanel('activeJobPanel')">
+    <div class="cursor-pointer border-b border-gray-700 pb-2 mb-3" onclick="togglePanel('activeJobPanel')">
         <div class="w-full flex justify-center pb-3">
             <div class="w-12 h-1.5 bg-gray-600 rounded-full"></div>
         </div>
         
-        <div id="unifiedStatusBox" class="flex justify-between items-center mb-3">
+        <div id="unifiedStatusBox" class="flex justify-between items-center">
           <div class="min-w-0 flex-1 pr-2">
               <p class="text-[10px] font-black text-gray-400 mb-0.5 tracking-widest" id="unifiedStatusLabel"><i class="fas fa-info-circle text-blue-400"></i> STATUS</p>
               <h2 class="font-black text-[15px] leading-tight text-green-400 drop-shadow-md truncate" id="jobStatusHeader">กำลังเดินทางไปหา</h2>
               <p class="text-[11px] font-bold mt-0.5 text-blue-300 drop-shadow-md truncate" id="etaDisplay">ระยะทาง -- กม. • -- นาที</p>
           </div>
-          <div class="text-right shrink-0">
-              <span class="bg-gray-800 border border-gray-600 px-3 py-1.5 rounded-xl font-black text-green-400 text-sm inline-block shadow-sm" id="jobPrice">฿0</span>
+          <div class="text-right shrink-0 flex flex-col items-end">
+              <span id="jobPromoTag" class="hidden text-[9px] font-bold text-green-400 mb-0.5 border border-green-500/30 px-1 rounded bg-green-900/30">ใช้โค้ด</span>
+              <div class="flex items-end gap-1.5 mt-0.5">
+                  <span id="jobOriginalPrice" class="hidden text-[10px] text-gray-500 line-through font-bold mb-0.5"></span>
+                  <span class="bg-gray-800 border border-gray-600 px-3 py-1.5 rounded-xl font-black text-green-400 text-sm inline-block shadow-sm" id="jobPrice">฿0</span>
+              </div>
           </div>
         </div>
     </div>
-
-    <div class="border-b border-gray-700 mb-3 w-full opacity-50"></div>
     
     <div class="job-scroll flex-1">
         
-        <div class="glass-box p-3 rounded-xl mb-3 flex justify-between items-center border border-gray-700 shadow-sm">
-            <div class="flex items-center gap-3 overflow-hidden w-full min-w-0">
+        <div class="glass-box p-2.5 rounded-xl mb-3 flex justify-between items-center shadow-sm">
+            <div class="flex items-center gap-3 overflow-hidden pr-2 w-full min-w-0">
                 <div class="w-10 h-10 rounded-full bg-gray-800 text-green-500 flex items-center justify-center shrink-0 border border-gray-600 shadow-inner">
                     <i class="fas fa-user"></i>
                 </div>
-                <div class="flex-1 min-w-0 flex justify-between items-center">
-                    <div class="flex flex-col min-w-0">
-                        <p class="text-[10px] text-gray-400 font-bold mb-0.5 tracking-wide flex items-center">ผู้โดยสาร 
-                            <span id="activePromoBadge" class="hidden ml-1.5 bg-green-900/50 text-green-400 border border-green-500/30 px-1.5 py-0.5 rounded text-[8px]">ใช้โค้ดส่วนลด</span>
-                        </p>
-                        <p class="font-bold text-gray-200 text-[14px] truncate leading-tight drop-shadow-md" id="passengerName">...</p>
-                    </div>
-                    <div class="flex gap-2 shrink-0 ml-2" id="activeContactButtons">
-                        <button onclick="openLineOA()" class="bg-gray-800 text-green-400 w-9 h-9 rounded-full flex items-center justify-center border border-gray-600 shadow-sm hover:bg-gray-700 transition">
-                            <i class="fab fa-line text-lg drop-shadow-md"></i>
-                        </button>
-                        <a href="#" id="btnCallPassenger" class="bg-green-600/90 text-white w-9 h-9 rounded-full flex items-center justify-center border border-green-500/50 shadow-sm hover:bg-green-500 transition backdrop-blur-xl">
-                            <i class="fas fa-phone-alt text-[14px] drop-shadow-md"></i>
-                        </a>
-                    </div>
+                <div class="flex-1 min-w-0">
+                    <p class="text-[10px] text-gray-400 font-bold mb-0.5 tracking-wide">ผู้โดยสาร</p>
+                    <p class="font-bold text-gray-200 text-[13px] truncate leading-tight drop-shadow-md" id="passengerName">...</p>
                 </div>
             </div>
+            <a href="#" id="btnCallPassenger" class="bg-green-600/90 text-white px-3 py-2 rounded-lg font-bold text-xs shadow-md border border-green-500/50 flex gap-1.5 items-center shrink-0 hover:bg-green-500 transition backdrop-blur-xl">
+                <i class="fas fa-phone-alt"></i> โทร
+            </a>
         </div>
 
-        <div class="mb-3 glass-box py-3 px-3.5 rounded-xl border border-gray-700 relative shadow-sm">
+        <div class="mb-3 glass-box py-2.5 px-3.5 rounded-xl relative shadow-sm">
             <div class="absolute left-[1.4rem] top-6 bottom-6 w-0.5 border-l-[1.5px] border-dashed border-gray-600 z-0"></div>
-            <div class="flex items-center gap-3 mb-3 relative z-10 w-full">
-                <div class="shrink-0"><i class="fas fa-circle text-[10px] text-green-500"></i></div>
-                <p class="text-[14px] text-gray-200 font-medium flex-1 leading-snug min-w-0" id="jobPick">...</p>
+            <div class="flex items-center gap-3 mb-2.5 relative z-10 w-full">
+                <div class="shrink-0"><i class="fas fa-circle text-[10px] text-green-500 border border-gray-800 rounded-full"></i></div>
+                <p class="text-[13px] text-gray-200 truncate font-medium flex-1 leading-tight min-w-0" id="jobPick">...</p>
             </div>
             <div class="flex items-center gap-3 relative z-10 w-full">
-                <div class="shrink-0"><i class="fas fa-circle text-[10px] text-red-500"></i></div>
-                <p class="text-[14px] text-gray-200 font-medium flex-1 leading-snug min-w-0" id="jobDrop">...</p>
+                <div class="shrink-0"><i class="fas fa-circle text-[10px] text-red-500 border border-gray-800 rounded-full"></i></div>
+                <p class="text-[13px] text-gray-200 truncate font-medium flex-1 leading-tight min-w-0" id="jobDrop">...</p>
             </div>
         </div>
 
@@ -228,41 +222,52 @@
                   <p class="text-[11px] text-gray-400 font-bold mt-0.5" id="detailTotalEta">ระยะทางรวม: กำลังคำนวณ...</p>
               </div>
               <div class="flex items-center gap-2 shrink-0">
-                  <span class="font-black text-green-400 text-[15px] glass-box px-3 py-1 rounded-xl shadow-inner" id="detailPrice">฿0</span>
-                  <button onclick="closeJobDetail()" class="text-gray-400 hover:text-white glass-box rounded-full w-9 h-9 flex items-center justify-center transition-colors shadow-sm">
+                  <div class="text-right flex flex-col items-end">
+                      <span id="detailPromoTag" class="hidden text-[9px] font-bold text-green-400 bg-green-900/40 border border-green-500/30 px-1.5 py-0.5 rounded mb-0.5">ใช้โค้ดลด</span>
+                      <span id="detailOriginalPrice" class="hidden text-[10px] text-gray-500 line-through font-bold mb-0.5"></span>
+                      <span class="font-black text-green-400 text-[18px] glass-box px-3 py-1 rounded-xl shadow-inner" id="detailPrice">฿0</span>
+                  </div>
+                  <button onclick="closeJobDetail()" class="text-gray-400 hover:text-white glass-box rounded-full w-9 h-9 flex items-center justify-center transition-colors shadow-sm ml-1">
                       <i class="fas fa-times"></i>
                   </button>
               </div>
           </div>
           
-          <div class="glass-box p-3 rounded-xl mb-3 flex justify-between items-center border border-gray-700 shadow-sm">
+          <div class="glass-box p-3 rounded-xl mb-3 flex justify-between items-center shadow-sm">
               <div class="flex items-center gap-3 overflow-hidden pr-2 w-full min-w-0">
                   <div class="w-10 h-10 rounded-full bg-gray-800 text-green-500 flex items-center justify-center shrink-0 border border-gray-600 shadow-inner">
                       <i class="fas fa-user"></i>
                   </div>
-                  <div class="flex-1 min-w-0 flex flex-col">
-                      <p class="text-[10px] text-gray-400 font-bold mb-0.5 tracking-wide flex items-center">ผู้โดยสาร
-                          <span id="detailPromoBadge" class="hidden ml-1.5 bg-green-900/50 text-green-400 border border-green-500/30 px-1.5 py-0.5 rounded text-[8px]">ใช้โค้ดส่วนลด</span>
-                      </p>
-                      <p class="font-bold text-gray-200 text-[14px] truncate leading-tight drop-shadow-md" id="detailName">...</p>
+                  <div class="flex-1 min-w-0">
+                      <p class="text-[10px] text-gray-400 font-bold mb-0.5 tracking-wide">ผู้โดยสาร</p>
+                      <p class="font-bold text-gray-200 text-[13px] truncate leading-tight drop-shadow-md" id="detailName">...</p>
                   </div>
               </div>
+              <a href="#" id="btnCallDetail" class="hidden bg-green-600/90 text-white px-3 py-2 rounded-lg font-bold text-xs shadow-md border border-green-500/50 flex gap-1.5 items-center shrink-0 hover:bg-green-500 transition">
+                  <i class="fas fa-phone-alt"></i> โทร
+              </a>
           </div>
 
-          <div class="mb-4 glass-box p-4 rounded-2xl border border-gray-700 relative shadow-sm">
-              <div class="absolute left-[1.45rem] top-6 bottom-6 w-0.5 border-l-[1.5px] border-dashed border-gray-600 z-0"></div>
+          <div class="mb-4 glass-box p-3.5 rounded-2xl relative shadow-sm">
+              <div class="absolute left-[1.4rem] top-6 bottom-8 w-0.5 border-l-[1.5px] border-dashed border-gray-600 z-0"></div>
               
-              <div class="flex items-start gap-3 mb-4 relative z-10 w-full min-w-0">
-                  <div class="shrink-0 mt-1"><i class="fas fa-circle text-[10px] text-green-500"></i></div>
+              <div class="flex items-start gap-3 mb-3 relative z-10 w-full min-w-0">
+                  <div class="shrink-0 mt-0.5"><i class="fas fa-circle text-[10px] text-green-500 border border-gray-800 rounded-full"></i></div>
                   <div class="flex-1 overflow-hidden min-w-0">
-                      <p class="text-[14px] text-gray-200 font-medium leading-snug" id="detailPick">...</p>
+                      <p class="text-[13px] text-gray-200 truncate font-medium leading-tight mb-0.5" id="detailPick">...</p>
+                      <p class="text-[12px] font-bold text-green-400 mt-0.5" id="detailEtaToPick">
+                          <i class="fas fa-car-side"></i> ห่างจากคุณ: กำลังคำนวณ...
+                      </p>
                   </div>
               </div>
 
               <div class="flex items-start gap-3 relative z-10 w-full min-w-0">
-                  <div class="shrink-0 mt-1"><i class="fas fa-circle text-[10px] text-red-500"></i></div>
+                  <div class="shrink-0 mt-0.5"><i class="fas fa-circle text-[10px] text-red-500 border border-gray-800 rounded-full"></i></div>
                   <div class="flex-1 overflow-hidden min-w-0">
-                      <p class="text-[14px] text-gray-200 font-medium leading-snug" id="detailDrop">...</p>
+                      <p class="text-[13px] text-gray-200 truncate font-medium leading-tight mb-0.5" id="detailDrop">...</p>
+                      <p class="text-[12px] font-bold text-blue-400 mt-0.5" id="detailEtaToDrop">
+                          <i class="fas fa-road"></i> ระยะทางไปส่ง: กำลังคำนวณ...
+                      </p>
                   </div>
               </div>
           </div>
@@ -276,67 +281,67 @@
       </div>
   </div>
 
-  <div id="pendingCancelModal" class="hidden fixed inset-0 z-[110] bg-black/80 flex items-center justify-center p-4 pointer-events-auto transition-all">
-      <div class="bg-gray-900 border border-gray-700 rounded-3xl p-6 w-full max-w-sm text-center shadow-2xl">
+  <div id="pendingCancelModal" class="hidden fixed inset-0 z-[110] bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 pointer-events-auto transition-all">
+      <div class="bg-gray-900 border border-gray-700 rounded-3xl p-6 w-full max-w-sm text-center shadow-xl text-gray-100">
           <div class="w-16 h-16 glass-box !border-red-500/40 text-red-400 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl"><i class="fas fa-times-circle"></i></div>
-          <h3 class="text-xl font-bold text-white mb-2">ยืนยันปฏิเสธงานนี้?</h3>
+          <h3 class="text-xl font-bold mb-2">ยืนยันปฏิเสธงานนี้?</h3>
           <p class="text-sm text-gray-400 mb-6">หากยืนยัน ระบบจะยกเลิกการเรียกรถและแจ้งเตือนผู้โดยสารว่าไม่มีรถว่างทันที</p>
           <div class="flex gap-3">
-              <button onclick="closePendingCancelModal()" class="flex-1 py-3.5 glass-box text-gray-300 font-bold rounded-xl hover:bg-gray-700">ปิด</button>
-              <button onclick="executeRejectPendingJob()" class="flex-1 py-3.5 bg-red-600/80 border border-red-500/50 text-white font-bold rounded-xl shadow-lg hover:bg-red-500">ยืนยันปฏิเสธ</button>
+              <button onclick="closePendingCancelModal()" class="flex-1 py-3 glass-box text-gray-200 font-bold rounded-xl hover:bg-white/10 transition">ปิด</button>
+              <button onclick="executeRejectPendingJob()" class="flex-1 py-3 bg-red-600/90 text-white font-bold rounded-xl shadow-md hover:bg-red-500 border border-red-500/50">ยืนยันปฏิเสธ</button>
           </div>
       </div>
   </div>
-  <div id="arriveModal" class="hidden fixed inset-0 z-[110] bg-black/80 flex items-center justify-center p-4 pointer-events-auto transition-all">
-      <div class="bg-gray-900 border border-gray-700 rounded-3xl p-6 w-full max-w-sm text-center shadow-2xl">
+  <div id="arriveModal" class="hidden fixed inset-0 z-[110] bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 pointer-events-auto transition-all">
+      <div class="bg-gray-900 border border-gray-700 rounded-3xl p-6 w-full max-w-sm text-center shadow-xl text-gray-100">
           <div class="w-16 h-16 glass-box !border-green-500/40 text-green-400 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl"><i class="fas fa-map-marker-alt"></i></div>
-          <h3 class="text-xl font-bold text-white mb-2">ยืนยันมาถึงจุดรับ?</h3>
+          <h3 class="text-xl font-bold mb-2">ยืนยันมาถึงจุดรับ?</h3>
           <p class="text-sm text-gray-400 mb-6">คุณได้เดินทางมาถึงจุดรับผู้โดยสารเรียบร้อยแล้วใช่หรือไม่?</p>
           <div class="flex gap-3">
-              <button onclick="closeArriveModal()" class="flex-1 py-3.5 glass-box text-gray-300 font-bold rounded-xl hover:bg-gray-700">ยังไม่ถึง</button>
-              <button onclick="executeArrive()" class="flex-[2] py-3.5 bg-green-600/80 border border-green-500/50 text-white font-bold rounded-xl shadow-lg hover:bg-green-500">มาถึงแล้ว</button>
+              <button onclick="closeArriveModal()" class="flex-1 py-3 glass-box text-gray-200 font-bold rounded-xl hover:bg-white/10 transition">ยังไม่ถึง</button>
+              <button onclick="executeArrive()" class="flex-[2] py-3 bg-green-600/90 text-white font-bold rounded-xl shadow-md hover:bg-green-500 border border-green-500/50">มาถึงแล้ว</button>
           </div>
       </div>
   </div>
-  <div id="boardedModal" class="hidden fixed inset-0 z-[110] bg-black/80 flex items-center justify-center p-4 pointer-events-auto transition-all">
-      <div class="bg-gray-900 border border-gray-700 rounded-3xl p-6 w-full max-w-sm text-center shadow-2xl">
+  <div id="boardedModal" class="hidden fixed inset-0 z-[110] bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 pointer-events-auto transition-all">
+      <div class="bg-gray-900 border border-gray-700 rounded-3xl p-6 w-full max-w-sm text-center shadow-xl text-gray-100">
           <div class="w-16 h-16 glass-box !border-yellow-500/40 text-yellow-400 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl"><i class="fas fa-user-check"></i></div>
-          <h3 class="text-xl font-bold text-white mb-2">ผู้โดยสารขึ้นรถแล้ว?</h3>
+          <h3 class="text-xl font-bold mb-2">ผู้โดยสารขึ้นรถแล้ว?</h3>
           <p class="text-sm text-gray-400 mb-6">ผู้โดยสารขึ้นรถเรียบร้อย และพร้อมออกเดินทางใช่หรือไม่?</p>
           <div class="flex gap-3">
-              <button onclick="closeBoardedModal()" class="flex-1 py-3.5 glass-box text-gray-300 font-bold rounded-xl hover:bg-gray-700">ยังไม่ขึ้น</button>
-              <button onclick="executeStartTrip()" class="flex-[2] py-3.5 bg-yellow-500/90 border border-yellow-400/50 text-gray-900 font-bold rounded-xl shadow-lg hover:bg-yellow-400">ขึ้นรถแล้ว</button>
+              <button onclick="closeBoardedModal()" class="flex-1 py-3 glass-box text-gray-200 font-bold rounded-xl hover:bg-white/10 transition">ยังไม่ขึ้น</button>
+              <button onclick="executeStartTrip()" class="flex-[2] py-3 bg-yellow-500/90 text-gray-900 font-bold rounded-xl shadow-md hover:bg-yellow-400 border border-yellow-400/50">ขึ้นรถแล้ว</button>
           </div>
       </div>
   </div>
-  <div id="finishJobModal" class="hidden fixed inset-0 z-[110] bg-black/80 flex items-center justify-center p-4 pointer-events-auto transition-all">
-      <div class="bg-gray-900 border border-gray-700 rounded-3xl p-6 w-full max-w-sm text-center shadow-2xl">
+  <div id="finishJobModal" class="hidden fixed inset-0 z-[110] bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 pointer-events-auto transition-all">
+      <div class="bg-gray-900 border border-gray-700 rounded-3xl p-6 w-full max-w-sm text-center shadow-xl text-gray-100">
           <div class="w-16 h-16 glass-box !border-emerald-500/40 text-emerald-400 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl"><i class="fas fa-check-circle"></i></div>
-          <h3 class="text-xl font-bold text-white mb-2">ยืนยันจบงานและรับเงิน?</h3>
+          <h3 class="text-xl font-bold mb-2">ยืนยันจบงานและรับเงิน?</h3>
           <p class="text-sm text-gray-400 mb-6">คุณได้ส่งผู้โดยสารถึงจุดหมายปลายทางอย่างปลอดภัยแล้วใช่หรือไม่?</p>
           <div class="flex gap-3">
-              <button onclick="closeFinishModal()" class="flex-1 py-3.5 glass-box text-gray-300 font-bold rounded-xl hover:bg-gray-700">ยังไม่จบ</button>
-              <button onclick="executeFinishJob()" class="flex-[2] py-3.5 bg-emerald-600/80 border border-emerald-500/50 text-white font-bold rounded-xl shadow-lg hover:bg-emerald-500">ยืนยันจบงาน!</button>
+              <button onclick="closeFinishModal()" class="flex-1 py-3 glass-box text-gray-200 font-bold rounded-xl hover:bg-white/10 transition">ยังไม่จบ</button>
+              <button onclick="executeFinishJob()" class="flex-[2] py-3 bg-emerald-600/90 text-white font-bold rounded-xl shadow-md hover:bg-emerald-500 border border-emerald-500/50">ยืนยันจบงาน!</button>
           </div>
       </div>
   </div>
-  <div id="driverCancelModal" class="hidden fixed inset-0 z-[110] bg-black/80 flex items-center justify-center p-4 pointer-events-auto transition-all">
-      <div class="bg-gray-900 border border-gray-700 rounded-3xl p-6 w-full max-w-sm text-center shadow-2xl">
+  <div id="driverCancelModal" class="hidden fixed inset-0 z-[110] bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 pointer-events-auto transition-all">
+      <div class="bg-gray-900 border border-gray-700 rounded-3xl p-6 w-full max-w-sm text-center shadow-xl text-gray-100">
           <div class="w-16 h-16 glass-box !border-red-500/40 text-red-400 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl"><i class="fas fa-exclamation-triangle"></i></div>
-          <h3 class="text-xl font-bold text-white mb-2">ยืนยันยกเลิกงานนี้?</h3>
+          <h3 class="text-xl font-bold mb-2">ยืนยันยกเลิกงานนี้?</h3>
           <p class="text-sm text-gray-400 mb-6">หากยกเลิก ผู้โดยสารจะถูกแจ้งเตือนว่าคุณไม่สามารถไปรับได้ และงานจะถูกลบออก</p>
           <div class="flex gap-3">
-              <button onclick="closeDriverCancelModal()" class="flex-1 py-3.5 glass-box text-gray-300 font-bold rounded-xl hover:bg-gray-700">ปิด</button>
-              <button onclick="executeCancelJob()" class="flex-[2] py-3.5 bg-red-600/80 border border-red-500/50 text-white font-bold rounded-xl shadow-lg hover:bg-red-500">ยืนยันยกเลิก</button>
+              <button onclick="closeDriverCancelModal()" class="flex-1 py-3 glass-box text-gray-200 font-bold rounded-xl hover:bg-white/10 transition">ปิด</button>
+              <button onclick="executeCancelJob()" class="flex-[2] py-3 bg-red-600/90 text-white font-bold rounded-xl shadow-md hover:bg-red-500 border border-red-500/50">ยืนยันยกเลิก</button>
           </div>
       </div>
   </div>
-  <div id="alertModal" class="hidden fixed inset-0 z-[120] bg-black/80 flex items-center justify-center p-4 pointer-events-auto transition-all">
-      <div class="bg-gray-900 border border-gray-700 rounded-3xl p-6 w-full max-w-sm text-center shadow-2xl">
-          <div id="alertIcon" class="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl glass-box z-10 relative"></div>
-          <h3 id="alertTitle" class="text-xl font-bold text-white mb-2 relative z-10">...</h3>
-          <p id="alertMessage" class="text-sm text-gray-400 mb-6 whitespace-pre-line relative z-10">...</p>
-          <button onclick="closeAlertModal()" class="w-full py-4 bg-green-600/80 border border-green-500/50 text-white font-bold rounded-xl shadow-[0_0_15px_rgba(34,197,94,0.3)] hover:bg-green-500 transition relative z-10">ตกลง</button>
+  <div id="alertModal" class="hidden fixed inset-0 z-[120] bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 pointer-events-auto transition-all">
+      <div class="bg-gray-900 border border-gray-700 rounded-3xl p-6 w-full max-w-sm text-center shadow-xl text-gray-100">
+          <div id="alertIcon" class="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl glass-box border-none"></div>
+          <h3 id="alertTitle" class="text-xl font-bold mb-2">...</h3>
+          <p id="alertMessage" class="text-sm text-gray-400 mb-6 whitespace-pre-line">...</p>
+          <button onclick="closeAlertModal()" class="w-full py-3 bg-green-600/90 text-white font-bold rounded-xl shadow-md border border-green-500/50 hover:bg-green-500">ตกลง</button>
       </div>
   </div>
 
@@ -382,7 +387,7 @@
     let lastNotifiedMsg = ""; 
     let knownPendingJobs = [];
     let isAlarmRinging = false; 
-    let isSatelliteMode = true; // เริ่มต้นเป็นดาวเทียม
+    let isSatelliteMode = true; // เปิดแอปมาเป็นดาวเทียม
 
     function generateUUID() {
         return Math.random().toString(36).substring(2) + Date.now().toString(36);
@@ -603,9 +608,9 @@
         document.getElementById('alertTitle').innerText = title;
         document.getElementById('alertMessage').innerText = message;
         let iconHtml = ''; let iconBg = ''; let iconColor = '';
-        if (type === 'error') { iconHtml = '<i class="fas fa-times"></i>'; iconBg = 'glass-box !border-red-500/30'; iconColor = 'text-red-400'; } 
-        else if (type === 'success') { iconHtml = '<i class="fas fa-check"></i>'; iconBg = 'glass-box !border-green-500/30'; iconColor = 'text-green-400'; } 
-        else { iconHtml = '<i class="fas fa-info"></i>'; iconBg = 'glass-box !border-blue-500/30'; iconColor = 'text-blue-400'; }
+        if (type === 'error') { iconHtml = '<i class="fas fa-times text-red-500 drop-shadow-[0_0_8px_rgba(239,68,68,0.6)]"></i>'; iconBg = 'glass-box !border-red-500/30'; iconColor = 'text-red-400'; } 
+        else if (type === 'success') { iconHtml = '<i class="fas fa-check text-green-500 drop-shadow-[0_0_8px_rgba(34,197,94,0.6)]"></i>'; iconBg = 'glass-box !border-green-500/30'; iconColor = 'text-green-400'; } 
+        else { iconHtml = '<i class="fas fa-info text-blue-500 drop-shadow-[0_0_8px_rgba(59,130,246,0.6)]"></i>'; iconBg = 'glass-box !border-blue-500/30'; iconColor = 'text-blue-400'; }
         const iconDiv = document.getElementById('alertIcon');
         if(iconDiv) {
             iconDiv.innerHTML = iconHtml; 
@@ -652,6 +657,7 @@
         }
     }
 
+    // แก้ไขบั๊ก Dark Mode API ให้ถูกต้อง
     const darkMapStyle = [
         { elementType: "geometry", stylers: [{ color: "#242f3e" }] },
         { elementType: "labels.text.stroke", stylers: [{ color: "#242f3e" }] },
@@ -694,28 +700,27 @@
     }
 
     const customPickIcon = {
-        path: "M 0,0 C -12,-16 -18,-22 -18,-32 A 18,18 0 1,1 18,-32 C 18,-22 12,-16 0,0 Z M -8,-32 A 8,8 0 1,0 8,-32 A 8,8 0 1,0 -8,-32 Z",
+        path: google.maps.SymbolPath.CIRCLE,
         fillColor: '#22c55e',
         fillOpacity: 1,
         strokeWeight: 2,
         strokeColor: '#ffffff',
-        scale: 1,
-        anchor: typeof google !== 'undefined' && google.maps ? new google.maps.Point(0, 0) : null
+        scale: 6
     };
     
     const customDropIcon = {
-        path: "M 0,0 C -12,-16 -18,-22 -18,-32 A 18,18 0 1,1 18,-32 C 18,-22 12,-16 0,0 Z M -8,-32 A 8,8 0 1,0 8,-32 A 8,8 0 1,0 -8,-32 Z",
+        path: google.maps.SymbolPath.CIRCLE,
         fillColor: '#ef4444',
         fillOpacity: 1,
         strokeWeight: 2,
         strokeColor: '#ffffff',
-        scale: 1,
-        anchor: typeof google !== 'undefined' && google.maps ? new google.maps.Point(0, 0) : null
+        scale: 6
     };
 
     function initMap() {
       if (typeof google === 'undefined' || typeof google.maps === 'undefined') return;
       
+      // 🌟 เริ่มเปิดแอปเป็นดาวเทียม (hybrid) ทันที
       map = new google.maps.Map(document.getElementById('map'), { 
         zoom: 16, 
         center: {lat: driverLat, lng: driverLng}, 
@@ -1011,30 +1016,40 @@
         let pk = document.getElementById('detailPick');
         let dp = document.getElementById('detailDrop');
         let pr = document.getElementById('detailPrice');
-        let promoBadge = document.getElementById('detailPromoBadge'); // ป้ายโปรตอนดูงาน
-
         if(n) n.innerText = job.name || "ลูกค้า";
         if(pk) pk.innerText = job.pName;
         if(dp) dp.innerText = job.dName;
         if(pr) pr.innerText = "฿" + job.price;
-
-        if(job.promoCode) {
-            if(promoBadge) promoBadge.classList.remove('hidden');
+        
+        // 🌟 โชว์ราคาก่อนลด ถ้ามีโปร
+        let dOrig = document.getElementById('detailOriginalPrice');
+        let dTag = document.getElementById('detailPromoTag');
+        if (job.promoCode && job.originalPrice) {
+            if(dOrig) { dOrig.innerText = "฿" + job.originalPrice; dOrig.classList.remove('hidden'); }
+            if(dTag) { dTag.innerText = `ลด ฿${job.discount || 0}`; dTag.classList.remove('hidden'); }
         } else {
-            if(promoBadge) promoBadge.classList.add('hidden');
+            if(dOrig) dOrig.classList.add('hidden');
+            if(dTag) dTag.classList.add('hidden');
         }
         
-        // เราซ่อนปุ่มโทรในหน้านี้ไว้ เพราะยังไม่ได้กดรับงาน
+        let bC = document.getElementById('btnCallDetail');
+        if(job.phone && bC) {
+            bC.href = "tel:" + job.phone;
+        }
 
         let tE = document.getElementById('detailTotalEta');
+        let eP = document.getElementById('detailEtaToPick');
+        let eD = document.getElementById('detailEtaToDrop');
         if(tE) tE.innerText = `ระยะทางรวม: กำลังคำนวณ...`;
+        if(eP) eP.innerHTML = `<i class="fas fa-car-side"></i> ห่างจากคุณ: กำลังคำนวณ...`;
+        if(eD) eD.innerHTML = `<i class="fas fa-road"></i> ระยะทางไปส่ง: กำลังคำนวณ...`;
         
         let bO = document.getElementById('btnOverview');
         let mod = document.getElementById('jobDetailModal');
         if(bO) bO.classList.remove('hidden');
         if(mod) mod.classList.remove('hidden');
 
-        // โฟกัสจุดรับ - จุดส่ง
+        // 🌟 ซูมให้เห็น 2 จุดรับส่ง ทันทีที่ดูงาน (Smart Overview)
         let origin = {lat: driverLat, lng: driverLng}; 
         let pickup = {lat: job.pLat, lng: job.pLng};
         let dest = {lat: job.dLat, lng: job.dLng};
@@ -1064,6 +1079,8 @@
                     let totalMins = Math.round((legPick.duration.value + legDrop.duration.value) / 60);
 
                     if(tE) tE.innerText = `ระยะทางรวม: ${totalDist.toFixed(1)} กม. • เวลาประเมิน: ${totalMins} นาที`;
+                    if(eP) eP.innerHTML = `<i class="fas fa-car-side"></i> ห่างจากคุณ: ${legPick.distance.text} • ${legPick.duration.text}`;
+                    if(eD) eD.innerHTML = `<i class="fas fa-road"></i> ระยะทางไปส่ง: ${legDrop.distance.text} • ${legDrop.duration.text}`;
 
                     if(map) {
                         setTimeout(() => { map.fitBounds(currentRouteBounds, { top: 80, right: 50, bottom: 420, left: 50 }); }, 100);
@@ -1184,18 +1201,22 @@
         let jP = document.getElementById('jobPick');
         let jD = document.getElementById('jobDrop');
         let pC = document.getElementById('jobPrice');
-        let pBadge = document.getElementById('activePromoBadge');
         
         if(pN) pN.innerText = activeJobData.name || "ลูกค้า";
         if(bC) bC.href = "tel:" + activeJobData.phone;
         if(jP) jP.innerText = activeJobData.pName;
         if(jD) jD.innerText = activeJobData.dName;
         if(pC) pC.innerText = "฿" + activeJobData.price;
-
-        if(activeJobData.promoCode) {
-            if(pBadge) pBadge.classList.remove('hidden');
+        
+        // 🌟 โชว์ราคาก่อนลด ตอนขับรถ (ถ้ารับงานแล้ว)
+        let jOrig = document.getElementById('jobOriginalPrice');
+        let jTag = document.getElementById('jobPromoTag');
+        if(activeJobData.promoCode && activeJobData.originalPrice) {
+            if(jOrig) { jOrig.innerText = "฿" + activeJobData.originalPrice; jOrig.classList.remove('hidden'); }
+            if(jTag) { jTag.innerText = `ใช้โค้ดลด`; jTag.classList.remove('hidden'); }
         } else {
-            if(pBadge) pBadge.classList.add('hidden');
+            if(jOrig) jOrig.classList.add('hidden');
+            if(jTag) jTag.classList.add('hidden');
         }
 
         let statusText = document.getElementById('jobStatusHeader'); 
@@ -1213,8 +1234,6 @@
             
             let cjb = document.getElementById('btnCancelJob');
             if(cjb) cjb.classList.remove('hidden');
-            let acb = document.getElementById('activeContactButtons');
-            if(acb) acb.classList.remove('hidden');
         } else if(s.includes("มาถึงจุดรับ") || s.includes("ถึงจุดรับแล้ว")) {
             if(statusText) statusText.innerText = "รอผู้โดยสารขึ้นรถ"; 
             if(etaEl) etaEl.classList.add('hidden');
@@ -1222,18 +1241,14 @@
             
             let cjb = document.getElementById('btnCancelJob');
             if(cjb) cjb.classList.remove('hidden');
-            let acb = document.getElementById('activeContactButtons');
-            if(acb) acb.classList.remove('hidden');
         } else if(s.includes("ออกเดินทาง") || s.includes("ไปยังจุดส่ง")) {
             if(statusText) statusText.innerText = "กำลังเดินทางไปจุดส่ง"; 
             if(etaEl) { etaEl.className = "text-[11px] text-blue-400 font-bold mt-0.5 inline-block truncate"; etaEl.classList.remove('hidden'); }
             if(btnAction) { btnAction.innerText = "ถึงที่หมาย (จบงาน)"; btnAction.className = "flex-[2] bg-emerald-600/90 backdrop-blur-xl border border-emerald-500/50 text-white py-3 rounded-xl font-bold text-sm shadow-[0_0_15px_rgba(16,185,129,0.3)] hover:bg-emerald-500 transition drop-shadow-md"; }
             
-            // ซ่อนปุ่มยกเลิกงาน และแชท/โทร 
             let cjb = document.getElementById('btnCancelJob');
             if(cjb) cjb.classList.add('hidden');
-            let acb = document.getElementById('activeContactButtons');
-            if(acb) acb.classList.add('hidden'); 
+            if(bC) bC.classList.add('hidden'); 
         }
     }
 
@@ -1331,7 +1346,7 @@
         if(!activeJobData || !directionsService) return;
         let origin = {lat: driverLat, lng: driverLng}; let dest; let isGoingToPickup = false; let isGoingToDropoff = false;
 
-        // 🌟 แผนที่โฟกัสอัจฉริยะ (Smart Overview)
+        // 🌟 Smart Overview
         if(activeJobData.status.includes("กำลังเดินทางไปหา") || activeJobData.status.includes("รับงานแล้ว") || activeJobData.status.includes("มาถึงจุดรับ")) {
             dest = {lat: activeJobData.pLat, lng: activeJobData.pLng};
             if(markerPick) { markerPick.setPosition(dest); markerPick.setMap(map); }
