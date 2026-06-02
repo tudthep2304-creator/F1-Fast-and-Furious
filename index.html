@@ -90,29 +90,27 @@
 
   <audio id="jobAlertSound" src="https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3" preload="auto" loop></audio>
 
-  <div id="mapContainer" class="block">
-      <div id="map" class="map-container"></div>
-      
-      <div id="topBar" class="fixed top-0 w-full h-16 bg-gray-900 border-b border-gray-800 flex items-center justify-between px-4 z-20 text-white shadow-md pointer-events-auto">
-        <div class="flex items-center gap-2">
-            <h1 class="text-lg font-black text-green-500 tracking-wide"><i class="fas fa-car-side"></i> F1 Fast and Furious <span id="driverNameDisplay" class="text-xs text-gray-500 ml-2 font-normal hidden"></span></h1>
-        </div>
-      </div>
-
-      <div id="mapControls" class="fixed top-[76px] right-4 z-30 flex flex-col gap-3 pointer-events-auto transition-all duration-300">
-          <button onclick="toggleMapStyle()" id="btnMapStyle" class="glass-box w-12 h-12 flex items-center justify-center rounded-full shadow-lg text-gray-300 hover:bg-white/10 transition" title="สลับโหมดแผนที่">
-              <i class="fas fa-layer-group text-[18px]"></i>
-          </button>
-          <button onclick="centerToDriver()" id="btnCrosshair" class="glass-box w-12 h-12 flex items-center justify-center rounded-full shadow-lg text-green-400 hover:bg-white/10 transition">
-              <i class="fas fa-crosshairs text-[18px] drop-shadow-md"></i>
-          </button>
-          <button onclick="fitRouteBounds()" id="btnOverview" class="hidden glass-box w-12 h-12 flex items-center justify-center rounded-full shadow-lg text-gray-300 hover:bg-white/10 transition">
-              <i class="fas fa-route text-[18px] drop-shadow-md"></i>
-          </button>
-      </div>
+  <div id="map" class="map-container z-0"></div>
+  
+  <div id="topBar" class="fixed top-0 w-full h-16 bg-gray-900 border-b border-gray-800 flex items-center justify-between px-4 z-20 text-white shadow-md pointer-events-auto">
+    <div class="flex items-center gap-2">
+        <h1 class="text-lg font-black text-green-500 tracking-wide"><i class="fas fa-car-side"></i> F1 Fast and Furious <span id="driverNameDisplay" class="text-xs text-gray-500 ml-2 font-normal hidden"></span></h1>
+    </div>
   </div>
 
-  <div id="idlePanel" class="ui-panel text-gray-100">
+  <div id="mapControls" class="fixed top-[76px] right-4 z-30 flex flex-col gap-3 pointer-events-auto transition-all duration-300">
+      <button onclick="toggleMapStyle()" id="btnMapStyle" class="glass-box w-12 h-12 flex items-center justify-center rounded-full shadow-lg text-gray-300 hover:bg-white/10 transition" title="สลับโหมดแผนที่">
+          <i class="fas fa-layer-group text-[18px]"></i>
+      </button>
+      <button onclick="centerToDriver()" id="btnCrosshair" class="glass-box w-12 h-12 flex items-center justify-center rounded-full shadow-lg text-green-400 hover:bg-white/10 transition">
+          <i class="fas fa-crosshairs text-[18px] drop-shadow-md"></i>
+      </button>
+      <button onclick="fitRouteBounds()" id="btnOverview" class="hidden glass-box w-12 h-12 flex items-center justify-center rounded-full shadow-lg text-gray-300 hover:bg-white/10 transition">
+          <i class="fas fa-route text-[18px] drop-shadow-md"></i>
+      </button>
+  </div>
+
+  <div id="idlePanel" class="ui-panel text-gray-100 z-10">
     <div class="cursor-pointer" onclick="togglePanel('idlePanel')">
         <div class="w-full flex justify-center pb-3">
             <div class="w-12 h-1.5 bg-gray-600 rounded-full"></div>
@@ -146,7 +144,7 @@
     </div>
   </div>
 
-  <div id="activeJobPanel" class="ui-panel hidden text-gray-100 transition-transform duration-300">
+  <div id="activeJobPanel" class="ui-panel hidden text-gray-100 transition-transform duration-300 z-10">
     <div id="activeJobContent" class="hidden h-full flex flex-col">
         <div class="cursor-pointer" onclick="togglePanel('activeJobPanel')">
             <div class="w-full flex justify-center pb-3">
@@ -219,7 +217,7 @@
     </div>
   </div>
 
-  <div id="tab3-History" class="hidden fixed inset-0 z-10 bg-gray-900 pt-8 pb-24 overflow-y-auto px-4 text-white">
+  <div id="tab3-History" class="hidden fixed inset-0 z-40 bg-gray-900 pt-8 pb-24 overflow-y-auto px-4 text-white">
       <h2 class="text-xl font-black text-green-400 mb-4 tracking-wide"><i class="fas fa-history"></i> ประวัติงานวิ่ง</h2>
       
       <div class="glass-box p-4 rounded-xl border border-gray-700 mb-4">
@@ -247,7 +245,7 @@
       </div>
   </div>
 
-  <div id="tab4-Profile" class="hidden fixed inset-0 z-10 bg-gray-900 pt-8 pb-24 overflow-y-auto px-4 text-white flex flex-col items-center">
+  <div id="tab4-Profile" class="hidden fixed inset-0 z-40 bg-gray-900 pt-8 pb-24 overflow-y-auto px-4 text-white flex flex-col items-center">
       <h2 class="text-xl font-black text-green-400 mb-6 w-full tracking-wide"><i class="fas fa-user-circle"></i> โปรไฟล์คนขับ</h2>
       
       <div class="w-24 h-24 bg-gray-800 text-green-500 rounded-full flex items-center justify-center text-5xl shadow-inner border-2 border-green-500/50 mb-4">
@@ -475,7 +473,7 @@
         document.getElementById('histEndDate').value = dateString;
     }
 
-    // ฟังก์ชันจัดการ 4 แท็บ
+    // ฟังก์ชันจัดการ 4 แท็บแบบใหม่ (ไม่ซ่อนแผนที่)
     function switchDriverTab(tabIndex) {
         // รีเซ็ตปุ่มทั้งหมด
         for(let i=1; i<=4; i++) {
@@ -485,10 +483,6 @@
         // แอคทีฟปุ่มที่เลือก
         document.getElementById('navBtn'+tabIndex).className = "flex-1 flex flex-col items-center justify-center text-green-400 transition-colors";
 
-        let mapContainer = document.getElementById('mapContainer');
-        let topBar = document.getElementById('topBar');
-        let mapControls = document.getElementById('mapControls');
-        
         let idleP = document.getElementById('idlePanel');
         let actP = document.getElementById('activeJobPanel');
         let actContent = document.getElementById('activeJobContent');
@@ -502,42 +496,33 @@
         tab3.classList.add('hidden');
         tab4.classList.add('hidden');
 
-        // ตรวจสอบว่าจะโชว์แผนที่ไหม (เฉพาะแท็บ 1 และ 2)
-        if(tabIndex === 1 || tabIndex === 2) {
-            mapContainer.classList.remove('hidden');
-            
-            if(tabIndex === 1) { // กระดานรับงาน (Home)
-                idleP.classList.remove('hidden');
+        if(tabIndex === 1) { // หน้าแรก
+            idleP.classList.remove('hidden');
+            if(map) map.setOptions({ padding: { top: 80, bottom: 350, left: 0, right: 0 } });
+            clearMapRoutes(); 
+            centerToDriver();
+        } else if (tabIndex === 2) { // งานปัจจุบัน
+            actP.classList.remove('hidden');
+            if(activeJobId) {
+                actContent.classList.remove('hidden');
+                noActState.classList.add('hidden');
                 if(map) map.setOptions({ padding: { top: 80, bottom: 350, left: 0, right: 0 } });
-                clearMapRoutes(); // ซ่อนเส้นทางเวลามาส่องงานใหม่
-                centerToDriver();
-            } else if (tabIndex === 2) { // งานปัจจุบัน (Active Job)
-                actP.classList.remove('hidden');
-                if(activeJobId) {
-                    actContent.classList.remove('hidden');
-                    noActState.classList.add('hidden');
-                    if(map) map.setOptions({ padding: { top: 80, bottom: 350, left: 0, right: 0 } });
-                    updateRoute(true); // วาดเส้นทางใหม่สำหรับงานที่ทำอยู่
-                } else {
-                    actContent.classList.add('hidden');
-                    noActState.classList.remove('hidden');
-                    if(map) map.setOptions({ padding: { top: 80, bottom: 350, left: 0, right: 0 } });
-                }
+                updateRoute(true); 
+            } else {
+                actContent.classList.add('hidden');
+                noActState.classList.remove('hidden');
+                if(map) map.setOptions({ padding: { top: 80, bottom: 350, left: 0, right: 0 } });
             }
-        } else {
-            // แท็บ 3 และ 4 ไม่ต้องใช้แผนที่
-            mapContainer.classList.add('hidden');
-            if(tabIndex === 3) {
-                tab3.classList.remove('hidden');
-                renderHistory();
-            } else if(tabIndex === 4) {
-                tab4.classList.remove('hidden');
-                if(currentDriverProfile) {
-                    document.getElementById('profName').innerText = currentDriverProfile.name;
-                    document.getElementById('profPin').innerText = "รหัส PIN: " + currentDriverProfile.pin;
-                    document.getElementById('profCar').innerText = `${currentDriverProfile.brand || '-'} ${currentDriverProfile.color || ''} (${currentDriverProfile.plate || '-'})`;
-                    document.getElementById('profPhone').innerText = currentDriverProfile.phone;
-                }
+        } else if (tabIndex === 3) { // ประวัติ
+            tab3.classList.remove('hidden');
+            renderHistory();
+        } else if (tabIndex === 4) { // โปรไฟล์
+            tab4.classList.remove('hidden');
+            if(currentDriverProfile) {
+                document.getElementById('profName').innerText = currentDriverProfile.name;
+                document.getElementById('profPin').innerText = "รหัส PIN: " + currentDriverProfile.pin;
+                document.getElementById('profCar').innerText = `${currentDriverProfile.brand || '-'} ${currentDriverProfile.color || ''} (${currentDriverProfile.plate || '-'})`;
+                document.getElementById('profPhone').innerText = currentDriverProfile.phone;
             }
         }
     }
@@ -663,7 +648,7 @@
                 document.getElementById('onlineToggle').checked = true;
                 toggleOnline();
             }
-            switchDriverTab(1); // เริ่มต้นที่หน้าแรก
+            switchDriverTab(1);
         } else {
             document.getElementById('loginModal').classList.remove('hidden');
         }
@@ -751,7 +736,7 @@
                     driverLng = pos.coords.longitude;
                     db.ref('driver').update({ lat: driverLat, lng: driverLng });
                     if(markerDriver) markerDriver.setPosition({lat: driverLat, lng: driverLng});
-                    // ไม่บังคับอัปเดตเส้นทางถ้าอยู่หน้าโฮม
+                    
                     if(activeJobId && !document.getElementById('activeJobPanel').classList.contains('hidden')) {
                         updateRoute(false);
                     }
@@ -972,7 +957,6 @@
                     let posObj = {lat: driverLat, lng: driverLng};
                     if(markerDriver) markerDriver.setPosition(posObj);
                     
-                    // ให้แผนที่เลื่อนตามตัวคนขับตลอด ยกเว้นตอนดูกระดานที่ไม่ได้เลือกงาน
                     if(isTrackingMode && map && !selectedJobId && !document.getElementById('activeJobPanel').classList.contains('hidden')) {
                         map.panTo(posObj);
                     }
@@ -1067,7 +1051,6 @@
             if (activeJobId && !foundActiveJob && !isProcessingAction) resetToIdle();
         }
         
-        // ถ้ารับงานอยู่ แต่ผู้ขับดันไปสลับแท็บอื่นๆ จะไม่มีการ force เด้งหน้า แต่ข้อมูลจะอัปเดตเบื้องหลัง
         renderJobList(); 
     }
 
@@ -1246,7 +1229,6 @@
         if(md) md.classList.add('hidden'); 
         selectedJobId = null;
         
-        // ถ้าดูจบแล้วปิดโมดอล จะกลับไปให้แผนที่โฟกัสงานปัจจุบัน (ถ้ามี) หรือโฟกัสตัวเอง(ถ้าไม่มีงาน)
         if (activeJobId && !document.getElementById('activeJobPanel').classList.contains('hidden')) {
             updateRoute(true);
         } else {
@@ -1324,7 +1306,6 @@
                 sendLineNotify(activeJobId, "🏎️ คนขับตอบรับงานของคุณแล้ว! กำลังรีบเดินทางไปหาคุณครับ");
                 isProcessingAction = false;
                 
-                // ถ้ารับงานสำเร็จให้สลับมาแท็บที่ 2 ทันที
                 switchDriverTab(2);
                 updateActiveJobUI();
             }
@@ -1471,7 +1452,7 @@
     function resetToIdle() {
         localStorage.removeItem('activeJobId'); activeJobId = null; activeJobData = null; selectedJobId = null;
         
-        updateActiveJobUI(); // รีเฟรชให้เห็น State ไม่มีงาน
+        updateActiveJobUI(); 
         
         let bo = document.getElementById('btnOverview');
         let ed = document.getElementById('etaDisplay');
@@ -1481,7 +1462,6 @@
         lastNotifiedMsg = ""; 
         clearMapRoutes(); centerToDriver(); renderJobList(); 
         
-        // เมื่อจบงานสลับกลับมาหน้าแรก
         switchDriverTab(1);
     }
 
