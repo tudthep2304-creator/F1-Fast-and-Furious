@@ -555,7 +555,7 @@
     let histMap = null, histDirectionsRenderer = null;
     let placesService = null;
     let rerouteAutocomplete = null;
-    let rerouteType = ''; // 'waypoint' or 'destination'
+    let rerouteType = ''; 
     
     let polylinePick = null;
     let polylineDrop = null;
@@ -573,15 +573,18 @@
     let allBookings = null;
     let myActiveJobs = []; 
     let currentViewingJobId = null; 
+    let activeJobId = null; 
     let activeJobData = null; 
     let selectedJobId = null; 
     let loadedHistoryJobs = {}; 
+    let hiddenJobs = {}; 
     let currentRouteBounds = null; 
     let currentMapFocus = null; 
 
     let isProcessingAction = false;
     let lastNotifiedMsg = ""; 
     let knownPendingJobs = [];
+    let previousPendingJobsList = []; 
     let isAlarmRinging = false; 
     let isSatelliteMode = false;
 
@@ -674,6 +677,8 @@
             if(currentDriverProfile) {
                 document.getElementById('profName').innerText = currentDriverProfile.name;
                 document.getElementById('profPin').innerText = "รหัส PIN: " + currentDriverProfile.pin;
+                document.getElementById('profCar').innerText = `${currentDriverProfile.brand || '-'} ${currentDriverProfile.color || ''} (${currentDriverProfile.plate || '-'})`;
+                document.getElementById('profPhone').innerText = currentDriverProfile.phone;
             }
         }
     }
@@ -927,7 +932,7 @@
             currentMapFocus = null;
         } else {
             map.panTo({lat: lat, lng: lng});
-            map.setZoom(18);
+            map.setZoom(18); 
             isTrackingMode = false;
             currentMapFocus = type;
             let btnC = document.getElementById('btnCrosshair');
@@ -947,7 +952,7 @@
 
         if(map && driverLat && driverLng) {
             map.panTo({lat: driverLat, lng: driverLng});
-            map.setZoom(18);
+            map.setZoom(18); 
         }
 
         let actP = document.getElementById('activeJobPanel');
@@ -1076,7 +1081,6 @@
       markerDrop = new google.maps.Marker({map: null, icon: customDropIcon, zIndex: 2});
       markerDriver = new google.maps.Marker({map: map, position: {lat: driverLat, lng: driverLng}, icon: {url: "https://img.icons8.com/color/48/car-top-view.png", scaledSize: new google.maps.Size(44, 44), anchor: new google.maps.Point(22, 22)}, zIndex: 9999});
 
-      // Init Autocomplete for Rerouting
       let rerouteInput = document.getElementById('rerouteSearch');
       if(rerouteInput && google.maps.places) {
           rerouteAutocomplete = new google.maps.places.Autocomplete(rerouteInput, { componentRestrictions: {country: 'th'} });
@@ -1231,6 +1235,9 @@
                     });
                     if(gpsEl) gpsEl.innerText = `พิกัดอัปเดตล่าสุด: ${new Date().toLocaleTimeString('th-TH')}`;
                     
+                    // ป้องกันจอดับตอนวิ่ง
+                    requestWakeLock();
+                    
                 }, 
                 (err) => { if(gpsEl) gpsEl.innerText = "GPS Error: กรุณาเปิด Location (ตำแหน่งที่ตั้ง)"; }, 
                 { enableHighAccuracy: true, maximumAge: 0, timeout: 5000 });
@@ -1278,12 +1285,11 @@
             }
         }
 
-        // เรียงลำดับงานตามเวลาที่กดรับ หรือ สร้าง
         myActiveJobs.sort((a, b) => (a.data.timestamp || 0) - (b.data.timestamp || 0));
 
         if (myActiveJobs.length > 0) {
             if(!foundCurrentViewing) currentViewingJobId = myActiveJobs[0].id;
-            activeJobId = currentViewingJobId; // For backward compatibility with routing logic
+            activeJobId = currentViewingJobId; 
             activeJobData = myActiveJobs.find(j => j.id === currentViewingJobId).data;
             
             updateActiveJobUI();
@@ -1337,14 +1343,13 @@
     }
 
     function updateMapMarkersForStackedJobs() {
-        // เคลียร์ Marker คิวงานซ้อนเก่าทิ้งให้หมด ยกเว้นงานที่กำลัง Focus อยู่ (ปล่อยให้ updateRoute จัดการ)
         activeJobMarkers.forEach(m => m.setMap(null));
         activeJobMarkers = [];
 
         if(myActiveJobs.length <= 1 || !map) return;
 
         myActiveJobs.forEach((job, index) => {
-            if(job.id === currentViewingJobId) return; // ข้ามงานที่ดูอยู่ (เพราะวาดเส้นเต็มๆ อยู่แล้ว)
+            if(job.id === currentViewingJobId) return; 
             
             let seqNum = (index + 1).toString();
             let b = job.data;
@@ -1373,14 +1378,14 @@
         });
     }
 
-    let previousPendingJobsList = [];
     function renderJobList() {
         const listContainer = document.getElementById('jobListContainer');
         const pBar = document.getElementById('searchProgressBar');
+        const emptyText = document.getElementById('jobListEmptyText');
         if(!listContainer) return;
         
         if (!isOnline) { 
-            listContainer.innerHTML = '<p class="text-center text-gray-500 text-[12px] font-bold py-6">กรุณาเปิดออนไลน์เพื่อดูงาน</p>'; 
+            if(emptyText) emptyText.classList.remove('hidden');
             if(pBar) pBar.classList.add('hidden');
             return; 
         }
@@ -1389,7 +1394,7 @@
         else if(pBar) pBar.classList.add('hidden');
 
         if (!allBookings) { 
-            listContainer.innerHTML = '<p class="text-center text-gray-500 text-[12px] font-bold py-6">ยังไม่มีงานในขณะนี้...</p>'; 
+            if(emptyText) emptyText.classList.remove('hidden');
             return; 
         }
 
@@ -1428,26 +1433,22 @@
             }
         }
 
-        // แจ้งเตือน Popup เมื่องานใหม่เด้งเข้ามา (ตอนรับงานอื่นอยู่)
         if (isOnline && currentPendingJobs.length > previousPendingJobsList.length && myActiveJobs.length > 0) {
             let snd = document.getElementById('jobAlertSound');
             if (snd) { snd.muted = false; snd.volume = 1; snd.load(); snd.play().catch(e=>{}); }
             if (navigator.vibrate) navigator.vibrate([500, 200, 500]); 
-            
-            // Pop-up เตือน
             showAlert("🔔 มีงานใหม่เข้ามา!", "ลูกค้าเรียกซ้อนเข้ามา ตรวจสอบดูที่กระดานรับงานครับ", "success");
         }
         previousPendingJobsList = currentPendingJobs;
 
         if (jobCount === 0) {
-            html = '<p class="text-center text-gray-500 text-[12px] font-bold py-6">ยังไม่มีงานในขณะนี้...</p>';
+            if(emptyText) emptyText.classList.remove('hidden');
         } else {
-            listContainer.innerHTML = '';
+            if(emptyText) emptyText.classList.add('hidden');
+            let existingJobs = listContainer.querySelectorAll('.cursor-pointer');
+            existingJobs.forEach(el => el.remove());
+            listContainer.insertAdjacentHTML('afterbegin', html);
         }
-        
-        listContainer.innerHTML = html + (jobCount === 0 && myActiveJobs.length === 0 ? `<div id="searchProgressBar" class="absolute bottom-0 left-0 w-full h-[2px] bg-gray-700/50">
-            <div class="h-full bg-blue-500 w-1/3 rounded-full animate-loading-scan"></div>
-        </div>` : '');
     }
 
     function openJobDetail(jobId) {
@@ -1527,8 +1528,6 @@
                     if(eD) eD.innerHTML = `<i class="fas fa-road"></i> ระยะทางไปส่ง: ${legDrop.distance.text} • ${legDrop.duration.text}`;
 
                     if(map) {
-                        let btnO = document.getElementById('btnOverview');
-                        if(btnO) { btnO.classList.remove('text-green-400'); btnO.classList.add('text-gray-300'); }
                         setTimeout(() => { map.fitBounds(currentRouteBounds, { top: 120, right: 30, bottom: getSafeBottomPadding() + 20, left: 30 }); }, 100);
                     }
                 }
@@ -1623,7 +1622,7 @@
             } else {
                 sendLineNotify(jobIdToAccept, "🏎️ คนขับตอบรับงานของคุณแล้ว! กำลังรีบเดินทางไปหาคุณครับ");
                 isProcessingAction = false;
-                
+                selectedJobId = null;
                 switchDriverTab(2);
             }
         });
@@ -1723,7 +1722,7 @@
             let cjb = document.getElementById('btnCancelJob');
             if(cjb) cjb.classList.add('hidden');
             if(contactBox) contactBox.classList.add('hidden'); 
-            if(rerouteBox) rerouteBox.classList.remove('hidden'); // โชว์ปุ่มเพิ่มจุดแวะ เฉพาะตอนออกเดินทางแล้ว
+            if(rerouteBox) rerouteBox.classList.remove('hidden'); 
         }
     }
 
@@ -1845,7 +1844,6 @@
         }
 
         let routeRequest = {origin: origin, destination: dest, travelMode: 'DRIVING'};
-        
         if(isGoingToDropoff && activeJobData.waypoints && activeJobData.waypoints.length > 0) {
             routeRequest.waypoints = activeJobData.waypoints.map(wp => ({location: {lat: wp.lat, lng: wp.lng}, stopover: true}));
         }
@@ -1905,7 +1903,6 @@
         window.open(`https://www.google.com/maps/dir/?api=1&origin=${driverLat},${driverLng}&destination=${lat},${lng}&travelmode=driving`, '_blank');
     }
 
-    // ฟังก์ชันจัดการ Modal ขอเปลี่ยนเส้นทาง (ระบบรอผู้โดยสารกดอนุมัติ)
     function openRerouteModal(type) {
         rerouteType = type;
         document.getElementById('rerouteTitle').innerText = type === 'waypoint' ? 'ค้นหาจุดแวะเพิ่ม' : 'เปลี่ยนจุดหมายปลายทาง';
@@ -1918,7 +1915,7 @@
     }
 
     function submitRerouteRequest(name, lat, lng) {
-        if(confirm(`ยืนยันการขอเพิ่ม/เปลี่ยนไปที่: \n${name}\n\n(ระบบจะส่งคำขอไปยังแอปผู้โดยสารเพื่อกดยืนยันอัตราค่าโดยสารใหม่)`)) {
+        if(confirm(`ยืนยันการขอเพิ่ม/เปลี่ยนไปที่: \n${name}\n\n(ระบบจะส่งคำขอไปยังแอปผู้โดยสารเพื่อกดยืนยันค่าบริการใหม่)`)) {
             closeRerouteModal();
             db.ref('bookings/' + activeJobId + '/routeChangeRequest').set({
                 type: rerouteType,
@@ -1928,7 +1925,6 @@
                 status: 'pending'
             }).then(() => {
                 showAlert("รอการยืนยัน", "ส่งคำขอไปยังผู้โดยสารเรียบร้อยแล้ว กรุณารอผู้โดยสารกดยืนยันในแอป", "info");
-                // หากผู้โดยสารกดยืนยัน (ในโค้ดฝั่งผู้โดยสารจะคำนวณราคาใหม่ และอัปเดต dLat/dLng หรือเพิ่ม waypoints พร้อมลบ routeChangeRequest)
             });
         }
     }
