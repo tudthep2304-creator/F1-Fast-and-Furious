@@ -200,7 +200,7 @@
                 </div>
             </div>
 
-            <div class="mb-1 glass-box py-2.5 px-3.5 rounded-xl border border-gray-700 relative shadow-sm">
+            <div class="mb-3 glass-box py-2.5 px-3.5 rounded-xl border border-gray-700 relative shadow-sm">
                 <div class="absolute left-[1.4rem] top-6 bottom-6 w-0.5 border-l-[1.5px] border-dashed border-gray-600 z-0"></div>
                 <div class="flex items-center gap-3 mb-2.5 relative z-10 w-full">
                     <div class="shrink-0"><i class="fas fa-circle text-[10px] text-green-500 border border-gray-800 rounded-full"></i></div>
@@ -213,6 +213,7 @@
             </div>
         </div>
     </div>
+    
     <div id="noActiveJobState" class="h-full flex flex-col items-center justify-center py-6 opacity-80">
         <div class="w-16 h-16 bg-gray-800 rounded-full flex items-center justify-center border border-gray-700 mb-4 shadow-inner">
             <i class="fas fa-car-side text-3xl text-gray-500"></i>
@@ -467,10 +468,11 @@
     let lastNotifiedMsg = ""; 
     let knownPendingJobs = [];
     let isAlarmRinging = false; 
-    let isSatelliteMode = false; // ค่าเริ่มต้นเป็นแผนที่แบบ Roadmap เพื่อความลื่นไหล
+    let isSatelliteMode = false;
 
+    // คำนวณขอบล่างให้พอดีเวลาหดและยืด
     function getSafeBottomPadding() {
-        return Math.min(350, window.innerHeight * 0.45);
+        return Math.min(320, window.innerHeight * 0.40);
     }
 
     function initDatePickers() {
@@ -536,11 +538,6 @@
                     map.setOptions({ padding: { top: 180, bottom: getSafeBottomPadding(), left: 0, right: 0 } });
                 }
                 updateRoute(true); 
-                
-                // ถ้ารับงานแล้ว ยังไม่ต้องหด Panel จนกว่าจะกดเป้าเล็ง
-                if(actP.classList.contains('panel-collapsed')) {
-                    actP.classList.remove('panel-collapsed');
-                }
             } else {
                 actContent.classList.add('hidden');
                 noActState.classList.remove('hidden');
@@ -694,7 +691,6 @@
         const panel = document.getElementById(panelId);
         if(!panel) return;
         
-        // หน้าแรก ไม่ยอมให้ Panel หดตัว (ยกเว้นเราไปบังคับมัน)
         if(panelId === 'idlePanel') return;
 
         panel.classList.toggle('panel-collapsed');
@@ -803,7 +799,6 @@
         if (window.alertCloseCallback) window.alertCloseCallback();
     }
 
-    // ฟังก์ชันเล็งเป้า หด Panel แค่ตอนผู้ใช้กด (สำหรับ Tab 2 งานปัจจุบัน)
     function centerToDriver() {
         isTrackingMode = true;
         let btnC = document.getElementById('btnCrosshair');
@@ -816,7 +811,7 @@
             map.setZoom(16);
         }
 
-        // หด Panel เมนูหลักด้านล่างถ้ายังไม่ได้หด (ยกเว้นหน้าแรก)
+        // หด Panel ลงอัตโนมัติเมื่อกดเป้าเล็ง
         let actP = document.getElementById('activeJobPanel');
         if (actP && !actP.classList.contains('hidden') && !actP.classList.contains('panel-collapsed')) {
             actP.classList.add('panel-collapsed');
@@ -832,16 +827,16 @@
         if(btnO) { btnO.classList.remove('text-gray-300'); btnO.classList.add('text-green-400'); }
 
         let activeTab = document.getElementById('navBtn2').classList.contains('text-green-400') ? 2 : 1;
-        let pTop = activeTab === 2 ? 180 : 100; // ดันแผนที่ลงมาหน่อยให้ไม่ชนขอบบน
+        let pTop = activeTab === 2 ? 180 : 120; 
 
         if (map && currentRouteBounds) {
-            map.fitBounds(currentRouteBounds, { top: pTop, right: 50, bottom: getSafeBottomPadding(), left: 50 });
-            
-            // ขยาย Panel คืนมาเมื่อกด Overview (เพื่อให้เห็นข้อมูลผู้โดยสารชัดๆ)
+            // เมื่อกด Overview ให้ขยาย Panel คืนมา เพื่อให้เห็นข้อมูลงานด้วย
             let actP = document.getElementById('activeJobPanel');
             if (actP && !actP.classList.contains('hidden')) {
                 actP.classList.remove('panel-collapsed');
             }
+            // ปรับระยะการซูมให้เห็นภาพรวม
+            map.fitBounds(currentRouteBounds, { top: pTop, right: 50, bottom: getSafeBottomPadding(), left: 50 });
         } else {
             centerToDriver();
         }
@@ -918,7 +913,8 @@
         styles: darkMapStyle,
         disableDefaultUI: true, 
         gestureHandling: 'greedy', 
-        zoomControl: true, 
+        zoomControl: true,
+        clickableIcons: false, // ปิดการกด POI (วัด, โรงเรียน)
         padding: { top: 80, bottom: getSafeBottomPadding(), left: 0, right: 0 } 
       });
 
@@ -1215,8 +1211,17 @@
         let oldPrBox = document.getElementById('detailPromoBox');
 
         if(n) n.innerText = job.name || "ลูกค้า";
-        if(pk) pk.innerText = job.pName;
-        if(dp) dp.innerText = job.dName;
+        
+        // เพิ่มระบบกดที่ชื่อสถานที่แล้วซูมแผนที่ไปที่หมุด
+        if(pk) {
+            pk.innerHTML = `<span class="cursor-pointer hover:text-green-300 underline decoration-dashed decoration-gray-500 underline-offset-4 transition">${job.pName}</span>`;
+            pk.onclick = () => { map.panTo({lat: job.pLat, lng: job.pLng}); map.setZoom(17); isTrackingMode = false; };
+        }
+        if(dp) {
+            dp.innerHTML = `<span class="cursor-pointer hover:text-green-300 underline decoration-dashed decoration-gray-500 underline-offset-4 transition">${job.dName}</span>`;
+            dp.onclick = () => { map.panTo({lat: job.dLat, lng: job.dLng}); map.setZoom(17); isTrackingMode = false; };
+        }
+        
         if(pr) pr.innerText = "฿" + job.price;
 
         if(job.promoCode) {
@@ -1272,8 +1277,8 @@
                     if(eD) eD.innerHTML = `<i class="fas fa-road"></i> ระยะทางไปส่ง: ${legDrop.distance.text} • ${legDrop.duration.text}`;
 
                     if(map) {
-                        // ปรับ padding ให้ซูมเข้ามาใกล้และอยู่ตรงกลางพอดีกับกล่อง Detail
-                        setTimeout(() => { map.fitBounds(currentRouteBounds, { top: 60, right: 30, bottom: 420, left: 30 }); }, 100);
+                        // ปรับ padding ให้เส้นทางเลื่อนลงมาอยู่ตรงกลางชัดๆ ไม่ชิดขอบบน
+                        setTimeout(() => { map.fitBounds(currentRouteBounds, { top: 160, right: 40, bottom: getSafeBottomPadding() + 20, left: 40 }); }, 100);
                     }
                 }
             });
@@ -1296,7 +1301,6 @@
         if(md) md.classList.add('hidden'); 
         selectedJobId = null;
         
-        // ถ้าปิด Modal แล้ว ให้กลับไปวาดเส้นทางงานปัจจุบัน (ถ้ามี) แบบไม่ต้องหด Panel หน้าแรก
         if (activeJobId && !document.getElementById('activeJobPanel').classList.contains('hidden')) {
             updateRoute(true);
         } else {
@@ -1341,10 +1345,8 @@
         let jobIdToAccept = selectedJobId;
         let phoneNumber = currentDriverProfile ? currentDriverProfile.phone : "ไม่ระบุเบอร์โทร";
 
-        // ซ่อน Modal Detail ทันที
         let jd = document.getElementById('jobDetailModal');
         if(jd) jd.classList.add('hidden');
-        selectedJobId = null;
         
         db.ref('bookings/' + jobIdToAccept).transaction(function(currentData) {
             if (currentData === null) return null; 
@@ -1365,19 +1367,20 @@
                 showAlert("ไม่ทันแล้ว!", "เสียใจด้วยครับ งานนี้ถูกคนขับท่านอื่นรับไปแล้ว 🥲", "error");
                 closeJobDetail();
                 isProcessingAction = false;
+                selectedJobId = null;
                 renderJobList(); 
             } else {
                 activeJobId = jobIdToAccept;
                 activeJobData = snapshot.val();
                 localStorage.setItem('activeJobId', activeJobId);
+                selectedJobId = null; // ปิดสถานะ Selected ปล่อยให้ Active ทำงาน
                 
                 sendLineNotify(activeJobId, "🏎️ คนขับตอบรับงานของคุณแล้ว! กำลังรีบเดินทางไปหาคุณครับ");
                 isProcessingAction = false;
                 
-                // สลับไปหน้า 2 โดยยังคงกาง Panel ไว้เพื่อเห็นข้อมูลผู้โดยสาร
                 switchDriverTab(2);
                 updateActiveJobUI();
-                updateRoute(false); // ห้ามให้ updateRoute บังคับหด Panel ทันที
+                updateRoute(false); 
             }
         });
     }
@@ -1420,8 +1423,16 @@
         
         if(pN) pN.innerText = activeJobData.name || "ลูกค้า";
         if(bC) bC.href = "tel:" + activeJobData.phone;
-        if(jP) jP.innerText = activeJobData.pName;
-        if(jD) jD.innerText = activeJobData.dName;
+        
+        if(jP) {
+            jP.innerHTML = `<span class="cursor-pointer hover:text-green-300 underline decoration-dashed decoration-gray-500 underline-offset-4 transition">${activeJobData.pName}</span>`;
+            jP.onclick = () => { map.panTo({lat: activeJobData.pLat, lng: activeJobData.pLng}); map.setZoom(17); isTrackingMode = false; };
+        }
+        if(jD) {
+            jD.innerHTML = `<span class="cursor-pointer hover:text-green-300 underline decoration-dashed decoration-gray-500 underline-offset-4 transition">${activeJobData.dName}</span>`;
+            jD.onclick = () => { map.panTo({lat: activeJobData.dLat, lng: activeJobData.dLng}); map.setZoom(17); isTrackingMode = false; };
+        }
+        
         if(pC) pC.innerText = "฿" + activeJobData.price;
 
         if(activeJobData.promoCode) {
@@ -1570,7 +1581,8 @@
         if(activeJobData.status.includes("กำลังเดินทางไปหา") || activeJobData.status.includes("รับงานแล้ว") || activeJobData.status.includes("มาถึงจุดรับ")) {
             dest = {lat: activeJobData.pLat, lng: activeJobData.pLng};
             if(markerPick) { markerPick.setPosition(dest); markerPick.setMap(map); }
-            if(markerDrop) markerDrop.setMap(null); 
+            // ไม่ต้องซ่อนหมุดปลายทาง 
+            if(markerDrop) { markerDrop.setPosition({lat: activeJobData.dLat, lng: activeJobData.dLng}); markerDrop.setMap(map); }
             isGoingToPickup = true;
         } else {
             dest = {lat: activeJobData.dLat, lng: activeJobData.dLng};
@@ -1585,6 +1597,11 @@
                 drawCustomPolylines(res, isGoingToPickup, isGoingToDropoff); 
                 
                 currentRouteBounds = res.routes[0].bounds; 
+                // เพิ่มหมุดปลายทางเข้าไปใน Bounds เพื่อให้ Overview มองเห็นครบ
+                if (isGoingToPickup && markerDrop) {
+                    currentRouteBounds.extend(markerDrop.getPosition());
+                }
+
                 let leg = res.routes[0].legs[0]; let distKm = leg.distance.value / 1000;
                 
                 let etaEl = document.getElementById('etaDisplay');
@@ -1614,8 +1631,8 @@
                     if(btnC) { btnC.classList.remove('text-green-400'); btnC.classList.add('text-gray-300'); }
                     if(btnO) { btnO.classList.remove('text-gray-300'); btnO.classList.add('text-green-400'); }
                     
-                    // ปรับกล้องให้เห็นรวมๆ โดยไม่ต้องหด Panel ให้หายไป
-                    setTimeout(() => { map.fitBounds(currentRouteBounds, { top: 180, right: 50, bottom: getSafeBottomPadding() - 20, left: 50 }); }, 200);
+                    // ปรับให้การ Overview ครั้งแรกเห็นชัดเจน ไม่ต้องหด Panel
+                    setTimeout(() => { map.fitBounds(currentRouteBounds, { top: 180, right: 50, bottom: getSafeBottomPadding(), left: 50 }); }, 200);
                 }
             }
         });
@@ -1640,7 +1657,6 @@
         let startMs = new Date(startInput + "T00:00:00").getTime();
         let endMs = new Date(endInput + "T23:59:59").getTime();
 
-        // ดึงจากโหนด completed_jobs แทน เพื่อป้องกันประวัติหายตอนลูกค้ากดออก
         db.ref('completed_jobs').orderByChild('driverPin').equalTo(driverPin).once('value', snap => {
             let totalEarn = 0;
             let totalJobs = 0;
