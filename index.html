@@ -141,7 +141,7 @@
             <p class="text-[11px] font-bold mt-0.5 text-red-500" id="statusText">🔴 ออฟไลน์</p>
           </div>
           <label class="relative inline-flex items-center cursor-pointer">
-            <input type="checkbox" id="onlineToggle" class="sr-only peer" onchange="toggleOnline()">
+            <input type="checkbox" id="onlineToggle" class="sr-only peer" onclick="event.preventDefault(); toggleOnlineWithPermission();">
             <div class="w-14 h-7 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-gray-800 after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-gray-200 after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-green-500 border border-gray-600"></div>
           </label>
         </div>
@@ -527,10 +527,10 @@
     let activeJobData = null;
     let selectedJobId = null; 
     let allBookings = null;
-    let loadedHistoryJobs = {}; // เก็บข้อมูลประวัติไว้ดึงมาดูใน Modal
+    let loadedHistoryJobs = {}; 
     let hiddenJobs = {}; 
     let currentRouteBounds = null; 
-    let currentMapFocus = null; // เช็กสถานะการกดซูมที่ชื่อสถานที่
+    let currentMapFocus = null; 
 
     let isProcessingAction = false;
     let lastNotifiedMsg = ""; 
@@ -585,8 +585,10 @@
             idleP.classList.remove('hidden');
             if(isOnline) floatGps.classList.remove('hidden');
             if(map) {
-                google.maps.event.trigger(map, 'resize');
-                map.setOptions({ padding: { top: 80, bottom: getSafeBottomPadding(), left: 0, right: 0 } });
+                setTimeout(() => {
+                    google.maps.event.trigger(map, 'resize');
+                    map.setOptions({ padding: { top: 80, bottom: getSafeBottomPadding(), left: 0, right: 0 } });
+                }, 50);
             }
             clearMapRoutes(); 
             centerToDriver();
@@ -601,16 +603,20 @@
                 mapCtrl.classList.add('top-[170px]');
 
                 if(map) {
-                    google.maps.event.trigger(map, 'resize');
-                    map.setOptions({ padding: { top: 180, bottom: getSafeBottomPadding(), left: 0, right: 0 } });
+                    setTimeout(() => {
+                        google.maps.event.trigger(map, 'resize');
+                        map.setOptions({ padding: { top: 180, bottom: getSafeBottomPadding(), left: 0, right: 0 } });
+                        updateRoute(true); 
+                    }, 50);
                 }
-                updateRoute(true); 
             } else {
                 actContent.classList.add('hidden');
                 noActState.classList.remove('hidden');
                 if(map) {
-                    google.maps.event.trigger(map, 'resize');
-                    map.setOptions({ padding: { top: 80, bottom: getSafeBottomPadding(), left: 0, right: 0 } });
+                    setTimeout(() => {
+                        google.maps.event.trigger(map, 'resize');
+                        map.setOptions({ padding: { top: 80, bottom: getSafeBottomPadding(), left: 0, right: 0 } });
+                    }, 50);
                 }
             }
         } else if (tabIndex === 3) { 
@@ -650,11 +656,24 @@
                             db.ref('driver_sessions/' + driverPin).set(driverSessionId);
                         }
                     });
+                    
+                    initFirebaseListeners(); // โหลดงานหลังจากยืนยันตัวตนผ่าน
                 } else {
                     forceLogout("รหัสพนักงานถูกลบออกจากระบบ กรุณาติดต่อแอดมิน");
                 }
             });
         }
+    }
+
+    function initFirebaseListeners() {
+        db.ref('bookings').on('value', snap => {
+            if(!driverPin) return; 
+            allBookings = snap.val();
+            processBookings(); 
+            if(!document.getElementById('tab3-History').classList.contains('hidden')) {
+                renderHistory();
+            }
+        });
     }
 
     function unlockAudio() {
@@ -696,9 +715,8 @@
                 let savedOnlineState = localStorage.getItem('isDriverOnline');
                 if (savedOnlineState === 'true') {
                     document.getElementById('onlineToggle').checked = true;
-                    toggleOnline();
+                    toggleOnlineWithPermission();
                 }
-                processBookings(); 
             } else {
                 alert("รหัส PIN ไม่ถูกต้อง หรือยังไม่ได้ลงทะเบียนในระบบ");
                 document.getElementById('pinInput').value = '';
@@ -746,7 +764,7 @@
             let savedOnlineState = localStorage.getItem('isDriverOnline');
             if (savedOnlineState === 'true') {
                 document.getElementById('onlineToggle').checked = true;
-                toggleOnline();
+                toggleOnlineWithPermission();
             }
             switchDriverTab(1);
         } else {
@@ -758,6 +776,7 @@
         const panel = document.getElementById(panelId);
         if(!panel) return;
         
+        // หน้าแรก ไม่ยอมให้ Panel หดตัว
         if(panelId === 'idlePanel') return;
 
         panel.classList.toggle('panel-collapsed');
@@ -866,14 +885,13 @@
         if (window.alertCloseCallback) window.alertCloseCallback();
     }
 
-    // ฟังก์ชันช่วยจัดการ Toggle การโฟกัสแผนที่
     function focusLocation(lat, lng, type) {
         if (currentMapFocus === type) {
             fitRouteBounds();
             currentMapFocus = null;
         } else {
             map.panTo({lat: lat, lng: lng});
-            map.setZoom(17);
+            map.setZoom(18); // ซูมใกล้ระดับ 18
             isTrackingMode = false;
             currentMapFocus = type;
         }
@@ -889,9 +907,10 @@
 
         if(map && driverLat && driverLng) {
             map.panTo({lat: driverLat, lng: driverLng});
-            map.setZoom(16);
+            map.setZoom(18); // ซูมใกล้ระดับ 18
         }
 
+        // หด Panel เมนูหลักด้านล่างถ้ายังไม่ได้หด (สำหรับหน้า 2)
         let actP = document.getElementById('activeJobPanel');
         if (actP && !actP.classList.contains('hidden') && !actP.classList.contains('panel-collapsed')) {
             actP.classList.add('panel-collapsed');
@@ -911,6 +930,7 @@
         let pTop = activeTab === 2 ? 180 : 100;
 
         if (map && currentRouteBounds) {
+            // เมื่อกด Overview ให้ขยาย Panel คืนมา เพื่อให้เห็นข้อมูลงานด้วย
             let actP = document.getElementById('activeJobPanel');
             if (actP && !actP.classList.contains('hidden')) {
                 actP.classList.remove('panel-collapsed');
@@ -993,7 +1013,7 @@
         disableDefaultUI: true, 
         gestureHandling: 'greedy', 
         zoomControl: true,
-        clickableIcons: false,
+        clickableIcons: false, // ปิดการกด POI (วัด, โรงเรียน)
         padding: { top: 80, bottom: getSafeBottomPadding(), left: 0, right: 0 } 
       });
 
@@ -1069,18 +1089,35 @@
         }
     }
 
-    function toggleOnline() {
+    // ตรวจสอบสิทธิ GPS ก่อนเปลี่ยนสถานะ
+    function toggleOnlineWithPermission() {
+        let tg = document.getElementById('onlineToggle');
         if(!driverPin) {
-            let tg = document.getElementById('onlineToggle');
-            if(tg) tg.checked = false;
+            tg.checked = false;
             document.getElementById('loginModal').classList.remove('hidden');
             return;
         }
-
-        let tg = document.getElementById('onlineToggle');
-        if(!tg) return;
         
-        isOnline = tg.checked;
+        if (tg.checked) {
+            navigator.geolocation.getCurrentPosition(
+                (pos) => {
+                    driverLat = pos.coords.latitude;
+                    driverLng = pos.coords.longitude;
+                    executeToggleOnline(true);
+                },
+                (err) => {
+                    tg.checked = false;
+                    showAlert("แอปต้องการพิกัด GPS", "กรุณาเปิด 'ตำแหน่งที่ตั้ง' (Location) บนมือถือและอนุญาตให้เบราว์เซอร์เข้าถึง GPS ก่อนกดออนไลน์ครับ", "error");
+                },
+                { enableHighAccuracy: true, timeout: 10000 }
+            );
+        } else {
+            executeToggleOnline(false);
+        }
+    }
+
+    function executeToggleOnline(state) {
+        isOnline = state;
         const statusEl = document.getElementById('statusText');
         const gpsEl = document.getElementById('gpsStatus');
         
@@ -1116,12 +1153,13 @@
                     }
                     
                     if(isFirstGps) {
-                        if(!activeJobId && !selectedJobId && isTrackingMode && map) map.setZoom(16);
+                        if(!activeJobId && !selectedJobId && isTrackingMode && map) map.setZoom(18); // ซูมใกล้ระดับ 18
                         if(activeJobId && !document.getElementById('activeJobPanel').classList.contains('hidden')) updateRoute(true); 
                         isFirstGps = false;
                     }
 
-                    if(activeJobId && (Date.now() - lastRouteUpdate > 10000) && !document.getElementById('activeJobPanel').classList.contains('hidden')) {
+                    // อัปเดตเส้นทางใหม่ถ้ารถวิ่งไป 8 วิ
+                    if(activeJobId && (Date.now() - lastRouteUpdate > 8000) && !document.getElementById('activeJobPanel').classList.contains('hidden')) {
                         lastRouteUpdate = Date.now();
                         updateRoute(false); 
                     }
@@ -1163,15 +1201,6 @@
         }
         renderJobList();
     }
-
-    db.ref('bookings').on('value', snap => {
-        if(!driverPin) return; 
-        allBookings = snap.val();
-        processBookings(); 
-        if(!document.getElementById('tab3-History').classList.contains('hidden')) {
-            renderHistory();
-        }
-    });
 
     function processBookings() {
         if(!driverPin) return; 
@@ -1376,6 +1405,7 @@
                     if(map) {
                         let btnO = document.getElementById('btnOverview');
                         if(btnO) { btnO.classList.remove('text-green-400'); btnO.classList.add('text-gray-300'); }
+                        
                         setTimeout(() => { map.fitBounds(currentRouteBounds, { top: 120, right: 30, bottom: getSafeBottomPadding() + 20, left: 30 }); }, 100);
                     }
                 }
@@ -1478,6 +1508,11 @@
                 
                 switchDriverTab(2);
                 updateActiveJobUI();
+                
+                // ไม่บังคับหด Panel จนกว่าคนขับจะกดเป้าเล็งเอง
+                if(document.getElementById('activeJobPanel').classList.contains('panel-collapsed')) {
+                    document.getElementById('activeJobPanel').classList.remove('panel-collapsed');
+                }
                 updateRoute(false); 
             }
         });
@@ -1514,6 +1549,7 @@
         
         let pN = document.getElementById('passengerName');
         let bC = document.getElementById('btnCallPassenger');
+        let contactBox = document.getElementById('contactPassengerBox');
         let jP = document.getElementById('jobPick');
         let jD = document.getElementById('jobDrop');
         let pC = document.getElementById('jobPrice');
@@ -1551,11 +1587,12 @@
         let s = activeJobData.status;
         if(s.includes("กำลังเดินทางไปหา") || s.includes("รับงานแล้ว")) {
             if(statusText) statusText.innerText = "กำลังเดินทางไปรับ"; 
-            if(etaEl) { etaEl.className = "text-[14px] text-white font-bold mt-1 drop-shadow-md truncate"; etaEl.classList.remove('hidden'); }
+            if(etaEl) { etaEl.className = "text-[14px] text-white font-bold mt-1 truncate"; etaEl.classList.remove('hidden'); }
             if(btnAction) { btnAction.innerText = "มาถึงจุดรับ"; btnAction.className = "flex-[3] bg-green-600/90 border border-green-500/50 text-white py-2 rounded-xl font-bold text-sm shadow-md hover:bg-green-500 transition"; }
             
             let cjb = document.getElementById('btnCancelJob');
             if(cjb) cjb.classList.remove('hidden');
+            if(contactBox) contactBox.classList.remove('hidden'); 
         } else if(s.includes("มาถึงจุดรับ") || s.includes("ถึงจุดรับแล้ว")) {
             if(statusText) statusText.innerText = "รอผู้โดยสารขึ้นรถ"; 
             if(etaEl) etaEl.classList.add('hidden');
@@ -1563,14 +1600,15 @@
             
             let cjb = document.getElementById('btnCancelJob');
             if(cjb) cjb.classList.remove('hidden');
+            if(contactBox) contactBox.classList.remove('hidden');
         } else if(s.includes("ออกเดินทาง") || s.includes("ไปยังจุดส่ง")) {
             if(statusText) statusText.innerText = "กำลังเดินทางไปจุดส่ง"; 
-            if(etaEl) { etaEl.className = "text-[14px] text-white font-bold mt-1 drop-shadow-md truncate"; etaEl.classList.remove('hidden'); }
+            if(etaEl) { etaEl.className = "text-[14px] text-white font-bold mt-1 truncate"; etaEl.classList.remove('hidden'); }
             if(btnAction) { btnAction.innerText = "ถึงที่หมาย (จบงาน)"; btnAction.className = "flex-[3] bg-emerald-600/90 border border-emerald-500/50 text-white py-2 rounded-xl font-bold text-sm shadow-md hover:bg-emerald-500 transition"; }
             
             let cjb = document.getElementById('btnCancelJob');
             if(cjb) cjb.classList.add('hidden');
-            if(bC) document.getElementById('contactPassengerBox').classList.add('hidden'); 
+            if(contactBox) contactBox.classList.add('hidden'); 
         }
     }
 
@@ -1627,7 +1665,7 @@
         };
 
         db.ref('completed_jobs').push().set(completedData).then(() => {
-            return db.ref('bookings/' + activeJobId).update({ status: "ถึงที่หมายเรียบร้อยแล้ว" });
+            return db.ref('bookings/' + activeJobId).remove(); // ลบงานออกจากบอร์ดเลย กันการค้าง
         }).then(() => {
             showAlert("สำเร็จ!", "ส่งผู้โดยสารเรียบร้อย รอรับงานถัดไป", "success", () => { isProcessingAction = false; resetToIdle(); });
         }).catch(()=>{ isProcessingAction = false; });
@@ -1688,7 +1726,13 @@
             isGoingToDropoff = true;
         }
 
-        directionsService.route({origin: origin, destination: dest, travelMode: 'DRIVING'}, (res, stat) => {
+        // หากมีการสั่งส่งจุดแวะ (waypoint) จะเพิ่มเข้าไปในเส้นทาง
+        let routeRequest = {origin: origin, destination: dest, travelMode: 'DRIVING'};
+        if(isGoingToDropoff && activeJobData.waypoints && activeJobData.waypoints.length > 0) {
+            routeRequest.waypoints = activeJobData.waypoints.map(wp => ({location: {lat: wp.lat, lng: wp.lng}, stopover: true}));
+        }
+
+        directionsService.route(routeRequest, (res, stat) => {
             if(stat === 'OK') {
                 if(directionsRenderer) directionsRenderer.setDirections(res); 
                 drawCustomPolylines(res, isGoingToPickup, isGoingToDropoff); 
@@ -1743,7 +1787,6 @@
         window.open(`https://www.google.com/maps/dir/?api=1&origin=${driverLat},${driverLng}&destination=${lat},${lng}&travelmode=driving`, '_blank');
     }
 
-    // ฟังก์ชันเปิดดูรายละเอียดประวัติ
     function openHistoryDetail(jobId) {
         let job = loadedHistoryJobs[jobId];
         if (!job) return;
@@ -1768,7 +1811,6 @@
 
         document.getElementById('historyDetailModal').classList.remove('hidden');
 
-        // แสดงเส้นทางบนแผนที่จำลอง
         setTimeout(() => {
             initHistMap();
             google.maps.event.trigger(histMap, 'resize');
@@ -1801,7 +1843,7 @@
         let startMs = new Date(startInput + "T00:00:00").getTime();
         let endMs = new Date(endInput + "T23:59:59").getTime();
 
-        loadedHistoryJobs = {}; // เคลียร์แคชประวัติ
+        loadedHistoryJobs = {}; 
 
         db.ref('completed_jobs').orderByChild('driverPin').equalTo(driverPin).once('value', snap => {
             let totalEarn = 0;
