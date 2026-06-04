@@ -152,23 +152,20 @@
       </button>
   </div>
 
-  <div id="locationSelectionUI" class="hidden fixed inset-0 z-[100] pointer-events-none flex flex-col justify-between transition-opacity duration-300 bg-gray-900/40">
-      <div class="pointer-events-auto bg-gray-900 border-b border-gray-800 p-4 shadow-xl flex items-center gap-3">
-          <button onclick="exitSelectionMode()" class="w-10 h-10 shrink-0 bg-gray-800 text-gray-400 rounded-full flex items-center justify-center border border-gray-700 hover:text-white transition">
-              <i class="fas fa-arrow-left"></i>
-          </button>
-          <div class="flex-1 relative">
-              <i class="fas fa-search absolute left-3.5 top-3 text-gray-500"></i>
-              <input type="text" id="mapSelectSearch" class="w-full bg-gray-800 border border-gray-700 text-white text-sm rounded-xl py-2.5 pl-9 pr-3 outline-none focus:border-blue-500" placeholder="ค้นหา หรือ จิ้มเลือกจุดบนแผนที่">
+  <div id="locationSelectionUI" class="hidden fixed inset-0 z-[100] pointer-events-none flex flex-col justify-between transition-opacity duration-300 bg-transparent">
+      <div class="pointer-events-auto bg-gray-900 border-b border-gray-800 p-4 shadow-xl">
+          <div class="relative">
+              <i class="fas fa-search absolute left-3.5 top-3.5 text-gray-500"></i>
+              <input type="text" id="mapSelectSearch" class="w-full bg-gray-800 border border-gray-700 text-white text-[15px] rounded-xl py-3 pl-10 pr-3 outline-none focus:border-blue-500 shadow-inner" placeholder="พิมพ์ค้นหาสถานที่ หรือจิ้มแผนที่">
           </div>
       </div>
-      
-      <div id="locationConfirmPanel" class="pointer-events-auto bg-gray-900 p-5 rounded-t-3xl shadow-[0_-10px_40px_rgba(0,0,0,0.8)] border-t border-gray-700 transform translate-y-full transition-transform duration-300 flex flex-col">
-          <h3 class="text-sm font-black text-blue-400 mb-1" id="selectionTitle">ยืนยันพิกัดที่เลือก</h3>
-          <p class="text-[13px] text-white font-medium mb-4 truncate" id="selectionAddress">กำลังดึงข้อมูลสถานที่...</p>
+
+      <div id="locationConfirmPanel" class="pointer-events-auto bg-gray-900 p-5 rounded-t-3xl shadow-[0_-10px_40px_rgba(0,0,0,0.8)] border-t border-gray-700 flex flex-col mt-auto">
+          <h3 class="text-sm font-black text-blue-400 mb-1" id="selectionTitle">ค้นหาสถานที่</h3>
+          <p class="text-[13px] text-gray-300 font-medium mb-4 truncate" id="selectionAddress">เลื่อนและแตะที่แผนที่เพื่อปักหมุด...</p>
           <div class="flex gap-2">
-              <button onclick="hideSelectionConfirmPanel()" class="flex-1 py-3 bg-gray-800 border border-gray-700 text-gray-300 font-bold rounded-xl hover:bg-gray-700 transition shadow-sm">ยกเลิก</button>
-              <button onclick="confirmSelectedLocation()" class="flex-[2] py-3 bg-blue-600/90 border border-blue-500/50 text-white font-bold rounded-xl shadow-md hover:bg-blue-500 transition text-[14px]">
+              <button onclick="exitSelectionMode()" class="flex-[1] py-3 bg-gray-800 border border-gray-700 text-gray-300 font-bold rounded-xl hover:bg-gray-700 transition shadow-sm flex items-center justify-center gap-1.5"><i class="fas fa-arrow-left"></i> กลับ</button>
+              <button id="btnConfirmSelection" onclick="confirmSelectedLocation()" class="flex-[2] py-3 bg-blue-600/50 border border-blue-500/30 text-white font-bold rounded-xl shadow-md transition text-[14px] opacity-50 cursor-not-allowed" disabled>
                   ยืนยันตำแหน่งนี้
               </button>
           </div>
@@ -186,7 +183,7 @@
             <p class="text-[11px] font-bold mt-0.5 text-red-500" id="statusText">🔴 ออฟไลน์</p>
           </div>
           <label class="relative inline-flex items-center cursor-pointer">
-            <input type="checkbox" id="onlineToggle" class="sr-only peer" onclick="event.preventDefault(); toggleOnlineWithPermission();">
+            <input type="checkbox" id="onlineToggle" class="sr-only peer" onchange="toggleOnlineWithPermission()">
             <div class="w-14 h-7 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-gray-800 after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-gray-200 after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-green-500 border border-gray-600"></div>
           </label>
         </div>
@@ -600,7 +597,7 @@
     let currentMapFocus = null; 
     
     let isSelectingLocation = false;
-    let selectionType = ''; // 'waypoint' or 'destination'
+    let selectionType = ''; 
 
     let isProcessingAction = false;
     let lastNotifiedMsg = ""; 
@@ -625,7 +622,7 @@
     }
 
     function switchDriverTab(tabIndex) {
-        if(isSelectingLocation) return; // ล็อกไม่ให้เปลี่ยนแท็บตอนกำลังจิ้มแผนที่
+        if(isSelectingLocation) return; 
 
         for(let i=1; i<=4; i++) {
             let btn = document.getElementById('navBtn'+i);
@@ -935,7 +932,7 @@
 
     function sendLineNotify(userId, msg, type = 'status_update') {
         if (!APPS_SCRIPT_URL) return;
-        let cacheKey = type + "_" + msg;
+        let cacheKey = userId + "_" + type + "_" + msg;
         if (lastNotifiedMsg === cacheKey) return; 
         
         lastNotifiedMsg = cacheKey;
@@ -1144,6 +1141,16 @@
         anchor: typeof google !== 'undefined' && google.maps ? new google.maps.Point(0, 0) : null
     };
 
+    const customSelectIcon = {
+        path: "M 0,0 C -12,-16 -18,-22 -18,-32 A 18,18 0 1,1 18,-32 C 18,-22 12,-16 0,0 Z M -8,-32 A 8,8 0 1,0 8,-32 A 8,8 0 1,0 -8,-32 Z",
+        fillColor: '#fbbf24', 
+        fillOpacity: 1,
+        strokeWeight: 2,
+        strokeColor: '#ffffff',
+        scale: 1,
+        anchor: typeof google !== 'undefined' && google.maps ? new google.maps.Point(0, 0) : null
+    };
+
     function initMap() {
       if (typeof google === 'undefined' || typeof google.maps === 'undefined') return;
       
@@ -1171,7 +1178,6 @@
           }
       });
 
-      // จัดการการจิ้มแผนที่ตอนเลือกพิกัด
       map.addListener('click', (e) => {
           if(!isSelectingLocation) return;
           placeTempMarker(e.latLng);
@@ -1203,7 +1209,7 @@
                   }
                   
                   map.panTo(place.geometry.location);
-                  map.setZoom(17);
+                  map.setZoom(18);
                   placeTempMarker(place.geometry.location);
                   showSelectionConfirmPanel(finalAddr, place.geometry.location.lat(), place.geometry.location.lng());
               }
@@ -1276,18 +1282,23 @@
         }
         
         if (tg.checked) {
-            navigator.geolocation.getCurrentPosition(
-                (pos) => {
-                    driverLat = pos.coords.latitude;
-                    driverLng = pos.coords.longitude;
-                    executeToggleOnline(true);
-                },
-                (err) => {
-                    tg.checked = false;
-                    showAlert("แอปต้องการพิกัด GPS", "กรุณาเปิด 'ตำแหน่งที่ตั้ง' (Location) บนมือถือและอนุญาตให้เบราว์เซอร์เข้าถึง GPS ก่อนกดออนไลน์ครับ", "error");
-                },
-                { enableHighAccuracy: true, timeout: 10000 }
-            );
+            if(navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    (pos) => {
+                        driverLat = pos.coords.latitude;
+                        driverLng = pos.coords.longitude;
+                        executeToggleOnline(true);
+                    },
+                    (err) => {
+                        tg.checked = false;
+                        showAlert("แอปต้องการพิกัด GPS", "กรุณาเปิด 'ตำแหน่งที่ตั้ง' (Location) บนมือถือและอนุญาตให้เบราว์เซอร์เข้าถึง GPS ก่อนกดออนไลน์ครับ", "error");
+                    },
+                    { enableHighAccuracy: true, timeout: 10000 }
+                );
+            } else {
+                tg.checked = false;
+                showAlert("ไม่รองรับ GPS", "เบราว์เซอร์นี้ไม่รองรับการระบุตำแหน่ง", "error");
+            }
         } else {
             executeToggleOnline(false);
         }
@@ -1517,7 +1528,6 @@
             let b = allBookings[key];
             let isHidden = hiddenJobs[key] && hiddenJobs[key] === b.timestamp;
             
-            // ข้ามงานของลูกค้าที่ถูกบล็อก
             if (myBlockedPassengers[b.phone]) continue;
 
             if (b.status === "รอผู้ขับขี่ตอบรับ" && !isHidden) {
@@ -1738,17 +1748,10 @@
                 selectedJobId = null;
                 renderJobList(); 
             } else {
-                activeJobId = jobIdToAccept;
-                activeJobData = snapshot.val();
-                localStorage.setItem('activeJobId', activeJobId);
-                selectedJobId = null; 
-                
-                sendLineNotify(activeJobId, "🏎️ คนขับตอบรับงานของคุณแล้ว! กำลังรีบเดินทางไปหาคุณครับ");
+                sendLineNotify(jobIdToAccept, "🏎️ คนขับตอบรับงานของคุณแล้ว! กำลังรีบเดินทางไปหาคุณครับ");
                 isProcessingAction = false;
-                
+                selectedJobId = null; 
                 switchDriverTab(2);
-                updateActiveJobUI();
-                updateRoute(false); 
             }
         });
     }
@@ -1969,6 +1972,7 @@
         }
 
         let routeRequest = {origin: origin, destination: dest, travelMode: 'DRIVING'};
+        
         if(isGoingToDropoff && activeJobData.waypoints && activeJobData.waypoints.length > 0) {
             routeRequest.waypoints = activeJobData.waypoints.map(wp => ({location: {lat: wp.lat, lng: wp.lng}, stopover: true}));
         }
@@ -2028,7 +2032,6 @@
         window.open(`https://www.google.com/maps/dir/?api=1&origin=${driverLat},${driverLng}&destination=${lat},${lng}&travelmode=driving`, '_blank');
     }
 
-    // ================= ฟังก์ชันขอเปลี่ยนเส้นทาง (Interactive Map) =================
     function enterSelectionMode(type) {
         if(!map) return;
         isSelectingLocation = true;
@@ -2038,10 +2041,14 @@
         let sTitle = document.getElementById('selectionTitle');
         let sInput = document.getElementById('mapSelectSearch');
         
-        sTitle.innerText = type === 'waypoint' ? 'เพิ่มจุดแวะที่เลือก?' : 'เปลี่ยนจุดหมายที่เลือก?';
+        sTitle.innerText = type === 'waypoint' ? 'เพิ่มจุดแวะที่เลือก' : 'เปลี่ยนจุดหมายที่เลือก';
         sInput.value = '';
         
-        // ซ่อน TopBar / BottomNav
+        document.getElementById('selectionAddress').innerText = "เลื่อนและแตะที่แผนที่เพื่อปักหมุด...";
+        let btnConfirm = document.getElementById('btnConfirmSelection');
+        btnConfirm.disabled = true;
+        btnConfirm.className = "flex-[2] py-3 bg-blue-600/50 border border-blue-500/30 text-white font-bold rounded-xl shadow-md transition text-[14px] opacity-50 cursor-not-allowed";
+
         document.getElementById('topBar').classList.add('hidden');
         document.getElementById('bottomNav').classList.add('hidden');
         document.getElementById('mapControls').classList.add('hidden');
@@ -2050,7 +2057,6 @@
 
         ui.classList.remove('hidden');
         map.setOptions({ padding: { top: 70, bottom: 200, left: 0, right: 0 } });
-        
         showAlert("โหมดเลือกตำแหน่ง", "เลื่อนและแตะที่แผนที่เพื่อปักหมุด หรือพิมพ์ค้นหาด้านบนครับ", "info");
     }
 
@@ -2059,22 +2065,21 @@
         
         if(tempMarker) { tempMarker.setMap(null); tempMarker = null; }
         document.getElementById('locationSelectionUI').classList.add('hidden');
-        document.getElementById('locationConfirmPanel').classList.replace('translate-y-0', 'translate-y-full');
         
-        // โชว์ TopBar / BottomNav คืน
         document.getElementById('topBar').classList.remove('hidden');
         document.getElementById('bottomNav').classList.remove('hidden');
         document.getElementById('mapControls').classList.remove('hidden');
         
-        switchDriverTab(2); // กลับไปหน้า active job
+        switchDriverTab(2); 
     }
 
     function placeTempMarker(latLng) {
         if(tempMarker) tempMarker.setMap(null);
         tempMarker = new google.maps.Marker({
             position: latLng, map: map,
-            icon: { url: "https://maps.google.com/mapfiles/ms/icons/yellow-dot.png" },
-            animation: google.maps.Animation.DROP
+            icon: customSelectIcon,
+            animation: google.maps.Animation.DROP,
+            zIndex: 999
         });
         map.panTo(latLng);
     }
@@ -2082,7 +2087,6 @@
     function geocodeLatLng(latLng) {
         if(!geocoder) return;
         document.getElementById('selectionAddress').innerText = "กำลังดึงข้อมูลสถานที่...";
-        document.getElementById('locationConfirmPanel').classList.replace('translate-y-full', 'translate-y-0');
 
         geocoder.geocode({ location: latLng }, (results, status) => {
             if (status === "OK" && results[0]) {
@@ -2097,13 +2101,11 @@
     let tempSelectedLocation = {};
     function showSelectionConfirmPanel(name, lat, lng) {
         document.getElementById('selectionAddress').innerText = name;
-        document.getElementById('locationConfirmPanel').classList.replace('translate-y-full', 'translate-y-0');
         tempSelectedLocation = { name: name, lat: lat, lng: lng };
-    }
-
-    function hideSelectionConfirmPanel() {
-        document.getElementById('locationConfirmPanel').classList.replace('translate-y-0', 'translate-y-full');
-        if(tempMarker) { tempMarker.setMap(null); tempMarker = null; }
+        
+        let btnConfirm = document.getElementById('btnConfirmSelection');
+        btnConfirm.disabled = false;
+        btnConfirm.className = "flex-[2] py-3 bg-blue-600 border border-blue-500 text-white font-bold rounded-xl shadow-[0_0_15px_rgba(37,99,235,0.4)] hover:bg-blue-500 transition text-[14px]";
     }
 
     function confirmSelectedLocation() {
@@ -2118,6 +2120,8 @@
                 lng: tempSelectedLocation.lng,
                 status: 'pending'
             }).then(() => {
+                let notifyMsg = `คนขับขอ${typeText} ${tempSelectedLocation.name} กรุณาตรวจสอบในแอป`;
+                sendLineNotify(activeJobId, notifyMsg, 'route_change_request');
                 showAlert("รอการยืนยัน", "ส่งคำขอไปยังผู้โดยสารเรียบร้อยแล้ว กรุณารอผู้โดยสารกดยืนยันในแอป", "info");
                 exitSelectionMode();
             });
