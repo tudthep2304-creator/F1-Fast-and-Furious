@@ -153,8 +153,8 @@
   </div>
 
   <div id="locationSelectionUI" class="hidden fixed inset-0 z-[100] pointer-events-none flex flex-col justify-between transition-opacity duration-300 bg-transparent">
-      <div class="pointer-events-auto bg-gray-900 border-b border-gray-800 p-4 shadow-xl">
-          <div class="relative">
+      <div class="pointer-events-auto bg-gray-900 border-b border-gray-800 p-4 shadow-xl flex items-center gap-3">
+          <div class="flex-1 relative">
               <i class="fas fa-search absolute left-3.5 top-3.5 text-gray-500"></i>
               <input type="text" id="mapSelectSearch" class="w-full bg-gray-800 border border-gray-700 text-white text-[15px] rounded-xl py-3 pl-10 pr-3 outline-none focus:border-blue-500 shadow-inner" placeholder="พิมพ์ค้นหาสถานที่ หรือเลื่อนแผนที่">
           </div>
@@ -174,7 +174,7 @@
 
   <div id="centerPinOverlay" class="hidden fixed top-0 left-0 right-0 bottom-[70px] z-[90] pointer-events-none flex flex-col items-center justify-center" style="transform: translateY(-65px);">
       <div id="centerPinWrapper" class="transition-transform duration-200">
-          <svg id="centerPinSvg" width="44" height="44" viewBox="0 0 36 36" class="drop-shadow-xl" style="margin-left: -22px; margin-top: -40px;">
+          <svg id="centerPinSvg" width="44" height="44" viewBox="-2 -2 40 40" class="drop-shadow-xl" style="margin-left: -22px; margin-top: -40px;">
               <path d="M18,0 C10,0 4,6 4,14 C4,24 18,36 18,36 C18,36 32,24 32,14 C32,6 26,0 18,0 Z M18,20 C14.686,20 12,17.314 12,14 C12,10.686 14.686,8 18,8 C21.314,8 24,10.686 24,14 C24,17.314 21.314,20 18,20 Z" fill="#fbbf24" stroke="#ffffff" stroke-width="2"/>
           </svg>
       </div>
@@ -192,7 +192,7 @@
             <p class="text-[11px] font-bold mt-0.5 text-red-500" id="statusText">🔴 ออฟไลน์</p>
           </div>
           <label class="relative inline-flex items-center cursor-pointer">
-            <input type="checkbox" id="onlineToggle" class="sr-only peer" onchange="toggleOnlineWithPermission()">
+            <input type="checkbox" id="onlineToggle" class="sr-only peer" onclick="event.preventDefault(); toggleOnlineWithPermission();">
             <div class="w-14 h-7 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-gray-800 after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-gray-200 after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-green-500 border border-gray-600"></div>
           </label>
         </div>
@@ -265,7 +265,7 @@
 
             <div id="routeChangeBox" class="flex gap-2 mb-2 hidden">
                 <button onclick="enterSelectionMode('waypoint')" class="flex-1 glass-box text-[10px] text-yellow-400 py-2 rounded-lg font-bold border border-yellow-500/30 hover:bg-white/10 transition shadow-sm"><i class="fas fa-plus-circle"></i> เพิ่มจุดแวะ</button>
-                <button onclick="enterSelectionMode('destination')" class="flex-1 glass-box text-[10px] text-red-400 py-2 rounded-lg font-bold border border-red-500/30 hover:bg-white/10 transition shadow-sm"><i class="fas fa-map-marker-alt"></i> เปลี่ยนจุดหมาย</button>
+                <button onclick="enterSelectionMode('destination')" class="flex-1 glass-box text-[10px] text-blue-400 py-2 rounded-lg font-bold border border-blue-500/30 hover:bg-white/10 transition shadow-sm"><i class="fas fa-map-marked-alt"></i> เปลี่ยนจุดหมาย</button>
             </div>
         </div>
     </div>
@@ -429,6 +429,18 @@
               <button onclick="executeAcceptJob()" class="flex-[2] py-2.5 bg-green-600/90 border border-green-500/50 text-white font-bold rounded-xl shadow-md hover:bg-green-500 transition text-[14px] flex justify-center items-center gap-1.5">
                   <i class="fas fa-bolt"></i> รับงานเลย!
               </button>
+          </div>
+      </div>
+  </div>
+
+  <div id="rerouteConfirmModal" class="hidden fixed inset-0 z-[160] bg-black/70 flex items-center justify-center p-4 pointer-events-auto">
+      <div class="bg-gray-800 rounded-3xl p-6 w-full max-w-sm text-center shadow-xl text-gray-100 border border-gray-700">
+          <div class="w-16 h-16 bg-blue-950/50 text-blue-400 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl"><i class="fas fa-map-marked-alt"></i></div>
+          <h3 class="text-xl font-bold mb-2" id="rerouteConfirmTitle">ยืนยันการเพิ่มจุดแวะ?</h3>
+          <p class="text-sm text-gray-400 mb-6 whitespace-pre-line" id="rerouteConfirmText">...</p>
+          <div class="flex gap-3">
+              <button onclick="closeRerouteConfirmModal()" class="flex-1 py-3 bg-gray-700 text-gray-200 font-bold rounded-xl hover:bg-gray-600">ยกเลิก</button>
+              <button onclick="executeRerouteRequest()" class="flex-[2] py-3 bg-blue-600 text-white font-bold rounded-xl shadow-md hover:bg-blue-700">ส่งคำขอ</button>
           </div>
       </div>
   </div>
@@ -995,6 +1007,18 @@
             if(driverPin) {
                 db.ref('driver/status').onDisconnect().set("ออฟไลน์");
                 db.ref('driver').update({ status: "ออนไลน์" });
+            }
+            if(navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition((pos) => {
+                    driverLat = pos.coords.latitude;
+                    driverLng = pos.coords.longitude;
+                    db.ref('driver').update({ lat: driverLat, lng: driverLng });
+                    if(markerDriver) markerDriver.setPosition({lat: driverLat, lng: driverLng});
+                    
+                    if(activeJobId && !document.getElementById('activeJobPanel').classList.contains('hidden')) {
+                        updateRoute(false);
+                    }
+                }, null, { enableHighAccuracy: true });
             }
         }
     });
@@ -1744,7 +1768,7 @@
                 
                 switchDriverTab(2);
                 updateActiveJobUI();
-                updateRoute(false); 
+                
             }
         });
     }
@@ -1960,7 +1984,7 @@
         } else {
             dest = {lat: activeJobData.dLat, lng: activeJobData.dLng};
             if(markerDrop) { markerDrop.setPosition(dest); markerDrop.setMap(map); }
-            if(markerPick) { markerPick.setPosition({lat: activeJobData.pLat, lng: activeJobData.pLng}); markerPick.setMap(map); }
+            if(markerPick) markerPick.setMap(null); 
             isGoingToDropoff = true;
         }
 
@@ -1977,9 +2001,6 @@
                 currentRouteBounds = res.routes[0].bounds; 
                 if (isGoingToPickup && markerDrop) {
                     currentRouteBounds.extend(markerDrop.getPosition());
-                }
-                if (isGoingToDropoff && markerPick) {
-                    currentRouteBounds.extend(markerPick.getPosition());
                 }
 
                 let leg = res.routes[0].legs[0]; let distKm = leg.distance.value / 1000;
@@ -2027,7 +2048,6 @@
         window.open(`https://www.google.com/maps/dir/?api=1&origin=${driverLat},${driverLng}&destination=${lat},${lng}&travelmode=driving`, '_blank');
     }
 
-    // ================= ฟังก์ชันขอเปลี่ยนเส้นทาง (Interactive Map) =================
     function enterSelectionMode(type) {
         if(!map) return;
         isSelectingLocation = true;
@@ -2112,22 +2132,32 @@
 
     function confirmSelectedLocation() {
         if(!tempSelectedLocation.lat) return;
-        let typeText = selectionType === 'waypoint' ? 'เพิ่มจุดแวะไปที่' : 'เปลี่ยนจุดหมายไปที่';
+        let typeText = selectionType === 'waypoint' ? 'เพิ่มจุดแวะ' : 'เปลี่ยนจุดหมาย';
+        document.getElementById('rerouteConfirmTitle').innerText = `ยืนยันการ${typeText}?`;
+        document.getElementById('rerouteConfirmText').innerText = `คุณต้องการ${typeText}ไปที่:\n${tempSelectedLocation.name}\n\n(ระบบจะส่งคำขอไปยังแอปผู้โดยสารเพื่อกดยืนยันค่าบริการใหม่)`;
         
-        if(confirm(`ยืนยันการขอ${typeText}: \n${tempSelectedLocation.name}\n\n(ระบบจะส่งคำขอไปยังแอปผู้โดยสารเพื่อกดยืนยันค่าบริการใหม่)`)) {
-            db.ref('bookings/' + activeJobId + '/routeChangeRequest').set({
-                type: selectionType,
-                name: tempSelectedLocation.name,
-                lat: tempSelectedLocation.lat,
-                lng: tempSelectedLocation.lng,
-                status: 'pending'
-            }).then(() => {
-                let notifyMsg = `คนขับขอ${typeText} ${tempSelectedLocation.name} กรุณาตรวจสอบในแอป`;
-                sendLineNotify(activeJobId, notifyMsg, 'route_change_request');
-                showAlert("รอการยืนยัน", "ส่งคำขอไปยังผู้โดยสารเรียบร้อยแล้ว กรุณารอผู้โดยสารกดยืนยันในแอป", "info");
-                exitSelectionMode();
-            });
-        }
+        document.getElementById('rerouteConfirmModal').classList.remove('hidden');
+    }
+
+    function closeRerouteConfirmModal() {
+        document.getElementById('rerouteConfirmModal').classList.add('hidden');
+    }
+
+    function executeRerouteRequest() {
+        let typeText = selectionType === 'waypoint' ? 'เพิ่มจุดแวะไปที่' : 'เปลี่ยนจุดหมายไปที่';
+        db.ref('bookings/' + activeJobId + '/routeChangeRequest').set({
+            type: selectionType,
+            name: tempSelectedLocation.name,
+            lat: tempSelectedLocation.lat,
+            lng: tempSelectedLocation.lng,
+            status: 'pending'
+        }).then(() => {
+            let notifyMsg = `คนขับขอ${typeText} ${tempSelectedLocation.name} กรุณาตรวจสอบในแอป`;
+            sendLineNotify(activeJobId, notifyMsg, 'route_change_request');
+            closeRerouteConfirmModal();
+            exitSelectionMode();
+            showAlert("รอการยืนยัน", "ส่งคำขอไปยังผู้โดยสารเรียบร้อยแล้ว กรุณารอผู้โดยสารกดยืนยันในแอป", "info");
+        });
     }
 
     function openHistoryDetail(jobId) {
