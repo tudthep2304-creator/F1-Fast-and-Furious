@@ -156,7 +156,7 @@
       <div class="pointer-events-auto bg-gray-900 border-b border-gray-800 p-4 shadow-xl">
           <div class="relative">
               <i class="fas fa-search absolute left-3.5 top-3.5 text-gray-500"></i>
-              <input type="text" id="mapSelectSearch" class="w-full bg-gray-800 border border-gray-700 text-white text-[15px] rounded-xl py-3 pl-10 pr-3 outline-none focus:border-blue-500 shadow-inner" placeholder="พิมพ์ค้นหาสถานที่ หรือจิ้มแผนที่">
+              <input type="text" id="mapSelectSearch" class="w-full bg-gray-800 border border-gray-700 text-white text-[15px] rounded-xl py-3 pl-10 pr-3 outline-none focus:border-blue-500 shadow-inner" placeholder="พิมพ์ค้นหาสถานที่ หรือเลื่อนแผนที่">
           </div>
       </div>
 
@@ -170,6 +170,15 @@
               </button>
           </div>
       </div>
+  </div>
+
+  <div id="centerPinOverlay" class="hidden fixed top-0 left-0 right-0 bottom-[70px] z-[90] pointer-events-none flex flex-col items-center justify-center" style="transform: translateY(-65px);">
+      <div id="centerPinWrapper" class="transition-transform duration-200">
+          <svg id="centerPinSvg" width="44" height="44" viewBox="0 0 36 36" class="drop-shadow-xl" style="margin-left: -22px; margin-top: -40px;">
+              <path d="M18,0 C10,0 4,6 4,14 C4,24 18,36 18,36 C18,36 32,24 32,14 C32,6 26,0 18,0 Z M18,20 C14.686,20 12,17.314 12,14 C12,10.686 14.686,8 18,8 C21.314,8 24,10.686 24,14 C24,17.314 21.314,20 18,20 Z" fill="#fbbf24" stroke="#ffffff" stroke-width="2"/>
+          </svg>
+      </div>
+      <div id="centerPinShadow" class="w-4 h-1.5 bg-black/40 rounded-full blur-[1px] transition-all duration-200 mt-0.5"></div>
   </div>
 
   <div id="idlePanel" class="ui-panel text-gray-100 z-10">
@@ -256,7 +265,7 @@
 
             <div id="routeChangeBox" class="flex gap-2 mb-2 hidden">
                 <button onclick="enterSelectionMode('waypoint')" class="flex-1 glass-box text-[10px] text-yellow-400 py-2 rounded-lg font-bold border border-yellow-500/30 hover:bg-white/10 transition shadow-sm"><i class="fas fa-plus-circle"></i> เพิ่มจุดแวะ</button>
-                <button onclick="enterSelectionMode('destination')" class="flex-1 glass-box text-[10px] text-blue-400 py-2 rounded-lg font-bold border border-blue-500/30 hover:bg-white/10 transition shadow-sm"><i class="fas fa-map-marked-alt"></i> เปลี่ยนจุดหมาย</button>
+                <button onclick="enterSelectionMode('destination')" class="flex-1 glass-box text-[10px] text-red-400 py-2 rounded-lg font-bold border border-red-500/30 hover:bg-white/10 transition shadow-sm"><i class="fas fa-map-marker-alt"></i> เปลี่ยนจุดหมาย</button>
             </div>
         </div>
     </div>
@@ -987,18 +996,6 @@
                 db.ref('driver/status').onDisconnect().set("ออฟไลน์");
                 db.ref('driver').update({ status: "ออนไลน์" });
             }
-            if(navigator.geolocation) {
-                navigator.geolocation.getCurrentPosition((pos) => {
-                    driverLat = pos.coords.latitude;
-                    driverLng = pos.coords.longitude;
-                    db.ref('driver').update({ lat: driverLat, lng: driverLng });
-                    if(markerDriver) markerDriver.setPosition({lat: driverLat, lng: driverLng});
-                    
-                    if(activeJobId && !document.getElementById('activeJobPanel').classList.contains('hidden')) {
-                        updateRoute(false);
-                    }
-                }, null, { enableHighAccuracy: true });
-            }
         }
     });
 
@@ -1141,16 +1138,6 @@
         anchor: typeof google !== 'undefined' && google.maps ? new google.maps.Point(0, 0) : null
     };
 
-    const customSelectIcon = {
-        path: "M 0,0 C -12,-16 -18,-22 -18,-32 A 18,18 0 1,1 18,-32 C 18,-22 12,-16 0,0 Z M -8,-32 A 8,8 0 1,0 8,-32 A 8,8 0 1,0 -8,-32 Z",
-        fillColor: '#fbbf24', 
-        fillOpacity: 1,
-        strokeWeight: 2,
-        strokeColor: '#ffffff',
-        scale: 1,
-        anchor: typeof google !== 'undefined' && google.maps ? new google.maps.Point(0, 0) : null
-    };
-
     function initMap() {
       if (typeof google === 'undefined' || typeof google.maps === 'undefined') return;
       
@@ -1169,19 +1156,26 @@
       geocoder = new google.maps.Geocoder();
 
       map.addListener('dragstart', () => {
-          if (isSelectingLocation) return;
-          isTrackingMode = false; 
-          let btnC = document.getElementById('btnCrosshair');
-          if(btnC) {
-              btnC.classList.remove('text-green-400');
-              btnC.classList.add('text-gray-300');
+          if (isSelectingLocation) {
+              document.getElementById('centerPinWrapper').classList.add('-translate-y-2');
+              document.getElementById('centerPinShadow').classList.add('scale-75', 'opacity-50');
+          } else {
+              isTrackingMode = false; 
+              let btnC = document.getElementById('btnCrosshair');
+              if(btnC) {
+                  btnC.classList.remove('text-green-400');
+                  btnC.classList.add('text-gray-300');
+              }
           }
       });
 
-      map.addListener('click', (e) => {
-          if(!isSelectingLocation) return;
-          placeTempMarker(e.latLng);
-          geocodeLatLng(e.latLng);
+      map.addListener('idle', () => {
+          if (isSelectingLocation) {
+              document.getElementById('centerPinWrapper').classList.remove('-translate-y-2');
+              document.getElementById('centerPinShadow').classList.remove('scale-75', 'opacity-50');
+              let center = map.getCenter();
+              geocodeLatLng(center);
+          }
       });
 
       directionsService = new google.maps.DirectionsService();
@@ -1202,16 +1196,8 @@
           rerouteAutocomplete.addListener('place_changed', () => {
               let place = rerouteAutocomplete.getPlace();
               if(place.geometry) {
-                  let finalAddr = place.name;
-                  if (place.formatted_address) {
-                      let cleanAddr = place.formatted_address.replace(/,?\s*ประเทศไทย/g, '').replace(/Unnamed Road,?\s*/g, '').trim();
-                      if(!cleanAddr.includes(place.name)) finalAddr += " (" + cleanAddr + ")";
-                  }
-                  
                   map.panTo(place.geometry.location);
                   map.setZoom(18);
-                  placeTempMarker(place.geometry.location);
-                  showSelectionConfirmPanel(finalAddr, place.geometry.location.lat(), place.geometry.location.lng());
               }
           });
       }
@@ -1748,10 +1734,17 @@
                 selectedJobId = null;
                 renderJobList(); 
             } else {
-                sendLineNotify(jobIdToAccept, "🏎️ คนขับตอบรับงานของคุณแล้ว! กำลังรีบเดินทางไปหาคุณครับ");
-                isProcessingAction = false;
+                activeJobId = jobIdToAccept;
+                activeJobData = snapshot.val();
+                localStorage.setItem('activeJobId', activeJobId);
                 selectedJobId = null; 
+                
+                sendLineNotify(activeJobId, "🏎️ คนขับตอบรับงานของคุณแล้ว! กำลังรีบเดินทางไปหาคุณครับ");
+                isProcessingAction = false;
+                
                 switchDriverTab(2);
+                updateActiveJobUI();
+                updateRoute(false); 
             }
         });
     }
@@ -1967,12 +1960,11 @@
         } else {
             dest = {lat: activeJobData.dLat, lng: activeJobData.dLng};
             if(markerDrop) { markerDrop.setPosition(dest); markerDrop.setMap(map); }
-            if(markerPick) markerPick.setMap(null); 
+            if(markerPick) { markerPick.setPosition({lat: activeJobData.pLat, lng: activeJobData.pLng}); markerPick.setMap(map); }
             isGoingToDropoff = true;
         }
 
         let routeRequest = {origin: origin, destination: dest, travelMode: 'DRIVING'};
-        
         if(isGoingToDropoff && activeJobData.waypoints && activeJobData.waypoints.length > 0) {
             routeRequest.waypoints = activeJobData.waypoints.map(wp => ({location: {lat: wp.lat, lng: wp.lng}, stopover: true}));
         }
@@ -1985,6 +1977,9 @@
                 currentRouteBounds = res.routes[0].bounds; 
                 if (isGoingToPickup && markerDrop) {
                     currentRouteBounds.extend(markerDrop.getPosition());
+                }
+                if (isGoingToDropoff && markerPick) {
+                    currentRouteBounds.extend(markerPick.getPosition());
                 }
 
                 let leg = res.routes[0].legs[0]; let distKm = leg.distance.value / 1000;
@@ -2032,6 +2027,7 @@
         window.open(`https://www.google.com/maps/dir/?api=1&origin=${driverLat},${driverLng}&destination=${lat},${lng}&travelmode=driving`, '_blank');
     }
 
+    // ================= ฟังก์ชันขอเปลี่ยนเส้นทาง (Interactive Map) =================
     function enterSelectionMode(type) {
         if(!map) return;
         isSelectingLocation = true;
@@ -2040,10 +2036,18 @@
         let ui = document.getElementById('locationSelectionUI');
         let sTitle = document.getElementById('selectionTitle');
         let sInput = document.getElementById('mapSelectSearch');
+        let pinOverlay = document.getElementById('centerPinOverlay');
+        let svg = document.getElementById('centerPinSvg');
         
         sTitle.innerText = type === 'waypoint' ? 'เพิ่มจุดแวะที่เลือก' : 'เปลี่ยนจุดหมายที่เลือก';
         sInput.value = '';
         
+        if(type === 'waypoint') {
+            svg.innerHTML = '<path d="M18,0 C10,0 4,6 4,14 C4,24 18,36 18,36 C18,36 32,24 32,14 C32,6 26,0 18,0 Z M18,20 C14.686,20 12,17.314 12,14 C12,10.686 14.686,8 18,8 C21.314,8 24,10.686 24,14 C24,17.314 21.314,20 18,20 Z" fill="#fbbf24" stroke="#ffffff" stroke-width="2"/>';
+        } else {
+            svg.innerHTML = '<path d="M18,0 C10,0 4,6 4,14 C4,24 18,36 18,36 C18,36 32,24 32,14 C32,6 26,0 18,0 Z M18,20 C14.686,20 12,17.314 12,14 C12,10.686 14.686,8 18,8 C21.314,8 24,10.686 24,14 C24,17.314 21.314,20 18,20 Z" fill="#ef4444" stroke="#ffffff" stroke-width="2"/>';
+        }
+
         document.getElementById('selectionAddress').innerText = "เลื่อนและแตะที่แผนที่เพื่อปักหมุด...";
         let btnConfirm = document.getElementById('btnConfirmSelection');
         btnConfirm.disabled = true;
@@ -2056,15 +2060,22 @@
         document.getElementById('floatingStatusBox').classList.add('hidden');
 
         ui.classList.remove('hidden');
+        pinOverlay.classList.remove('hidden'); 
+
         map.setOptions({ padding: { top: 70, bottom: 200, left: 0, right: 0 } });
-        showAlert("โหมดเลือกตำแหน่ง", "เลื่อนและแตะที่แผนที่เพื่อปักหมุด หรือพิมพ์ค้นหาด้านบนครับ", "info");
+        
+        if(type === 'destination' && activeJobData) {
+            map.panTo({lat: activeJobData.dLat, lng: activeJobData.dLng});
+        } else {
+            map.panTo({lat: driverLat, lng: driverLng});
+        }
     }
 
     function exitSelectionMode() {
         isSelectingLocation = false;
         
-        if(tempMarker) { tempMarker.setMap(null); tempMarker = null; }
         document.getElementById('locationSelectionUI').classList.add('hidden');
+        document.getElementById('centerPinOverlay').classList.add('hidden'); 
         
         document.getElementById('topBar').classList.remove('hidden');
         document.getElementById('bottomNav').classList.remove('hidden');
@@ -2073,20 +2084,11 @@
         switchDriverTab(2); 
     }
 
-    function placeTempMarker(latLng) {
-        if(tempMarker) tempMarker.setMap(null);
-        tempMarker = new google.maps.Marker({
-            position: latLng, map: map,
-            icon: customSelectIcon,
-            animation: google.maps.Animation.DROP,
-            zIndex: 999
-        });
-        map.panTo(latLng);
-    }
-
     function geocodeLatLng(latLng) {
         if(!geocoder) return;
         document.getElementById('selectionAddress').innerText = "กำลังดึงข้อมูลสถานที่...";
+        document.getElementById('btnConfirmSelection').disabled = true;
+        document.getElementById('btnConfirmSelection').className = "flex-[2] py-3 bg-blue-600/50 border border-blue-500/30 text-white font-bold rounded-xl shadow-md transition text-[14px] opacity-50 cursor-not-allowed";
 
         geocoder.geocode({ location: latLng }, (results, status) => {
             if (status === "OK" && results[0]) {
