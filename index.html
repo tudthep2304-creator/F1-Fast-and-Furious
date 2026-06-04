@@ -1979,15 +1979,68 @@
         if(activeJobData.status.includes("กำลังเดินทางไปหา") || activeJobData.status.includes("รับงานแล้ว") || activeJobData.status.includes("มาถึงจุดรับ")) {
             dest = {lat: activeJobData.pLat, lng: activeJobData.pLng};
             if(markerPick) { markerPick.setPosition(dest); markerPick.setMap(map); }
+            // โชว์หมุดปลายทางค้างไว้ แต่ไม่ต้องเอามาคำนวณกรอบภาพตอนโอเวอร์วิว
             if(markerDrop) { markerDrop.setPosition({lat: activeJobData.dLat, lng: activeJobData.dLng}); markerDrop.setMap(map); }
             isGoingToPickup = true;
         } else {
             dest = {lat: activeJobData.dLat, lng: activeJobData.dLng};
             if(markerDrop) { markerDrop.setPosition(dest); markerDrop.setMap(map); }
+            // โชว์หมุดจุดรับค้างไว้
             if(markerPick) { markerPick.setPosition({lat: activeJobData.pLat, lng: activeJobData.pLng}); markerPick.setMap(map); }
             isGoingToDropoff = true;
         }
 
+        let routeRequest = {origin: origin, destination: dest, travelMode: 'DRIVING'};
+        
+        if(isGoingToDropoff && activeJobData.waypoints && activeJobData.waypoints.length > 0) {
+            routeRequest.waypoints = activeJobData.waypoints.map(wp => ({location: {lat: wp.lat, lng: wp.lng}, stopover: true}));
+        }
+
+        directionsService.route(routeRequest, (res, stat) => {
+            if(stat === 'OK') {
+                if(directionsRenderer) directionsRenderer.setDirections(res); 
+                drawCustomPolylines(res, isGoingToPickup, isGoingToDropoff); 
+                
+                // โฟกัส (Overview) เฉพาะเส้นทางที่กำลังขับอยู่ (จากรถ ถึง เป้าหมายถัดไปเท่านั้น)
+                currentRouteBounds = res.routes[0].bounds; 
+
+                let leg = res.routes[0].legs[0]; let distKm = leg.distance.value / 1000;
+                
+                let etaEl = document.getElementById('etaDisplay');
+                if(etaEl) {
+                    etaEl.innerText = `ระยะทาง ${leg.distance.text} • ${leg.duration.text}`; 
+                    etaEl.classList.remove('hidden');
+                }
+
+                if(isGoingToPickup && distKm <= 2.0 && activeJobData.notifiedPick !== true) {
+                    activeJobData.notifiedPick = true; 
+                    db.ref('bookings/' + activeJobId).update({ notifiedPick: true });
+                    setTimeout(() => {
+                        sendLineNotify(activeJobId, `⚡ คนขับใกล้ถึงจุดรับแล้วครับ! (ระยะห่างอีกประมาณ ${distKm.toFixed(1)} กม.)`);
+                    }, 3000);
+                } else if(isGoingToDropoff && distKm <= 2.0 && activeJobData.notifiedDrop !== true) {
+                    activeJobData.notifiedDrop = true; 
+                    db.ref('bookings/' + activeJobId).update({ notifiedDrop: true });
+                    setTimeout(() => {
+                        sendLineNotify(activeJobId, `⚡ ใกล้ถึงจุดหมายปลายทางแล้วครับ! (ระยะห่างอีกประมาณ ${distKm.toFixed(1)} กม.)`);
+                    }, 3000);
+                }
+                
+                let bO = document.getElementById('btnOverview');
+                if(bO) bO.classList.remove('hidden');
+
+                if (forceZoom && map && document.getElementById('navBtn2').classList.contains('text-green-400')) {
+                    isTrackingMode = false; 
+                    let btnC = document.getElementById('btnCrosshair');
+                    let btnO = document.getElementById('btnOverview');
+                    if(btnC) { btnC.classList.remove('text-green-400'); btnC.classList.add('text-gray-300'); }
+                    if(bO) { bO.classList.remove('text-gray-300'); bO.classList.add('text-green-400'); }
+                    
+                    setTimeout(() => { map.fitBounds(currentRouteBounds, { top: 180, right: 50, bottom: getSafeBottomPadding(), left: 50 }); }, 200);
+                }
+            }
+        });
+    }
         let routeRequest = {origin: origin, destination: dest, travelMode: 'DRIVING'};
         
         if(isGoingToDropoff && activeJobData.waypoints && activeJobData.waypoints.length > 0) {
