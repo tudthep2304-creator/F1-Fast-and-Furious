@@ -242,7 +242,7 @@
             <div class="mb-2 glass-box py-2.5 px-3.5 rounded-xl border border-gray-700 relative shadow-sm">
                 <div class="absolute left-[1.4rem] top-6 bottom-6 w-0.5 border-l-[1.5px] border-dashed border-gray-600 z-0"></div>
                 <div id="activeJobWaypointsContainer" class="flex flex-col w-full relative z-10 gap-2">
-                    </div>
+                </div>
             </div>
 
             <div id="routeChangeBox" class="flex gap-2 mb-2 hidden">
@@ -554,7 +554,6 @@
     let isAlarmRinging = false; 
     let isSatelliteMode = false;
 
-    // --- Custom Confirm & Alert System ---
     let currentConfirmCallback = null;
     function showConfirm(title, message, type, confirmText, callback) {
         document.getElementById('confirmTitle').innerText = title;
@@ -620,7 +619,6 @@
         document.getElementById('alertModal').classList.add('hidden');
         if (window.alertCloseCallback) window.alertCloseCallback();
     }
-    // -------------------------------------
 
     function getSafeBottomPadding() {
         return Math.min(320, window.innerHeight * 0.40);
@@ -1205,8 +1203,10 @@
       
       markerPick = new google.maps.Marker({map: null, icon: customPickIcon, zIndex: 2});
       markerDrop = new google.maps.Marker({map: null, icon: customDropIcon, zIndex: 2});
+      
+      // ตอนยังไม่รับงานให้ซ่อนรถก่อน (Feature Update)
       markerDriver = new google.maps.Marker({
-          map: null, // เริ่มต้นซ่อนรถ
+          map: null, 
           position: {lat: driverLat, lng: driverLng}, 
           icon: {url: "https://img.icons8.com/color/48/car-top-view.png", scaledSize: new google.maps.Size(44, 44), anchor: new google.maps.Point(22, 22)}, 
           zIndex: 9999
@@ -1617,21 +1617,16 @@
         if(bO) bO.classList.remove('hidden'); 
         if(mod) mod.classList.remove('hidden');
 
-        // เมื่อดูงานที่ยังไม่ได้รับ ให้โชว์เส้นทางจากรถไปหาจุดรับ 
-        // โดยให้มีรถแสดงชั่วคราว
-        if(markerDriver && isOnline) markerDriver.setMap(map);
-
-        let origin = {lat: driverLat, lng: driverLng}; 
-        let pickup = {lat: job.pLat, lng: job.pLng};
+        // Feature Update: ถ้ายังไม่รับงาน จะไม่โชว์เส้นทางจากรถคนขับ
+        let origin = {lat: job.pLat, lng: job.pLng}; 
         let dest = {lat: job.dLat, lng: job.dLng};
         
-        if(markerPick) { markerPick.setPosition(pickup); markerPick.setMap(map); }
+        if(markerPick) { markerPick.setPosition(origin); markerPick.setMap(map); }
         if(markerDrop) { markerDrop.setPosition(dest); markerDrop.setMap(map); }
         
         let request = {
             origin: origin,
             destination: dest,
-            waypoints: [{location: pickup, stopover: true}],
             travelMode: 'DRIVING'
         };
 
@@ -1639,19 +1634,18 @@
             directionsService.route(request, (res, stat) => {
                 if(stat === 'OK') {
                     if(directionsRenderer) directionsRenderer.setDirections(res);
-                    drawCustomPolylines(res, '#22c55e'); 
+                    drawCustomPolylines(res, '#3b82f6'); 
                     
                     currentRouteBounds = res.routes[0].bounds;
 
-                    let legPick = res.routes[0].legs[0]; 
-                    let legDrop = res.routes[0].legs[1]; 
+                    let leg = res.routes[0].legs[0]; 
                     
-                    let totalDist = (legPick.distance.value + legDrop.distance.value) / 1000;
-                    let totalMins = Math.round((legPick.duration.value + legDrop.duration.value) / 60);
+                    let totalDist = leg.distance.value / 1000;
+                    let totalMins = Math.round(leg.duration.value / 60);
 
-                    if(tE) tE.innerText = `ระยะทางรวม: ${totalDist.toFixed(1)} กม. • เวลาประเมิน: ${totalMins} นาที`;
-                    if(eP) eP.innerHTML = `<i class="fas fa-car-side"></i> ห่างจากคุณ: ${legPick.distance.text} • ${legPick.duration.text}`;
-                    if(eD) eD.innerHTML = `<i class="fas fa-road"></i> ระยะทางไปส่ง: ${legDrop.distance.text} • ${legDrop.duration.text}`;
+                    if(tE) tE.innerText = `ระยะทางรวม (จุดรับไปส่ง): ${totalDist.toFixed(1)} กม. • เวลาประเมิน: ${totalMins} นาที`;
+                    if(eP) eP.innerHTML = ``;
+                    if(eD) eD.innerHTML = ``;
 
                     if(map) {
                         setTimeout(() => { map.fitBounds(currentRouteBounds, { top: 120, right: 30, bottom: getSafeBottomPadding() + 20, left: 30 }); }, 100);
@@ -1681,7 +1675,7 @@
             updateRoute(true);
         } else {
             clearMapRoutes(); 
-            if(markerDriver && !activeJobId) markerDriver.setMap(null); // ซ่อนรถกลับเมื่อยังไม่ได้เริ่มงาน
+            if(markerDriver && !activeJobId) markerDriver.setMap(null); 
             centerToDriver(); 
         }
     }
@@ -1750,7 +1744,7 @@
                 sendLineNotify(activeJobId, "🏎️ คนขับตอบรับงานของคุณแล้ว! กำลังรีบเดินทางไปหาคุณครับ");
                 isProcessingAction = false;
                 
-                if(markerDriver && isOnline) markerDriver.setMap(map); // แสดงรถเมื่อรับงาน
+                if(markerDriver && isOnline) markerDriver.setMap(map); 
                 
                 switchDriverTab(2);
                 updateActiveJobUI();
@@ -1807,7 +1801,6 @@
             if(activePromoBox) { activePromoBox.classList.add('hidden'); activePromoBox.classList.remove('flex'); }
         }
 
-        // ระบบไล่ลำดับจุด (Dynamic Waypoints)
         let waypoints = activeJobData.waypoints || [];
         let unpassedIndex = waypoints.findIndex(w => !w.passed);
         
@@ -1833,7 +1826,6 @@
             wpContainer.innerHTML = wpHtml;
         }
 
-        // อัปเดตข้อความสเตตัสและปุ่มให้ฉลาดขึ้นตามคิว
         let statusText = document.getElementById('jobStatusHeader'); 
         let btnAction = document.getElementById('btnAction');
         let s = activeJobData.status || "";
@@ -1936,7 +1928,7 @@
         db.ref().update(updates).then(() => {
             sendLineNotify(activeJobId, "✨ ผู้โดยสารขึ้นรถเรียบร้อยแล้ว! " + nextStatus);
             updateRoute(true); 
-            // ล็อกเป้าที่รถแล้วซูมระดับ 18 ทันทีที่ขึ้นรถ!
+            // ซูมและล็อกเป้ารถทันทีหลังขึ้นรถ
             setTimeout(() => { centerToDriver(); isProcessingAction = false; }, 1000);
         });
     }
@@ -2027,7 +2019,7 @@
         lastNotifiedMsg = ""; 
         clearMapRoutes(); 
         
-        if (markerDriver) markerDriver.setMap(null); // ซ่อนรถเมื่อไม่ได้ทำงาน
+        if (markerDriver) markerDriver.setMap(null); 
         centerToDriver(); 
         renderJobList(); 
         
@@ -2048,7 +2040,6 @@
         let routeWaypoints = [];
         let dest = {lat: nextWp.lat, lng: nextWp.lng};
         
-        // ถ้ารถออกเดินทางแล้ว (ไม่ได้ไปรับแล้ว) ให้ตีกรอบครอบจุดแวะที่เหลือทั้งหมด
         if (activeJobData.status.includes("ออกเดินทาง") || activeJobData.status.includes("ไปยังจุดส่ง") || activeJobData.status.includes("รับผู้โดยสารแล้ว")) {
             let remaining = waypoints.slice(unpassedIndex);
             if (remaining.length > 0) {
@@ -2101,7 +2092,7 @@
 
                 if (forceZoom && map && document.getElementById('navBtn2').classList.contains('text-green-400')) {
                     if (activeJobData.status.includes("ออกเดินทาง") || activeJobData.status.includes("ไปยังจุดส่ง") || activeJobData.status.includes("รับผู้โดยสารแล้ว")) {
-                        centerToDriver(); // ล็อกเป้าที่รถซูม 18
+                        centerToDriver(); 
                     } else {
                         isTrackingMode = false; 
                         let btnC = document.getElementById('btnCrosshair');
@@ -2148,4 +2139,265 @@
         document.getElementById('selectionAddress').innerText = "เลื่อนและแตะที่แผนที่เพื่อปักหมุด...";
         let btnConfirm = document.getElementById('btnConfirmSelection');
         btnConfirm.disabled = true;
-        btnConfirm.className = "flex-[2] py-3 bg-blue-600/50 border border-blue-500/30 text-white font-bold rounded-xl
+        btnConfirm.className = "flex-[2] py-3 bg-blue-600/50 border border-blue-500/30 text-white font-bold rounded-xl shadow-md transition text-[14px] opacity-50 cursor-not-allowed";
+
+        ui.classList.remove('hidden');
+        pinOverlay.classList.remove('hidden');
+        setTimeout(() => { ui.classList.remove('opacity-0'); }, 10);
+        
+        let pTop = 80;
+        let pBot = document.getElementById('locationConfirmPanel').offsetHeight + 20;
+        map.setOptions({ padding: { top: pTop, bottom: pBot, left: 0, right: 0 } });
+        
+        let bounds = map.getBounds();
+        if(bounds) {
+            let center = bounds.getCenter();
+            geocodeLatLng(center);
+        }
+    }
+
+    function exitSelectionMode() {
+        isSelectingLocation = false;
+        selectionType = '';
+        tempMarker = null;
+        
+        let ui = document.getElementById('locationSelectionUI');
+        let pinOverlay = document.getElementById('centerPinOverlay');
+        
+        ui.classList.add('opacity-0');
+        setTimeout(() => { 
+            ui.classList.add('hidden'); 
+            pinOverlay.classList.add('hidden');
+        }, 300);
+        
+        if (map) {
+            map.setOptions({ padding: { top: 180, bottom: getSafeBottomPadding(), left: 0, right: 0 } });
+            updateRoute(true);
+        }
+    }
+
+    function geocodeLatLng(latlng) {
+        if(!geocoder) return;
+        geocoder.geocode({ location: latlng }, (results, status) => {
+            let addrEl = document.getElementById('selectionAddress');
+            let btnConfirm = document.getElementById('btnConfirmSelection');
+            let sInput = document.getElementById('mapSelectSearch');
+            
+            if (status === "OK" && results[0]) {
+                let validResults = results.filter(r => !r.types.includes('plus_code') && !r.formatted_address.match(/^[A-Z0-9]{2,8}\+/));
+                let bestRes = validResults.length > 0 ? validResults[0] : results[0];
+                let finalAddr = bestRes.formatted_address.replace(/,?\s*ประเทศไทย/g, '').replace(/Unnamed Road,?\s*/g, '').replace(/^[A-Z0-9]{2,8}\+.*?\s/g, '').trim();
+                
+                addrEl.innerText = finalAddr;
+                if(document.activeElement !== sInput) {
+                    sInput.value = finalAddr;
+                }
+                
+                tempMarker = { lat: latlng.lat(), lng: latlng.lng(), name: finalAddr };
+                
+                btnConfirm.disabled = false;
+                btnConfirm.className = "flex-[2] py-3 bg-blue-600 text-white font-bold rounded-xl shadow-[0_0_15px_rgba(37,99,235,0.4)] hover:bg-blue-500 transition text-[14px]";
+            } else {
+                addrEl.innerText = "ไม่สามารถระบุพิกัดได้ กรุณาเลื่อนแผนที่ใหม่";
+                btnConfirm.disabled = true;
+                btnConfirm.className = "flex-[2] py-3 bg-blue-600/50 border border-blue-500/30 text-white font-bold rounded-xl shadow-md transition text-[14px] opacity-50 cursor-not-allowed";
+                tempMarker = null;
+            }
+        });
+    }
+
+    function confirmSelectedLocation() {
+        if(!tempMarker || !activeJobId || !activeJobData) return;
+        
+        let newName = tempMarker.name;
+        let currentWaypoints = activeJobData.waypoints || [];
+        let priceBase = parseInt(pricingConfig.base) || 50; 
+        let priceKm = parseInt(pricingConfig.km) || 10;
+        
+        let tempWaypoints = [...currentWaypoints];
+
+        if (selectionType === 'waypoint') {
+            tempWaypoints.splice(tempWaypoints.length - 1, 0, {lat: tempMarker.lat, lng: tempMarker.lng, name: newName, type: 'waypoint', passed: false});
+        } else if (selectionType === 'destination') {
+            tempWaypoints[tempWaypoints.length - 1] = {lat: tempMarker.lat, lng: tempMarker.lng, name: newName, type: 'drop', passed: false};
+        }
+
+        let origin = new google.maps.LatLng(tempWaypoints[0].lat, tempWaypoints[0].lng);
+        let dest = new google.maps.LatLng(tempWaypoints[tempWaypoints.length - 1].lat, tempWaypoints[tempWaypoints.length - 1].lng);
+        let waypts = tempWaypoints.slice(1, -1).map(w => ({location: new google.maps.LatLng(w.lat, w.lng), stopover: true}));
+        
+        let request = {origin: origin, destination: dest, waypoints: waypts, travelMode: 'DRIVING'};
+
+        directionsService.route(request, (res, stat) => {
+            if(stat === 'OK') {
+                let distMeters = 0;
+                res.routes[0].legs.forEach(leg => distMeters += leg.distance.value);
+                let distKm = distMeters / 1000;
+                
+                let distanceDriverToPickupKm = 0;
+                if (driverData && driverData.lat && typeof google.maps.geometry !== 'undefined') {
+                    let driverLatLng = new google.maps.LatLng(driverData.lat, driverData.lng);
+                    distanceDriverToPickupKm = google.maps.geometry.spherical.computeDistanceBetween(driverLatLng, origin) / 1000;
+                }
+                
+                let totalDist = distKm + distanceDriverToPickupKm;
+                let calcPrice = Math.ceil(priceBase + (totalDist * priceKm));
+                let newPrice = Math.floor(calcPrice / 10) * 10;
+                if(newPrice < priceBase) newPrice = priceBase;
+                
+                let oldPrice = activeJobData.originalPrice || activeJobData.price;
+                let diff = newPrice - oldPrice;
+                
+                let msg = `ระบบคำนวณราคาใหม่เรียบร้อยแล้ว\n\nราคาเดิม: ฿${oldPrice}\nราคาใหม่: ฿${newPrice}\nส่วนต่าง: ${diff >= 0 ? '+฿'+diff : '-฿'+Math.abs(diff)}\n\nต้องการส่งคำขอยืนยันให้ผู้โดยสารหรือไม่?`;
+                
+                showConfirm("ยืนยันเส้นทางใหม่", msg, "blue", "ส่งคำขอให้ผู้โดยสาร", () => {
+                    db.ref('bookings/' + activeJobId + '/routeChangeRequest').set({
+                        type: selectionType,
+                        lat: tempMarker.lat,
+                        lng: tempMarker.lng,
+                        name: tempMarker.name,
+                        newPrice: newPrice,
+                        newDist: distKm.toFixed(1),
+                        status: 'pending'
+                    }).then(() => {
+                        showAlert("ส่งคำขอแล้ว", "รอผู้โดยสารกดยืนยันเพื่ออัปเดตเส้นทาง", "success");
+                        exitSelectionMode();
+                    });
+                });
+            } else {
+                showAlert("ผิดพลาด", "ไม่สามารถคำนวณเส้นทางใหม่ได้", "error");
+            }
+        });
+    }
+
+    function renderHistory() {
+        if(!driverPin) return;
+        
+        let startDateInput = document.getElementById('histStartDate').value;
+        let endDateInput = document.getElementById('histEndDate').value;
+        
+        if (!startDateInput || !endDateInput) return;
+
+        let startD = new Date(startDateInput); startD.setHours(0,0,0,0);
+        let endD = new Date(endDateInput); endD.setHours(23,59,59,999);
+        
+        let container = document.getElementById('historyListContainer');
+        container.innerHTML = '<div class="flex justify-center py-10"><i class="fas fa-spinner fa-spin text-3xl text-green-500"></i></div>';
+
+        db.ref('completed_jobs').orderByChild('driverPin').equalTo(driverPin).once('value', snap => {
+            let jobs = [];
+            snap.forEach(child => {
+                let d = child.val();
+                let timestamp = d.completedAt || d.timestamp || 0;
+                if (timestamp >= startD.getTime() && timestamp <= endD.getTime()) {
+                    jobs.push({id: child.key, data: d, time: timestamp});
+                }
+            });
+            
+            jobs.sort((a,b) => b.time - a.time);
+
+            let totalEarn = 0;
+            let totalJobs = jobs.length;
+            let totalDist = 0;
+            let totalTime = 0;
+
+            if(jobs.length === 0) {
+                document.getElementById('histTotalEarn').innerText = "฿0";
+                document.getElementById('histTotalJobs').innerText = "0 งาน";
+                document.getElementById('histTotalDist').innerText = "0 กม.";
+                document.getElementById('histTotalTime').innerText = "0 นาที";
+                container.innerHTML = '<p class="text-center text-gray-500 text-xs py-10 bg-gray-800 rounded-xl border border-gray-700">ไม่มีประวัติงานในช่วงเวลานี้</p>';
+                return;
+            }
+
+            let html = '';
+            jobs.forEach(job => {
+                let d = job.data;
+                loadedHistoryJobs[job.id] = d; 
+                
+                totalEarn += parseInt(d.price || 0);
+                totalDist += parseFloat(d.distance || 0);
+                totalTime += parseInt(d.actualDuration || d.duration || 0);
+
+                let dateStr = new Date(job.time).toLocaleString('th-TH', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+                
+                let dNameShort = d.dName.length > 25 ? d.dName.substring(0,25)+'...' : d.dName;
+                
+                html += `
+                <div onclick="openHistoryDetail('${job.id}')" class="glass-box p-3 rounded-xl border border-gray-700 cursor-pointer hover:bg-gray-700 transition">
+                    <div class="flex justify-between items-center mb-2">
+                        <p class="text-[10px] text-gray-400 font-bold"><i class="far fa-clock"></i> ${dateStr}</p>
+                        <span class="font-black text-green-400 text-sm">฿${d.price}</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <i class="fas fa-user-circle text-gray-500"></i>
+                        <p class="text-xs text-gray-200 font-medium truncate flex-1">${d.name || 'ลูกค้า'}</p>
+                        <p class="text-[10px] text-blue-400 font-bold bg-blue-900/30 px-2 py-0.5 rounded border border-blue-500/30 shrink-0">${d.distance} กม.</p>
+                    </div>
+                </div>
+                `;
+            });
+
+            document.getElementById('histTotalEarn').innerText = "฿" + totalEarn.toLocaleString();
+            document.getElementById('histTotalJobs').innerText = totalJobs + " งาน";
+            document.getElementById('histTotalDist').innerText = totalDist.toFixed(1) + " กม.";
+            document.getElementById('histTotalTime').innerText = totalTime + " นาที";
+            
+            container.innerHTML = html;
+        });
+    }
+
+    function openHistoryDetail(jobId) {
+        let job = loadedHistoryJobs[jobId];
+        if(!job) return;
+        selectedHistoryJobForBlock = jobId; 
+
+        document.getElementById('histDetName').innerText = job.name || 'ลูกค้า';
+        document.getElementById('histDetPrice').innerText = '฿' + job.price;
+        document.getElementById('histDetPick').innerText = job.pName;
+        document.getElementById('histDetDrop').innerText = job.dName;
+        document.getElementById('histDetDate').innerText = new Date(job.completedAt || job.timestamp).toLocaleString('th-TH');
+        document.getElementById('histDetDist').innerText = (job.distance || 0) + ' กม.';
+        document.getElementById('histDetTime').innerText = (job.actualDuration || job.duration || 0) + ' นาที';
+        
+        let pBtn = document.getElementById('btnBlockPassenger');
+        if (isPassengerBlocked(job.name, job.phone)) {
+            pBtn.classList.add('hidden');
+        } else {
+            pBtn.classList.remove('hidden');
+        }
+
+        document.getElementById('historyDetailModal').classList.remove('hidden');
+        
+        setTimeout(() => {
+            initHistMap();
+            if(histMap && histDirectionsRenderer) {
+                let origin = {lat: job.pLat, lng: job.pLng};
+                let dest = {lat: job.dLat, lng: job.dLng};
+                
+                let req = { origin: origin, destination: dest, travelMode: 'DRIVING' };
+                let wps = job.waypoints || [];
+                if(wps.length > 2) {
+                    req.waypoints = wps.slice(1, -1).map(w => ({location: {lat: w.lat, lng: w.lng}, stopover: true}));
+                }
+                
+                directionsService.route(req, (res, stat) => {
+                    if(stat === 'OK') {
+                        histDirectionsRenderer.setDirections(res);
+                        let bounds = res.routes[0].bounds;
+                        histMap.fitBounds(bounds, {top: 20, bottom: 20, left: 20, right: 20});
+                    }
+                });
+            }
+        }, 300);
+    }
+
+    function closeHistoryDetail() {
+        document.getElementById('historyDetailModal').classList.add('hidden');
+        if(histDirectionsRenderer) histDirectionsRenderer.setDirections({routes: []});
+        selectedHistoryJobForBlock = null;
+    }
+  </script>
+  <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDsZ_tbFhH6fUXRz3I6C-tMshNwwrSevd4&libraries=places,geometry&callback=initMap" async defer></script>
+</body>
+</html>
