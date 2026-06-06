@@ -15,65 +15,30 @@
     .map-container { position: fixed; top: 0; left: 0; width: 100vw; height: calc(100vh - 70px); z-index: 0; background: #1f2937; }
     
     .ui-panel { 
-        position: fixed; 
-        bottom: 70px; 
-        left: 0; 
-        right: 0; 
-        background: #111827; 
-        border-top-left-radius: 30px; 
-        border-top-right-radius: 30px; 
-        box-shadow: 0 -10px 40px rgba(0,0,0,0.8); 
-        border-top: 1px solid rgba(255, 255, 255, 0.15); 
-        z-index: 10; 
-        display: flex; 
-        flex-direction: column; 
-        padding: 12px 20px 20px 20px; 
-        max-height: calc(85vh - 70px); 
-        overflow-y: hidden;
-        transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        transform: translateY(0);
-        pointer-events: auto;
+        position: fixed; bottom: 70px; left: 0; right: 0; 
+        background: #111827; border-top-left-radius: 30px; border-top-right-radius: 30px; 
+        box-shadow: 0 -10px 40px rgba(0,0,0,0.8); border-top: 1px solid rgba(255, 255, 255, 0.15); 
+        z-index: 10; display: flex; flex-direction: column; padding: 12px 20px 20px 20px; 
+        max-height: calc(85vh - 70px); overflow-y: hidden;
+        transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); transform: translateY(0); pointer-events: auto;
     }
 
     .glass-box {
-        background: rgba(31, 41, 55, 0.85); 
-        backdrop-filter: blur(12px);
-        -webkit-backdrop-filter: blur(12px);
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+        background: rgba(31, 41, 55, 0.85); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+        border: 1px solid rgba(255, 255, 255, 0.1); box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
     }
 
-    .panel-collapsed {
-        transform: translateY(calc(100% - 90px)) !important;
-    }
-
+    .panel-collapsed { transform: translateY(calc(100% - 90px)) !important; }
     .job-scroll { overflow-y: auto; }
     .job-scroll::-webkit-scrollbar { width: 4px; }
     .job-scroll::-webkit-scrollbar-thumb { background: #16a34a; border-radius: 4px; }
     .hide-scrollbar::-webkit-scrollbar { display: none; }
     .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-    
-    .pin-input {
-        letter-spacing: 0.5em;
-        text-align: center;
-        font-size: 2rem;
-    }
+    .pin-input { letter-spacing: 0.5em; text-align: center; font-size: 2rem; }
 
-    @keyframes loading-scan {
-        0% { transform: translateX(-100%); }
-        100% { transform: translateX(300%); }
-    }
-    .animate-loading-scan {
-        animation: loading-scan 1.5s infinite ease-in-out;
-    }
-
-    .marker-label {
-        font-family: 'Kanit', sans-serif;
-        font-weight: 800;
-        font-size: 14px;
-        color: white;
-        text-shadow: 1px 1px 2px black;
-    }
+    @keyframes loading-scan { 0% { transform: translateX(-100%); } 100% { transform: translateX(300%); } }
+    .animate-loading-scan { animation: loading-scan 1.5s infinite ease-in-out; }
+    .marker-label { font-family: 'Kanit', sans-serif; font-weight: 800; font-size: 14px; color: white; text-shadow: 1px 1px 2px black; }
   </style>
 </head>
 <body class="h-screen w-screen m-0 overflow-hidden bg-gray-900">
@@ -135,7 +100,7 @@
       <button onclick="centerToDriver()" id="btnCrosshair" class="glass-box w-12 h-12 flex items-center justify-center rounded-full shadow-lg text-green-400 hover:bg-white/10 transition" title="กลับไปที่พิกัดรถ">
           <i class="fas fa-crosshairs text-[18px]"></i>
       </button>
-      <button onclick="fitRouteBounds()" id="btnOverview" class="hidden glass-box w-12 h-12 flex items-center justify-center rounded-full shadow-lg text-gray-300 hover:bg-white/10 transition" title="ดูแผนที่รวม">
+      <button onclick="fitAllWaypoints()" id="btnOverview" class="hidden glass-box w-12 h-12 flex items-center justify-center rounded-full shadow-lg text-gray-300 hover:bg-white/10 transition" title="ดูแผนที่รวม">
           <i class="fas fa-route text-[18px]"></i>
       </button>
   </div>
@@ -230,9 +195,9 @@
                     </div>
                 </div>
                 <div id="contactPassengerBox" class="flex items-center gap-1.5 shrink-0">
-                    <a href="https://line.me/R/ti/p/%40805zvmii" target="_blank" class="bg-gray-700 text-white px-2.5 py-1.5 rounded-lg font-bold text-[11px] shadow-sm border border-gray-600 flex gap-1 items-center hover:bg-gray-600 transition">
+                    <button onclick="openLineOA()" class="bg-gray-700 text-white px-2.5 py-1.5 rounded-lg font-bold text-[11px] shadow-sm border border-gray-600 flex gap-1 items-center hover:bg-gray-600 transition">
                         <i class="fas fa-comment-dots"></i> แชท
-                    </a>
+                    </button>
                     <a href="#" id="btnCallPassenger" class="bg-green-600/90 text-white px-2.5 py-1.5 rounded-lg font-bold text-[11px] shadow-sm border border-green-500/50 flex gap-1 items-center hover:bg-green-500 transition">
                         <i class="fas fa-phone-alt"></i> โทร
                     </a>
@@ -466,7 +431,7 @@
       <div class="bg-gray-800 rounded-3xl p-6 w-full max-w-sm text-center shadow-xl text-gray-100 border border-gray-700">
           <div id="confirmIcon" class="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl"></div>
           <h3 id="confirmTitle" class="text-xl font-bold mb-2">...</h3>
-          <p id="confirmMessage" class="text-sm text-gray-400 mb-6 whitespace-pre-line">...<p>
+          <p id="confirmMessage" class="text-sm text-gray-400 mb-6 whitespace-pre-line">...</p>
           <div class="flex gap-3" id="confirmButtons">
               <button onclick="closeConfirmModal()" class="flex-1 py-3 bg-gray-700 text-gray-200 font-bold rounded-xl hover:bg-gray-600 transition">ยกเลิก</button>
               <button id="confirmActionBtn" onclick="executeConfirm()" class="flex-[2] py-3 font-bold rounded-xl shadow-md transition">ตกลง</button>
@@ -510,7 +475,7 @@
     
     let polylinePick = null;
     let markerDriver;
-    let currentJobMarkers = []; // ใช้เก็บหมุดตัวเลข
+    let currentJobMarkers = []; 
     
     let driverLat = 19.910479, driverLng = 99.840576; 
     let isOnline = false;
@@ -540,7 +505,6 @@
     let isAlarmRinging = false; 
     let isSatelliteMode = false;
 
-    // --- Custom Confirm & Alert System ---
     let currentConfirmCallback = null;
     function showConfirm(title, message, type, confirmText, callback) {
         document.getElementById('confirmTitle').innerText = title;
@@ -606,7 +570,6 @@
         document.getElementById('alertModal').classList.add('hidden');
         if (window.alertCloseCallback) window.alertCloseCallback();
     }
-    // -------------------------------------
 
     function getSafeBottomPadding() {
         return Math.min(320, window.innerHeight * 0.40);
@@ -678,7 +641,7 @@
                     setTimeout(() => {
                         google.maps.event.trigger(map, 'resize');
                         map.setOptions({ padding: { top: 180, bottom: getSafeBottomPadding(), left: 0, right: 0 } });
-                        updateRoute(true); 
+                        reDrawActiveJobOnMap(); // ดึงประวัติเส้นทางกลับมาวาดใหม่ทันที
                     }, 50);
                 }
             } else {
@@ -1152,6 +1115,17 @@
         });
     }
 
+    // === BUG FIX: Recovery Logic ตรวจจับความค้างของงานเพื่อบังคับดึงหมุดและรถขึ้นมาใหม่ ===
+    function reDrawActiveJobOnMap() {
+        if(activeJobData && map) {
+            renderWaypointsOnMap(activeJobData.waypoints);
+            if(markerDriver && isOnline) {
+                markerDriver.setPosition({lat: driverLat, lng: driverLng});
+                markerDriver.setMap(map);
+            }
+        }
+    }
+
     function initMap() {
       if (typeof google === 'undefined' || typeof google.maps === 'undefined') return;
       
@@ -1201,7 +1175,7 @@
       });
       
       markerDriver = new google.maps.Marker({
-          map: isOnline ? map : null,
+          map: isOnline ? map : null, // โชว์ทันทีเมื่อระบุว่าออนไลน์อยู่
           position: {lat: driverLat, lng: driverLng}, 
           icon: {url: "https://img.icons8.com/color/48/car-top-view.png", scaledSize: new google.maps.Size(44, 44), anchor: new google.maps.Point(22, 22)}, 
           zIndex: 9999
@@ -1218,6 +1192,9 @@
               }
           });
       }
+
+      // ตรวจสอบและดึงหมุดวาดใหม่กรณีที่เปิดเข้าแท็บงานปัจจุบันทันที
+      reDrawActiveJobOnMap();
     }
 
     function initHistMap() {
@@ -1241,7 +1218,6 @@
 
     function drawCustomPolylines(response, color) {
         if(polylinePick) { polylinePick.setMap(null); polylinePick = null; }
-        if(polylineDrop) { polylineDrop.setMap(null); polylineDrop = null; }
 
         let path = response.routes[0].legs.flatMap(leg => leg.steps.flatMap(step => step.path));
         polylinePick = new google.maps.Polyline({
@@ -1303,7 +1279,7 @@
             if(gpsEl) gpsEl.innerText = "กำลังค้นหาพิกัด GPS ของคุณ...";
             if(activeTab === 1) floatGps.classList.remove('hidden');
             
-            if(markerDriver) markerDriver.setMap(map); 
+            if(markerDriver && map) markerDriver.setMap(map); 
 
             isFirstGps = true; 
             requestWakeLock(); 
@@ -1405,6 +1381,11 @@
             updateActiveJobUI();
             renderActiveJobTabs();
             updateMapMarkersForStackedJobs();
+            
+            // ข้อมูลเปลี่ยนแปลง ให้วาดหมุดบนแผนที่อัปเดตตลอดเวลาป้องกันการหลุดหาย
+            if(!document.getElementById('activeJobPanel').classList.contains('hidden')) {
+                renderWaypointsOnMap(activeJobData.waypoints);
+            }
         } else {
             currentViewingJobId = null;
             activeJobId = null;
@@ -1656,7 +1637,6 @@
     function clearMapRoutes() {
         if(directionsRenderer) directionsRenderer.setDirections({routes: []});
         if(polylinePick) { polylinePick.setMap(null); polylinePick = null; }
-        if(polylineDrop) { polylineDrop.setMap(null); polylineDrop = null; }
         renderWaypointsOnMap([]);
         currentRouteBounds = null;
         
@@ -1813,7 +1793,7 @@
                 wpHtml += `<div class="flex items-start gap-3 relative z-10 w-full mb-2">
                     <div class="shrink-0 mt-1"><i class="fas fa-circle text-[10px] ${iconClass} border ${bgCircle} rounded-full"></i></div>
                     <div class="flex-1 overflow-hidden min-w-0 cursor-pointer hover:text-green-300 transition" onclick="focusLocation(${wp.lat}, ${wp.lng}, 'wp${index}')">
-                        <p class="text-[13px] ${textClass} truncate font-medium leading-tight">${wp.name}</p>
+                        <p class="text-[13px] ${textClass} truncate font-medium leading-tight flex items-center">${wp.name}</p>
                         ${index === unpassedIndex ? `<p class="text-[11px] font-bold text-blue-400 mt-1" id="dynamicEtaText">กำลังคำนวณ...</p>` : ''}
                     </div>
                 </div>`;
@@ -1902,9 +1882,12 @@
         });
     }
 
+    // แก้ไข Logic ระบบ Passed ในฝั่งคนขับให้ซิงค์พารามิเตอร์ passed ไป Firebase อัตโนมัติ (ขีดทับหมุดเทา)
     function executeBoarded(index) {
         if(isProcessingAction) return; isProcessingAction = true;
         let updates = {};
+        
+        // ส่ง passed: true ไปให้พิกัดนี้บน Firebase (เพื่อให้แอปผู้โดยสารเปลี่ยนตาม)
         updates[`bookings/${activeJobId}/waypoints/${index}/passed`] = true;
         
         let waypoints = activeJobData.waypoints || [];
@@ -1932,6 +1915,8 @@
     function executePassWaypoint(index) {
         if(isProcessingAction) return; isProcessingAction = true;
         let updates = {};
+        
+        // ส่ง passed: true ไปให้พิกัดนี้บน Firebase
         updates[`bookings/${activeJobId}/waypoints/${index}/passed`] = true;
         
         let waypoints = activeJobData.waypoints || [];
@@ -2035,6 +2020,17 @@
         let routeWaypoints = [];
         let dest = {lat: nextWp.lat, lng: nextWp.lng};
         
+        // ระบบกรองสเต็ป Overview อัตโนมัติ: บังคับคำนวณ bounds ปลายทางเฉพาะจุดคิวถัดไป (Passed จะถูกข้าม)
+        if (activeJobData.status.includes("ออกเดินทาง") || activeJobData.status.includes("ไปยังจุดส่ง") || activeJobData.status.includes("รับผู้โดยสารแล้ว")) {
+            let remaining = waypoints.slice(unpassedIndex);
+            if (remaining.length > 0) {
+                dest = {lat: remaining[remaining.length - 1].lat, lng: remaining[remaining.length - 1].lng};
+                if (remaining.length > 1) {
+                    routeWaypoints = remaining.slice(0, -1).map(w => ({location: {lat: w.lat, lng: w.lng}, stopover: true}));
+                }
+            }
+        }
+
         let routeRequest = {origin: origin, destination: dest, travelMode: 'DRIVING'};
         if (routeWaypoints.length > 0) routeRequest.waypoints = routeWaypoints;
 
@@ -2302,8 +2298,6 @@
                 totalTime += parseInt(d.actualDuration || d.duration || 0);
 
                 let dateStr = new Date(job.time).toLocaleString('th-TH', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
-                
-                let dNameShort = d.dName.length > 25 ? d.dName.substring(0,25)+'...' : d.dName;
                 
                 html += `
                 <div onclick="openHistoryDetail('${job.id}')" class="glass-box p-3 rounded-xl border border-gray-700 cursor-pointer hover:bg-gray-700 transition">
