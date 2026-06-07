@@ -451,7 +451,7 @@
                   <span class="font-black text-green-400 text-[16px] bg-gray-800 px-3 py-1 rounded-lg shadow-inner" id="histDetPrice">฿0</span>
               </div>
 
-              <div class="bg-gray-900 p-3.5 rounded-xl border border-gray-700 relative shadow-sm max-h-[150px] overflow-y-auto slim-scroll">
+              <div class="bg-gray-900 p-3.5 rounded-xl border border-gray-700 relative shadow-sm">
                   <div class="absolute left-[1.35rem] top-6 bottom-6 w-0.5 border-l-[1.5px] border-dashed border-gray-700"></div>
                   <div id="historyDetailWaypointsContainer" class="flex flex-col w-full relative z-10 gap-2"></div>
               </div>
@@ -587,7 +587,6 @@
     let isSatelliteMode = false;
     let activeChatListenerRef = null;
 
-    let currentConfirmCallback = null;
     function showConfirm(title, message, type, confirmText, callback) {
         document.getElementById('confirmTitle').innerText = title;
         document.getElementById('confirmMessage').innerText = message;
@@ -1066,43 +1065,41 @@
         }
     });
 
-    windowContext.toggleWpHighlight = function(element, lat, lng, elementId) {
+    function toggleWpHighlight(element, lat, lng, elementId) {
         if(!map) return;
-        let isHighlighted = element.classList.contains('bg-white/10');
+        let isHighlighted = element.classList.contains('bg-gray-700');
         
-        let container = document.getElementById('activeJobWaypointsContainer') || document.getElementById('modalWaypointsContainer');
-        if(container) {
-            let children = container.querySelectorAll('.cursor-pointer');
-            children.forEach(c => c.classList.remove('bg-white/10'));
-        }
+        document.querySelectorAll('#activeJobWaypointsContainer .cursor-pointer, #modalWaypointsContainer .cursor-pointer').forEach(c => {
+            c.classList.remove('bg-gray-700');
+        });
 
         if (isHighlighted) {
             if (activeJobData || selectedJobId) {
                 fitRouteBounds();
             }
         } else {
-            element.classList.add('bg-white/10');
+            element.classList.add('bg-gray-700');
             map.panTo({lat: lat, lng: lng});
-            setTimeout(() => { map.setZoom(17); }, 200);
+            if(map.getZoom() < 17) {
+                setTimeout(() => { map.setZoom(17); }, 200);
+            }
             
             isTrackingMode = false;
             currentMapFocus = elementId;
             let btnC = document.getElementById('btnCrosshair');
             let btnO = document.getElementById('btnOverview');
             if(btnC) { btnC.classList.remove('text-green-400'); btnC.classList.add('text-gray-300'); }
-            if(btnO) { btnO.classList.remove('text-green-400'); btnO.classList.add('text-gray-300'); }
+            if(btnO) { btnO.classList.remove('text-gray-300'); btnO.classList.add('text-green-400'); }
         }
-    };
+    }
 
     function centerToDriver() {
         isTrackingMode = true;
         currentMapFocus = null;
         
-        let container = document.getElementById('activeJobWaypointsContainer');
-        if(container) {
-            let children = container.querySelectorAll('.cursor-pointer');
-            children.forEach(c => c.classList.remove('bg-white/10'));
-        }
+        document.querySelectorAll('#activeJobWaypointsContainer .cursor-pointer, #modalWaypointsContainer .cursor-pointer').forEach(c => {
+            c.classList.remove('bg-gray-700');
+        });
 
         let btnC = document.getElementById('btnCrosshair');
         let btnO = document.getElementById('btnOverview');
@@ -1125,11 +1122,9 @@
         isTrackingMode = false;
         currentMapFocus = null;
 
-        let container = document.getElementById('activeJobWaypointsContainer');
-        if(container) {
-            let children = container.querySelectorAll('.cursor-pointer');
-            children.forEach(c => c.classList.remove('bg-white/10'));
-        }
+        document.querySelectorAll('#activeJobWaypointsContainer .cursor-pointer, #modalWaypointsContainer .cursor-pointer').forEach(c => {
+            c.classList.remove('bg-gray-700');
+        });
 
         let btnC = document.getElementById('btnCrosshair');
         let btnO = document.getElementById('btnOverview');
@@ -1609,7 +1604,6 @@
                     priceDisplay = `<span class="font-black text-green-400 px-1 text-[16px]">฿${b.price}</span>`;
                 }
 
-                // สรุปจำนวนจุดรับส่ง ระยะทาง และเวลา (ปรับปรุงข้อ 1)
                 let pCount = 0, dCount = 0;
                 if (b.waypoints && b.waypoints.length > 0) {
                     pCount = b.waypoints.filter(w => w.type === 'pick').length;
@@ -1663,7 +1657,7 @@
         if(!job) return;
         
         let idleP = document.getElementById('idlePanel');
-        if(idleP) idleP.classList.add('panel-collapsed'); // ซ่อนกรอบ idle ลงไปด้านหลัง
+        if(idleP) idleP.classList.add('panel-collapsed'); 
         
         let n = document.getElementById('detailName');
         let pr = document.getElementById('detailPrice');
@@ -1695,13 +1689,18 @@
             let pCount = 1, dCount = 1;
             waypoints.forEach((wp, idx) => {
                 let num = wp.type === 'pick' ? pCount++ : dCount++;
-                let colorClass = wp.type === 'pick' ? 'text-green-500 border-gray-800' : (wp.type === 'drop' ? 'text-red-500 border-gray-800' : 'text-yellow-500 border-gray-800');
+                let colorClass = wp.type === 'pick' ? 'text-green-500' : (wp.type === 'drop' ? 'text-red-500' : 'text-yellow-500');
+                let textClass = 'text-gray-200';
                 
+                let extraText = '';
+                if (idx === 0) extraText = `<p class="text-[10px] font-bold text-green-400 mt-0.5" id="modalEtaToPick"><i class="fas fa-car-side"></i> ห่างจากคุณ: กำลังคำนวณ...</p>`;
+
                 html += `
                 <div class="flex items-start gap-2.5 w-full min-w-0 p-1.5 rounded-lg transition cursor-pointer hover:bg-white/10" onclick="toggleWpHighlight(this, ${wp.lat}, ${wp.lng}, 'mdl_wp${idx}')" id="mdl_wp${idx}">
-                    <div class="shrink-0 mt-0.5"><i class="fas fa-circle text-[10px] ${colorClass} rounded-full"></i></div>
+                    <div class="shrink-0 mt-0.5"><i class="fas fa-circle text-[10px] ${colorClass}"></i></div>
                     <div class="flex-1 overflow-hidden min-w-0">
-                        <p class="text-[12px] text-gray-200 truncate font-medium leading-tight">${wp.name}</p>
+                        <p class="text-[12px] ${textClass} truncate font-medium leading-tight">${wp.name}</p>
+                        ${extraText}
                     </div>
                 </div>`;
             });
@@ -1714,17 +1713,12 @@
         let dest = {lat: job.dLat, lng: job.dLng};
         let wps = [];
 
-        // คำนวณระยะทางรวมทั้งหมดก่อนรับงาน
         if (job.waypoints && job.waypoints.length > 0) {
             dest = {lat: job.waypoints[job.waypoints.length-1].lat, lng: job.waypoints[job.waypoints.length-1].lng};
             wps = job.waypoints.slice(0, -1).map(w => ({location: {lat: w.lat, lng: w.lng}, stopover: true}));
         }
         
-        let request = {
-            origin: origin,
-            destination: dest,
-            travelMode: 'DRIVING'
-        };
+        let request = { origin: origin, destination: dest, travelMode: 'DRIVING' };
         if (wps.length > 0) request.waypoints = wps;
 
         if(directionsService) {
@@ -1774,7 +1768,7 @@
         selectedJobId = null;
         
         let idleP = document.getElementById('idlePanel');
-        if(idleP) idleP.classList.remove('panel-collapsed'); // เอากรอบกลับขึ้นมา
+        if(idleP) idleP.classList.remove('panel-collapsed'); 
         
         if (activeJobId && !document.getElementById('activeJobPanel').classList.contains('hidden')) {
             updateRoute(true);
@@ -1819,7 +1813,7 @@
         if(jd) jd.classList.add('hidden');
         
         let idleP = document.getElementById('idlePanel');
-        if(idleP) idleP.classList.add('hidden'); // ซ่อนไปเลยเพราะจะย้ายไปแท็บ 2
+        if(idleP) idleP.classList.add('hidden'); 
         
         db.ref('bookings/' + jobIdToAccept).transaction(function(currentData) {
             if (currentData === null) return null; 
@@ -1965,7 +1959,7 @@
                 if(floatStatus) floatStatus.classList.add('border-green-500', 'shadow-[0_0_15px_rgba(34,197,94,0.4)]');
                 if(statusText) { statusText.innerText = "กำลังไปจุดรับ: " + shortName; statusText.className = "font-black text-[15px] leading-tight text-green-400 truncate"; }
                 
-                // แก้ไข Logic ปุ่มให้เหลือแค่ 2 สเต็ป มาถึงจุดรับ -> ผู้โดยสารขึ้นรถ 
+                // คืนชีพปุ่ม "มาถึงจุดรับ" -> "ผู้โดยสารขึ้นรถ" -> "จบงาน" ตามคำขอ
                 if (s.includes("มาถึงจุดรับแล้ว") || s.includes("มาถึงจุดรับ")) {
                     if(btnAction) { btnAction.innerText = "ผู้โดยสารขึ้นรถแล้ว"; btnAction.className = "flex-[3] bg-yellow-500/90 border border-yellow-400/50 text-gray-900 py-1.5 rounded-lg font-bold text-[13px] shadow-md hover:bg-yellow-400 transition"; }
                 } else {
@@ -2489,6 +2483,8 @@
 
                 let dateStr = new Date(job.time).toLocaleString('th-TH', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
                 
+                let dNameShort = d.dName.length > 25 ? d.dName.substring(0,25)+'...' : d.dName;
+                
                 html += `
                 <div onclick="openHistoryDetail('${job.id}')" class="glass-box p-3 rounded-xl border border-gray-700 cursor-pointer hover:bg-gray-700 transition">
                     <div class="flex justify-between items-center mb-2">
@@ -2520,8 +2516,6 @@
 
         document.getElementById('histDetName').innerText = job.name || 'ลูกค้า';
         document.getElementById('histDetPrice').innerText = '฿' + job.price;
-        document.getElementById('histDetPick').innerText = job.pName;
-        document.getElementById('histDetDrop').innerText = job.dName;
         document.getElementById('histDetDate').innerText = new Date(job.completedAt || job.timestamp).toLocaleString('th-TH');
         document.getElementById('histDetDist').innerText = (job.distance || 0) + ' กม.';
         document.getElementById('histDetTime').innerText = (job.actualDuration || job.duration || 0) + ' นาที';
@@ -2531,6 +2525,25 @@
             pBtn.classList.add('hidden');
         } else {
             pBtn.classList.remove('hidden');
+        }
+
+        let wpContainer = document.getElementById('historyDetailWaypointsContainer');
+        if (wpContainer) {
+            let wpHtml = '';
+            let waypoints = job.waypoints || [];
+            let pCount = 1, dCount = 1;
+            waypoints.forEach((wp, index) => {
+                let num = wp.type === 'pick' ? pCount++ : dCount++;
+                let colorClass = wp.type === 'pick' ? 'text-green-500' : (wp.type === 'drop' ? 'text-red-500' : 'text-yellow-500');
+                
+                wpHtml += `<div class="flex items-start gap-2 relative z-10 w-full mb-1">
+                    <div class="shrink-0 mt-0.5"><i class="fas fa-circle text-[10px] ${colorClass}"></i></div>
+                    <div class="flex-1 overflow-hidden min-w-0">
+                        <p class="text-[12px] text-gray-200 truncate font-medium leading-tight">${wp.name}</p>
+                    </div>
+                </div>`;
+            });
+            wpContainer.innerHTML = wpHtml;
         }
 
         document.getElementById('historyDetailModal').classList.remove('hidden');
