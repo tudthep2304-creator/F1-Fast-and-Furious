@@ -307,7 +307,8 @@
       </div>
 
       <h3 class="text-xs font-black text-gray-400 mb-2 uppercase tracking-widest">รายการล่าสุด</h3>
-      <div id="historyListContainer" class="space-y-3 pb-6"></div>
+      <div id="historyListContainer" class="space-y-3 pb-6">
+      </div>
   </div>
 
   <div id="tab4-Profile" class="hidden fixed inset-0 z-40 bg-gray-900 pt-8 pb-24 overflow-y-auto px-4 text-white flex flex-col items-center">
@@ -450,22 +451,9 @@
                   <span class="font-black text-green-400 text-[16px] bg-gray-800 px-3 py-1 rounded-lg shadow-inner" id="histDetPrice">฿0</span>
               </div>
 
-              <div class="bg-gray-900 p-3.5 rounded-xl border border-gray-700 relative shadow-sm">
+              <div class="bg-gray-900 p-3.5 rounded-xl border border-gray-700 relative shadow-sm max-h-[150px] overflow-y-auto slim-scroll">
                   <div class="absolute left-[1.35rem] top-6 bottom-6 w-0.5 border-l-[1.5px] border-dashed border-gray-700"></div>
-                  <div class="flex items-start gap-3 mb-3 relative z-10 w-full min-w-0">
-                      <div class="shrink-0 mt-1"><i class="fas fa-circle text-[10px] text-green-500 border border-gray-800 rounded-full"></i></div>
-                      <div class="flex-1 min-w-0">
-                          <p class="text-[10px] text-gray-400 font-bold mb-0.5">จุดรับ</p>
-                          <p class="text-[13px] text-gray-200 font-medium leading-tight" id="histDetPick">...</p>
-                      </div>
-                  </div>
-                  <div class="flex items-start gap-3 relative z-10 w-full min-w-0">
-                      <div class="shrink-0 mt-1"><i class="fas fa-circle text-[10px] text-red-500 border border-gray-800 rounded-full"></i></div>
-                      <div class="flex-1 min-w-0">
-                          <p class="text-[10px] text-gray-400 font-bold mb-0.5">จุดส่ง</p>
-                          <p class="text-[13px] text-gray-200 font-medium leading-tight" id="histDetDrop">...</p>
-                      </div>
-                  </div>
+                  <div id="historyDetailWaypointsContainer" class="flex flex-col w-full relative z-10 gap-2"></div>
               </div>
 
               <div class="grid grid-cols-3 gap-2">
@@ -524,6 +512,7 @@
     });
     const db = firebase.database();
 
+    // ประกาศตัวแปรทั้งหมด
     window.hiddenJobs = window.hiddenJobs || {};
     let driverPin = localStorage.getItem('driverPin');
     let driverSessionId = localStorage.getItem('driverSessionId');
@@ -566,6 +555,7 @@
     let polylinePick = null;
     let markerDriver;
     let currentJobMarkers = []; 
+    let activeJobMarkers = []; 
     let histMapMarkers = []; 
     
     let driverLat = 19.910479, driverLng = 99.840576; 
@@ -1619,44 +1609,29 @@
                     priceDisplay = `<span class="font-black text-green-400 px-1 text-[16px]">฿${b.price}</span>`;
                 }
 
-                let wpHtml = '';
+                // สรุปจำนวนจุดรับส่ง ระยะทาง และเวลา (ปรับปรุงข้อ 1)
+                let pCount = 0, dCount = 0;
                 if (b.waypoints && b.waypoints.length > 0) {
-                    b.waypoints.forEach((wp, idx) => {
-                        let colorClass = wp.type === 'pick' ? 'text-green-500' : (wp.type === 'drop' ? 'text-red-500' : 'text-yellow-500');
-                        wpHtml += `
-                        <div class="flex items-start gap-2 w-full min-w-0 relative z-10">
-                            <div class="shrink-0 mt-1"><i class="fas fa-circle text-[8px] ${colorClass}"></i></div>
-                            <p class="text-[11px] text-gray-300 truncate font-medium flex-1 leading-tight">${wp.name}</p>
-                        </div>`;
-                    });
+                    pCount = b.waypoints.filter(w => w.type === 'pick').length;
+                    dCount = b.waypoints.filter(w => w.type === 'drop' || w.type === 'waypoint').length;
                 } else {
-                    wpHtml += `
-                        <div class="flex items-start gap-2 w-full min-w-0 relative z-10">
-                            <div class="shrink-0 mt-1"><i class="fas fa-circle text-[8px] text-green-500"></i></div>
-                            <p class="text-[11px] text-gray-300 truncate font-medium flex-1 leading-tight">${b.pName}</p>
-                        </div>
-                        <div class="flex items-start gap-2 w-full min-w-0 relative z-10 mt-1.5">
-                            <div class="shrink-0 mt-1"><i class="fas fa-circle text-[8px] text-red-500"></i></div>
-                            <p class="text-[11px] text-gray-300 truncate font-medium flex-1 leading-tight">${b.dName}</p>
-                        </div>`;
+                    pCount = 1; dCount = 1;
                 }
+                
+                let dist = b.distance || 0;
+                let dur = b.duration || 0;
+                let hrs = Math.floor(dur / 60);
+                let mins = dur % 60;
+                let timeStr = hrs > 0 ? `${hrs} ชม. ${mins} นาที` : `${mins} นาที`;
 
-                html += `<div onclick="openJobDetail('${key}')" class="glass-box p-3 rounded-xl shadow-sm border border-gray-600 cursor-pointer active:bg-gray-700 hover:bg-white/10 transition-colors mb-2">
+                html += `<div onclick="openJobDetail('${key}')" class="glass-box p-4 rounded-2xl shadow-md border border-gray-700 cursor-pointer active:scale-[0.98] transition-all mb-3 relative overflow-hidden">
                     <div class="flex justify-between items-center mb-2">
-                        <span class="font-bold text-sm text-green-400"><i class="fas fa-user-circle"></i> ${b.name || 'ลูกค้า'}</span>
+                        <span class="font-black text-sm text-green-400 flex items-center gap-1.5"><i class="fas fa-user-circle text-lg"></i> ${b.name || 'ลูกค้า'}</span>
                         ${priceDisplay}
                     </div>
-                    <div class="relative pl-0.5 mb-2">
-                        <div class="absolute left-[5px] top-2 bottom-2 w-0.5 border-l-[1.5px] border-dashed border-gray-600 z-0"></div>
-                        <div class="flex flex-col gap-1.5 relative z-10">
-                            ${wpHtml}
-                        </div>
-                    </div>
-                    <div class="pt-2 border-t border-gray-700 flex justify-between items-center">
-                        <span class="text-[10px] text-gray-400"><i class="far fa-hand-pointer"></i> แตะเพื่อดูแผนที่เส้นทาง</span>
-                        <div class="bg-green-600/90 text-white border border-green-500/50 px-3 py-1.5 rounded-lg text-[11px] font-bold flex items-center gap-1 shadow-sm">
-                            ดูรายละเอียด / รับงาน <i class="fas fa-chevron-right ml-0.5"></i>
-                        </div>
+                    <div class="bg-gray-800/50 rounded-xl p-3 border border-gray-700/50">
+                        <p class="text-[12px] text-gray-300 mb-1 font-medium"><i class="fas fa-map-marker-alt text-green-500 w-4 text-center"></i> รับ ${pCount} จุด <i class="fas fa-arrow-right text-gray-500 text-[10px] mx-1"></i> ส่ง ${dCount} จุด</p>
+                        <p class="text-[12px] text-gray-300 font-medium"><i class="fas fa-route text-blue-400 w-4 text-center"></i> ระยะทาง ${dist} กม. • ⏱️ ${timeStr}</p>
                     </div>
                 </div>`;
             }
@@ -1686,6 +1661,9 @@
         selectedJobId = jobId; 
         let job = allBookings[jobId];
         if(!job) return;
+        
+        let idleP = document.getElementById('idlePanel');
+        if(idleP) idleP.classList.add('panel-collapsed'); // ซ่อนกรอบ idle ลงไปด้านหลัง
         
         let n = document.getElementById('detailName');
         let pr = document.getElementById('detailPrice');
@@ -1717,18 +1695,13 @@
             let pCount = 1, dCount = 1;
             waypoints.forEach((wp, idx) => {
                 let num = wp.type === 'pick' ? pCount++ : dCount++;
-                let colorClass = wp.type === 'pick' ? 'text-green-500' : (wp.type === 'drop' ? 'text-red-500' : 'text-yellow-500');
+                let colorClass = wp.type === 'pick' ? 'text-green-500 border-gray-800' : (wp.type === 'drop' ? 'text-red-500 border-gray-800' : 'text-yellow-500 border-gray-800');
                 
-                let extraText = '';
-                if (idx === 0) extraText = `<p class="text-[11px] font-bold text-green-400 mt-0.5" id="modalEtaToPick"><i class="fas fa-car-side"></i> ห่างจากคุณ: กำลังคำนวณ...</p>`;
-                if (idx === waypoints.length - 1) extraText = `<p class="text-[11px] font-bold text-blue-400 mt-0.5" id="modalEtaToDrop"><i class="fas fa-road"></i> ไปส่ง: กำลังคำนวณ...</p>`;
-
                 html += `
                 <div class="flex items-start gap-2.5 w-full min-w-0 p-1.5 rounded-lg transition cursor-pointer hover:bg-white/10" onclick="toggleWpHighlight(this, ${wp.lat}, ${wp.lng}, 'mdl_wp${idx}')" id="mdl_wp${idx}">
-                    <div class="shrink-0 mt-0.5"><i class="fas fa-circle text-[10px] ${colorClass}"></i></div>
+                    <div class="shrink-0 mt-0.5"><i class="fas fa-circle text-[10px] ${colorClass} rounded-full"></i></div>
                     <div class="flex-1 overflow-hidden min-w-0">
                         <p class="text-[12px] text-gray-200 truncate font-medium leading-tight">${wp.name}</p>
-                        ${extraText}
                     </div>
                 </div>`;
             });
@@ -1739,12 +1712,20 @@
 
         let origin = {lat: driverLat, lng: driverLng}; 
         let dest = {lat: job.dLat, lng: job.dLng};
+        let wps = [];
+
+        // คำนวณระยะทางรวมทั้งหมดก่อนรับงาน
+        if (job.waypoints && job.waypoints.length > 0) {
+            dest = {lat: job.waypoints[job.waypoints.length-1].lat, lng: job.waypoints[job.waypoints.length-1].lng};
+            wps = job.waypoints.slice(0, -1).map(w => ({location: {lat: w.lat, lng: w.lng}, stopover: true}));
+        }
         
         let request = {
             origin: origin,
             destination: dest,
             travelMode: 'DRIVING'
         };
+        if (wps.length > 0) request.waypoints = wps;
 
         if(directionsService) {
             directionsService.route(request, (res, stat) => {
@@ -1754,11 +1735,20 @@
                     
                     currentRouteBounds = res.routes[0].bounds;
 
-                    let leg = res.routes[0].legs[0]; 
-                    let totalDist = leg.distance.value / 1000;
-                    let totalMins = Math.round(leg.duration.value / 60);
+                    let totalDistMeters = 0;
+                    let totalDurSeconds = 0;
+                    res.routes[0].legs.forEach(leg => {
+                        totalDistMeters += leg.distance.value;
+                        totalDurSeconds += leg.duration.value;
+                    });
+                    
+                    let totalDist = totalDistMeters / 1000;
+                    let totalMins = Math.round(totalDurSeconds / 60);
+                    let hrs = Math.floor(totalMins / 60);
+                    let mins = totalMins % 60;
+                    let timeStr = hrs > 0 ? `${hrs} ชม. ${mins} นาที` : `${mins} นาที`;
 
-                    if(tE) tE.innerText = `ระยะทางรวม (จุดรับไปส่ง): ${totalDist.toFixed(1)} กม. • เวลาประเมิน: ${totalMins} นาที`;
+                    if(tE) tE.innerText = `ระยะทางรวม (รถ -> จุดหมายสุดท้าย): ${totalDist.toFixed(1)} กม. • เวลาประเมิน: ${timeStr}`;
 
                     if(map) {
                         setTimeout(() => { map.fitBounds(currentRouteBounds, { top: 120, right: 30, bottom: getSafeBottomPadding() + 20, left: 30 }); }, 100);
@@ -1782,6 +1772,9 @@
         let md = document.getElementById('jobDetailModal');
         if(md) md.classList.add('hidden'); 
         selectedJobId = null;
+        
+        let idleP = document.getElementById('idlePanel');
+        if(idleP) idleP.classList.remove('panel-collapsed'); // เอากรอบกลับขึ้นมา
         
         if (activeJobId && !document.getElementById('activeJobPanel').classList.contains('hidden')) {
             updateRoute(true);
@@ -1824,6 +1817,9 @@
 
         let jd = document.getElementById('jobDetailModal');
         if(jd) jd.classList.add('hidden');
+        
+        let idleP = document.getElementById('idlePanel');
+        if(idleP) idleP.classList.add('hidden'); // ซ่อนไปเลยเพราะจะย้ายไปแท็บ 2
         
         db.ref('bookings/' + jobIdToAccept).transaction(function(currentData) {
             if (currentData === null) return null; 
@@ -1931,7 +1927,7 @@
 
                 let extraText = '';
                 if (index === unpassedIndex) {
-                    extraText = `<p class="text-[11px] font-bold text-blue-400 mt-0.5" id="dynamicEtaText">กำลังคำนวณ...</p>`;
+                    extraText = `<p class="text-[10px] font-bold text-blue-400 mt-0.5" id="dynamicEtaText">กำลังคำนวณ...</p>`;
                 }
 
                 wpHtml += `<div class="flex items-start gap-2.5 w-full min-w-0 p-1.5 rounded-lg transition cursor-pointer hover:bg-white/10" onclick="toggleWpHighlight(this, ${wp.lat}, ${wp.lng}, 'wp${index}')" id="wp${index}">
@@ -1967,17 +1963,18 @@
             
             if (currentWp.type === 'pick') {
                 if(floatStatus) floatStatus.classList.add('border-green-500', 'shadow-[0_0_15px_rgba(34,197,94,0.4)]');
+                if(statusText) { statusText.innerText = "กำลังไปจุดรับ: " + shortName; statusText.className = "font-black text-[15px] leading-tight text-green-400 truncate"; }
+                
+                // แก้ไข Logic ปุ่มให้เหลือแค่ 2 สเต็ป มาถึงจุดรับ -> ผู้โดยสารขึ้นรถ 
                 if (s.includes("มาถึงจุดรับแล้ว") || s.includes("มาถึงจุดรับ")) {
-                    if(statusText) { statusText.innerText = "รอผู้โดยสารขึ้นรถ"; statusText.className = "font-black text-[15px] leading-tight text-yellow-500 truncate"; }
                     if(btnAction) { btnAction.innerText = "ผู้โดยสารขึ้นรถแล้ว"; btnAction.className = "flex-[3] bg-yellow-500/90 border border-yellow-400/50 text-gray-900 py-1.5 rounded-lg font-bold text-[13px] shadow-md hover:bg-yellow-400 transition"; }
                 } else {
-                    if(statusText) { statusText.innerText = "กำลังไปจุดรับ: " + shortName; statusText.className = "font-black text-[15px] leading-tight text-green-400 truncate"; }
                     if(btnAction) { btnAction.innerText = "มาถึงจุดรับ"; btnAction.className = "flex-[3] bg-green-600/90 border border-green-500/50 text-white py-1.5 rounded-lg font-bold text-[13px] shadow-md hover:bg-green-500 transition"; }
                 }
+                
                 if(cjb) cjb.classList.remove('hidden');
                 if(contactBox) contactBox.classList.remove('hidden'); 
                 if(rerouteBox) rerouteBox.classList.add('hidden');
-
             } else if (currentWp.type === 'waypoint') {
                 if(floatStatus) floatStatus.classList.add('border-yellow-500', 'shadow-[0_0_15px_rgba(234,179,8,0.4)]');
                 if(statusText) { statusText.innerText = "กำลังไปจุดแวะ: " + shortName; statusText.className = "font-black text-[15px] leading-tight text-yellow-500 truncate"; }
@@ -2026,7 +2023,7 @@
 
         if (currentWp.type === 'pick') {
             if (s.includes("มาถึงจุดรับแล้ว") || s.includes("มาถึงจุดรับ")) {
-                showConfirm("ผู้โดยสารขึ้นรถแล้ว?", "ผู้โดยสารขึ้นรถเรียบร้อย และพร้อมออกเดินทางใช่หรือไม่?", "green", "ขึ้นรถแล้ว", () => executeBoarded(unpassedIndex));
+                showConfirm("ผู้โดยสารขึ้นรถแล้ว?", "ผู้โดยสารขึ้นรถเรียบร้อย และพร้อมออกเดินทางใช่หรือไม่?", "yellow", "ขึ้นรถแล้ว", () => executeBoarded(unpassedIndex));
             } else {
                 showConfirm("ยืนยันมาถึงจุดรับ?", `คุณได้เดินทางมาถึง:\n${currentWp.name}\nเรียบร้อยแล้วใช่หรือไม่?`, "green", "มาถึงแล้ว", () => executeArrivePick(unpassedIndex));
             }
@@ -2282,6 +2279,11 @@
         isSelectingLocation = true;
         selectionType = type;
         
+        let actP = document.getElementById('activeJobPanel');
+        if(actP) actP.classList.add('panel-collapsed');
+        let nav = document.getElementById('bottomNav');
+        if(nav) nav.style.transform = 'translateY(100%)'; 
+        
         let ui = document.getElementById('locationSelectionUI');
         let sTitle = document.getElementById('selectionTitle');
         let sInput = document.getElementById('mapSelectSearch');
@@ -2330,6 +2332,11 @@
             ui.classList.add('hidden'); 
             pinOverlay.classList.add('hidden');
         }, 300);
+        
+        let actP = document.getElementById('activeJobPanel');
+        if(actP) actP.classList.remove('panel-collapsed');
+        let nav = document.getElementById('bottomNav');
+        if(nav) nav.style.transform = 'translateY(0)';
         
         if (map) {
             map.setOptions({ padding: { top: 180, bottom: getSafeBottomPadding(), left: 0, right: 0 } });
@@ -2481,8 +2488,6 @@
                 totalTime += parseInt(d.actualDuration || d.duration || 0);
 
                 let dateStr = new Date(job.time).toLocaleString('th-TH', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
-                
-                let dNameShort = d.dName.length > 25 ? d.dName.substring(0,25)+'...' : d.dName;
                 
                 html += `
                 <div onclick="openHistoryDetail('${job.id}')" class="glass-box p-3 rounded-xl border border-gray-700 cursor-pointer hover:bg-gray-700 transition">
