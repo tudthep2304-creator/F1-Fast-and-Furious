@@ -92,7 +92,7 @@
 </head>
 <body class="h-screen w-screen m-0 overflow-hidden bg-gray-900">
 
-  <div id="loginModal" class="fixed inset-0 z-[999] bg-gray-900/95 backdrop-blur-md flex flex-col items-center justify-center p-6">
+  <div id="loginModal" class="fixed inset-0 z-[999] bg-gray-900/95 backdrop-blur-md flex flex-col items-center justify-center p-6 transition-opacity duration-300">
       <div class="w-20 h-20 bg-gray-800 text-green-500 rounded-full flex items-center justify-center mb-6 text-4xl shadow-inner border border-gray-700">
           <i class="fas fa-id-card opacity-100"></i>
       </div>
@@ -431,6 +431,52 @@
       </div>
   </div>
 
+  <div id="historyDetailModal" class="hidden fixed inset-0 z-[150] bg-gray-900/95 flex flex-col justify-end transition-transform">
+      <div class="bg-gray-800 rounded-t-[24px] w-full mx-auto shadow-2xl flex flex-col h-[85vh] border-t border-gray-700">
+          <div class="p-4 flex justify-between items-center border-b border-gray-700 shrink-0">
+              <h3 class="text-lg font-black text-white">รายละเอียดประวัติงาน</h3>
+              <button onclick="closeHistoryDetail()" class="text-gray-400 hover:text-white bg-gray-700 rounded-full w-8 h-8 flex items-center justify-center transition-colors">
+                  <i class="fas fa-times"></i>
+              </button>
+          </div>
+          <div class="w-full h-[35%] bg-gray-900 relative shrink-0">
+              <div id="histMap" class="w-full h-full"></div>
+          </div>
+          <div class="p-4 overflow-y-auto flex-1 space-y-4 text-white">
+              <div class="flex justify-between items-center bg-gray-900 p-3 rounded-xl border border-gray-700 shadow-sm">
+                  <div>
+                      <p class="text-[10px] text-gray-400 font-bold">ลูกค้า / ค่าโดยสาร</p>
+                      <p class="font-bold text-sm text-green-400 mt-0.5" id="histDetName">...</p>
+                  </div>
+                  <span class="font-black text-green-400 text-[16px] bg-gray-800 px-3 py-1 rounded-lg shadow-inner" id="histDetPrice">฿0</span>
+              </div>
+
+              <div class="bg-gray-900 p-3.5 rounded-xl border border-gray-700 relative shadow-sm max-h-[150px] overflow-y-auto slim-scroll">
+                  <div class="absolute left-[1.35rem] top-6 bottom-6 w-0.5 border-l-[1.5px] border-dashed border-gray-700"></div>
+                  <div id="historyDetailWaypointsContainer" class="flex flex-col w-full relative z-10 gap-2"></div>
+              </div>
+
+              <div class="grid grid-cols-3 gap-2">
+                  <div class="bg-gray-900 p-2 rounded-lg border border-gray-700 text-center">
+                      <p class="text-[10px] text-gray-400 font-bold">วันที่และเวลา</p>
+                      <p class="text-[11px] font-bold text-white mt-0.5" id="histDetDate">-</p>
+                  </div>
+                  <div class="bg-gray-900 p-2 rounded-lg border border-gray-700 text-center">
+                      <p class="text-[10px] text-gray-400 font-bold">ระยะทาง</p>
+                      <p class="text-[12px] font-bold text-yellow-400 mt-0.5" id="histDetDist">0 กม.</p>
+                  </div>
+                  <div class="bg-gray-900 p-2 rounded-lg border border-gray-700 text-center">
+                      <p class="text-[10px] text-gray-400 font-bold">ใช้เวลา</p>
+                      <p class="text-[12px] font-bold text-pink-400 mt-0.5" id="histDetTime">0 นาที</p>
+                  </div>
+              </div>
+              <button id="btnBlockPassenger" onclick="blockCurrentHistoryPassenger()" class="w-full mt-2 glass-box !border-red-500/30 hover:bg-red-900/40 text-red-400 font-bold py-3 rounded-xl shadow-sm transition flex items-center justify-center gap-2">
+                  <i class="fas fa-user-slash"></i> บล็อกผู้โดยสารคนนี้
+              </button>
+          </div>
+      </div>
+  </div>
+
   <div id="confirmModal" class="hidden fixed inset-0 z-[160] bg-black/70 flex items-center justify-center p-4 pointer-events-auto transition-opacity">
       <div class="bg-gray-800 rounded-3xl p-6 w-full max-w-sm text-center shadow-xl text-gray-100 border border-gray-700">
           <div id="confirmIcon" class="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl"></div>
@@ -540,7 +586,6 @@
     let isSatelliteMode = false;
     let activeChatListenerRef = null;
 
-    let currentConfirmCallback = null;
     function showConfirm(title, message, type, confirmText, callback) {
         document.getElementById('confirmTitle').innerText = title;
         document.getElementById('confirmMessage').innerText = message;
@@ -713,11 +758,18 @@
     }
 
     function checkLogin() {
+        let pinInp = document.getElementById('pinInput');
+        if (pinInp) {
+            pinInp.addEventListener('keypress', function (e) {
+                if (e.key === 'Enter') submitLogin();
+            });
+        }
+
         if (!driverPin) {
             document.getElementById('loginModal').classList.remove('hidden');
         } else {
             document.getElementById('loginModal').classList.add('hidden');
-            db.ref('drivers_profile/' + driverPin).once('value', snap => {
+            db.ref('drivers_profile/' + driverPin).once('value').then(snap => {
                 if (snap.exists()) {
                     currentDriverProfile = snap.val();
                     let nameEl = document.getElementById('driverNameDisplay');
@@ -737,6 +789,8 @@
                 } else {
                     forceLogoutAction("รหัสพนักงานถูกลบออกจากระบบ กรุณาติดต่อแอดมิน");
                 }
+            }).catch(e => {
+                showAlert("ข้อผิดพลาด", "ไม่สามารถเชื่อมต่อฐานข้อมูลได้: " + e.message, "error");
             });
         }
     }
@@ -836,51 +890,64 @@
     }
 
     function unlockAudio() {
-        let snd = document.getElementById('jobAlertSound');
-        if (snd) {
-            snd.muted = true;
-            snd.play().then(() => {
-                snd.pause();
-                snd.muted = false;
-                snd.currentTime = 0;
-            }).catch(e => console.log('Audio unlock prevented'));
-        }
+        try {
+            let snd = document.getElementById('jobAlertSound');
+            if (snd) {
+                snd.muted = true;
+                let playPromise = snd.play();
+                if(playPromise !== undefined) {
+                    playPromise.then(() => {
+                        snd.pause();
+                        snd.muted = false;
+                        snd.currentTime = 0;
+                    }).catch(e => console.log('Audio unlock prevented'));
+                }
+            }
+        } catch(e){}
     }
 
     function submitLogin() {
-        let pin = document.getElementById('pinInput').value;
-        if(pin.length !== 4) { showAlert("แจ้งเตือน", "กรุณาระบุรหัส PIN 4 หลักให้ครบถ้วน", "error"); return; }
-        
-        document.getElementById('loginBtnText').classList.add('hidden');
-        document.getElementById('loginSpinner').classList.remove('hidden');
+        try {
+            let pin = document.getElementById('pinInput').value.trim();
+            if(pin.length !== 4) { showAlert("แจ้งเตือน", "กรุณาระบุรหัส PIN 4 หลักให้ครบถ้วน", "error"); return; }
+            
+            document.getElementById('loginBtnText').classList.add('hidden');
+            document.getElementById('loginSpinner').classList.remove('hidden');
 
-        unlockAudio(); 
+            unlockAudio(); 
 
-        db.ref('drivers_profile/' + pin).once('value', snap => {
-            document.getElementById('loginBtnText').classList.remove('hidden');
-            document.getElementById('loginSpinner').classList.add('hidden');
+            db.ref('drivers_profile/' + pin).once('value').then(snap => {
+                document.getElementById('loginBtnText').classList.remove('hidden');
+                document.getElementById('loginSpinner').classList.add('hidden');
 
-            if(snap.exists()) {
-                currentDriverProfile = snap.val();
-                driverPin = pin;
-                driverSessionId = generateUUID();
-                localStorage.setItem('driverPin', driverPin);
-                localStorage.setItem('driverSessionId', driverSessionId);
-                
-                db.ref('driver_sessions/' + driverPin).set(driverSessionId);
-                document.getElementById('loginModal').classList.add('hidden');
-                checkLogin();
-                
-                let savedOnlineState = localStorage.getItem('isDriverOnline');
-                if (savedOnlineState === 'true') {
-                    document.getElementById('onlineToggle').checked = true;
-                    toggleOnlineWithPermission();
+                if(snap.exists()) {
+                    currentDriverProfile = snap.val();
+                    driverPin = pin;
+                    driverSessionId = generateUUID();
+                    localStorage.setItem('driverPin', driverPin);
+                    localStorage.setItem('driverSessionId', driverSessionId);
+                    
+                    db.ref('driver_sessions/' + driverPin).set(driverSessionId);
+                    document.getElementById('loginModal').classList.add('hidden');
+                    checkLogin();
+                    
+                    let savedOnlineState = localStorage.getItem('isDriverOnline');
+                    if (savedOnlineState === 'true') {
+                        document.getElementById('onlineToggle').checked = true;
+                        toggleOnlineWithPermission();
+                    }
+                } else {
+                    showAlert("เข้าสู่ระบบล้มเหลว", "รหัส PIN ไม่ถูกต้อง หรือยังไม่ได้ลงทะเบียนในระบบ", "error");
+                    document.getElementById('pinInput').value = '';
                 }
-            } else {
-                showAlert("เข้าสู่ระบบล้มเหลว", "รหัส PIN ไม่ถูกต้อง หรือยังไม่ได้ลงทะเบียนในระบบ", "error");
-                document.getElementById('pinInput').value = '';
-            }
-        });
+            }).catch(error => {
+                document.getElementById('loginBtnText').classList.remove('hidden');
+                document.getElementById('loginSpinner').classList.add('hidden');
+                showAlert("ข้อผิดพลาด", "ไม่สามารถเชื่อมต่อฐานข้อมูลได้: " + error.message, "error");
+            });
+        } catch(e) {
+            alert("เกิดข้อผิดพลาด: " + e.message);
+        }
     }
 
     function forceLogoutAction(msg) {
@@ -935,6 +1002,12 @@
                 document.getElementById('jobListContainer').innerHTML = '<p class="text-center text-gray-500 text-[12px] font-bold py-6">กรุณาเปิดออนไลน์เพื่อดูงาน</p>';
             }
         } else {
+            let pinInp = document.getElementById('pinInput');
+            if(pinInp) {
+                pinInp.addEventListener('keypress', function(e) {
+                    if(e.key === 'Enter') submitLogin();
+                });
+            }
             document.getElementById('loginModal').classList.remove('hidden');
         }
     };
@@ -1021,29 +1094,29 @@
 
     windowContext.toggleWpHighlight = function(element, lat, lng, elementId) {
         if(!map) return;
-        let isHighlighted = element.classList.contains('bg-gray-700');
+        let isHighlighted = element.classList.contains('bg-white/10');
         
-        document.querySelectorAll('#activeJobWaypointsContainer .cursor-pointer, #modalWaypointsContainer .cursor-pointer').forEach(c => {
-            c.classList.remove('bg-gray-700');
-        });
+        let container = document.getElementById('activeJobWaypointsContainer') || document.getElementById('modalWaypointsContainer');
+        if(container) {
+            let children = container.querySelectorAll('.cursor-pointer');
+            children.forEach(c => c.classList.remove('bg-white/10'));
+        }
 
         if (isHighlighted) {
             if (activeJobData || selectedJobId) {
                 fitRouteBounds();
             }
         } else {
-            element.classList.add('bg-gray-700');
+            element.classList.add('bg-white/10');
             map.panTo({lat: lat, lng: lng});
-            if(map.getZoom() < 17) {
-                setTimeout(() => { map.setZoom(17); }, 200);
-            }
+            setTimeout(() => { map.setZoom(17); }, 200);
             
             isTrackingMode = false;
             currentMapFocus = elementId;
             let btnC = document.getElementById('btnCrosshair');
             let btnO = document.getElementById('btnOverview');
             if(btnC) { btnC.classList.remove('text-green-400'); btnC.classList.add('text-gray-300'); }
-            if(btnO) { btnO.classList.remove('text-gray-300'); btnO.classList.add('text-green-400'); }
+            if(btnO) { btnO.classList.remove('text-green-400'); btnO.classList.add('text-gray-300'); }
         }
     };
 
@@ -1051,9 +1124,11 @@
         isTrackingMode = true;
         currentMapFocus = null;
         
-        document.querySelectorAll('#activeJobWaypointsContainer .cursor-pointer, #modalWaypointsContainer .cursor-pointer').forEach(c => {
-            c.classList.remove('bg-gray-700');
-        });
+        let container = document.getElementById('activeJobWaypointsContainer');
+        if(container) {
+            let children = container.querySelectorAll('.cursor-pointer');
+            children.forEach(c => c.classList.remove('bg-white/10'));
+        }
 
         let btnC = document.getElementById('btnCrosshair');
         let btnO = document.getElementById('btnOverview');
@@ -1076,9 +1151,11 @@
         isTrackingMode = false;
         currentMapFocus = null;
 
-        document.querySelectorAll('#activeJobWaypointsContainer .cursor-pointer, #modalWaypointsContainer .cursor-pointer').forEach(c => {
-            c.classList.remove('bg-gray-700');
-        });
+        let container = document.getElementById('activeJobWaypointsContainer');
+        if(container) {
+            let children = container.querySelectorAll('.cursor-pointer');
+            children.forEach(c => c.classList.remove('bg-white/10'));
+        }
 
         let btnC = document.getElementById('btnCrosshair');
         let btnO = document.getElementById('btnOverview');
@@ -1098,33 +1175,6 @@
             centerToDriver();
         }
     }
-
-    const darkMapStyle = [
-        { elementType: "geometry", stylers: [{ color: "#242f3e" }] },
-        { elementType: "labels.text.stroke", stylers: [{ color: "#242f3e" }] },
-        { elementType: "labels.text.fill", stylers: [{ color: "#746855" }] },
-        { featureType: "administrative.locality", elementType: "labels.text.fill", stylers: [{ color: "#d59563" }] },
-        { featureType: "landscape.man_made", elementType: "geometry.fill", stylers: [{ color: "#364559" }] }, 
-        { featureType: "landscape.man_made", elementType: "geometry.stroke", stylers: [{ color: "#546a82" }] }, 
-        { featureType: "landscape.man_made.building", elementType: "geometry.fill", stylers: [{ color: "#506680" }] }, 
-        { featureType: "landscape.man_made.building", elementType: "geometry.stroke", stylers: [{ color: "#7089a6" }] },
-        { featureType: "landscape.natural", elementType: "geometry", stylers: [{ color: "#1e2836" }] }, 
-        { featureType: "poi", elementType: "labels.text.fill", stylers: [{ color: "#d59563" }] },
-        { featureType: "poi", elementType: "geometry", stylers: [{ color: "#283d3b" }] },
-        { featureType: "poi.park", elementType: "geometry", stylers: [{ color: "#263c3f" }] },
-        { featureType: "poi.park", elementType: "labels.text.fill", stylers: [{ color: "#6b9a76" }] },
-        { featureType: "road", elementType: "geometry", stylers: [{ color: "#111720" }] },
-        { featureType: "road", elementType: "geometry.stroke", stylers: [{ color: "#212a37" }] },
-        { featureType: "road", elementType: "labels.text.fill", stylers: [{ color: "#9ca5b3" }] },
-        { featureType: "road.highway", elementType: "geometry", stylers: [{ color: "#746855" }] },
-        { featureType: "road.highway", elementType: "geometry.stroke", stylers: [{ color: "#1f2835" }] },
-        { featureType: "road.highway", elementType: "labels.text.fill", stylers: [{ color: "#f3d19c" }] },
-        { featureType: "transit", elementType: "geometry", stylers: [{ color: "#2f3948" }] },
-        { featureType: "transit.station", elementType: "labels.text.fill", stylers: [{ color: "#d59563" }] },
-        { featureType: "water", elementType: "geometry", stylers: [{ color: "#17263c" }] },
-        { featureType: "water", elementType: "labels.text.fill", stylers: [{ color: "#515c6d" }] },
-        { featureType: "water", elementType: "labels.text.stroke", stylers: [{ color: "#17263c" }] }
-    ];
 
     function toggleMapStyle() {
         if(!map) return;
@@ -1670,14 +1720,14 @@
             let pCount = 1, dCount = 1;
             waypoints.forEach((wp, idx) => {
                 let num = wp.type === 'pick' ? pCount++ : dCount++;
-                let colorClass = wp.type === 'pick' ? 'text-green-500' : (wp.type === 'drop' ? 'text-red-500' : 'text-yellow-500');
+                let colorClass = wp.type === 'pick' ? 'text-green-500 border-gray-800' : (wp.type === 'drop' ? 'text-red-500 border-gray-800' : 'text-yellow-500 border-gray-800');
                 
                 let extraText = '';
-                if (idx === 0) extraText = `<p class="text-[10px] font-bold text-green-400 mt-0.5" id="modalEtaToPick"><i class="fas fa-car-side"></i> ห่างจากคุณ: กำลังคำนวณ...</p>`;
+                if (idx === 0) extraText = `<p class="text-[11px] font-bold text-green-400 mt-0.5" id="modalEtaToPick"><i class="fas fa-car-side"></i> ห่างจากคุณ: กำลังคำนวณ...</p>`;
 
                 html += `
                 <div class="flex items-start gap-2.5 w-full min-w-0 p-1.5 rounded-lg transition cursor-pointer hover:bg-white/10" onclick="toggleWpHighlight(this, ${wp.lat}, ${wp.lng}, 'mdl_wp${idx}')" id="mdl_wp${idx}">
-                    <div class="shrink-0 mt-0.5"><i class="fas fa-circle text-[10px] ${colorClass}"></i></div>
+                    <div class="shrink-0 mt-0.5"><i class="fas fa-circle text-[10px] ${colorClass} rounded-full"></i></div>
                     <div class="flex-1 overflow-hidden min-w-0">
                         <p class="text-[12px] text-gray-200 truncate font-medium leading-tight">${wp.name}</p>
                         ${extraText}
@@ -2168,6 +2218,9 @@
         centerToDriver(); 
         renderJobList(); 
         
+        let idleP = document.getElementById('idlePanel');
+        if(idleP) idleP.classList.remove('panel-collapsed'); 
+
         switchDriverTab(1);
     }
 
@@ -2468,8 +2521,6 @@
                 totalTime += parseInt(d.actualDuration || d.duration || 0);
 
                 let dateStr = new Date(job.time).toLocaleString('th-TH', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
-                
-                let dNameShort = d.dName.length > 25 ? d.dName.substring(0,25)+'...' : d.dName;
                 
                 html += `
                 <div onclick="openHistoryDetail('${job.id}')" class="glass-box p-3 rounded-xl border border-gray-700 cursor-pointer hover:bg-gray-700 transition">
