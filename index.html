@@ -15,30 +15,65 @@
     .map-container { position: fixed; top: 0; left: 0; width: 100vw; height: calc(100vh - 70px); z-index: 0; background: #1f2937; }
     
     .ui-panel { 
-        position: fixed; bottom: 70px; left: 0; right: 0; 
-        background: #111827; border-top-left-radius: 30px; border-top-right-radius: 30px; 
-        box-shadow: 0 -10px 40px rgba(0,0,0,0.8); border-top: 1px solid rgba(255, 255, 255, 0.15); 
-        z-index: 10; display: flex; flex-direction: column; padding: 12px 20px 20px 20px; 
-        max-height: calc(85vh - 70px); overflow-y: hidden;
-        transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); transform: translateY(0); pointer-events: auto;
+        position: fixed; 
+        bottom: 70px; 
+        left: 0; 
+        right: 0; 
+        background: #111827; 
+        border-top-left-radius: 30px; 
+        border-top-right-radius: 30px; 
+        box-shadow: 0 -10px 40px rgba(0,0,0,0.8); 
+        border-top: 1px solid rgba(255, 255, 255, 0.15); 
+        z-index: 10; 
+        display: flex; 
+        flex-direction: column; 
+        padding: 12px 20px 20px 20px; 
+        max-height: calc(85vh - 70px); 
+        overflow-y: hidden;
+        transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        transform: translateY(0);
+        pointer-events: auto;
     }
 
     .glass-box {
-        background: rgba(31, 41, 55, 0.85); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
-        border: 1px solid rgba(255, 255, 255, 0.1); box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+        background: rgba(31, 41, 55, 0.85); 
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
     }
 
-    .panel-collapsed { transform: translateY(calc(100% - 90px)) !important; }
+    .panel-collapsed {
+        transform: translateY(calc(100% - 90px)) !important;
+    }
+
     .job-scroll { overflow-y: auto; }
     .job-scroll::-webkit-scrollbar { width: 4px; }
     .job-scroll::-webkit-scrollbar-thumb { background: #16a34a; border-radius: 4px; }
     .hide-scrollbar::-webkit-scrollbar { display: none; }
     .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-    .pin-input { letter-spacing: 0.5em; text-align: center; font-size: 2rem; }
+    
+    .pin-input {
+        letter-spacing: 0.5em;
+        text-align: center;
+        font-size: 2rem;
+    }
 
-    @keyframes loading-scan { 0% { transform: translateX(-100%); } 100% { transform: translateX(300%); } }
-    .animate-loading-scan { animation: loading-scan 1.5s infinite ease-in-out; }
-    .marker-label { font-family: 'Kanit', sans-serif; font-weight: 800; font-size: 14px; color: white; text-shadow: 1px 1px 2px black; }
+    @keyframes loading-scan {
+        0% { transform: translateX(-100%); }
+        100% { transform: translateX(300%); }
+    }
+    .animate-loading-scan {
+        animation: loading-scan 1.5s infinite ease-in-out;
+    }
+
+    .marker-label {
+        font-family: 'Kanit', sans-serif;
+        font-weight: 800;
+        font-size: 14px;
+        color: white;
+        text-shadow: 1px 1px 2px black;
+    }
   </style>
 </head>
 <body class="h-screen w-screen m-0 overflow-hidden bg-gray-900">
@@ -100,7 +135,7 @@
       <button onclick="centerToDriver()" id="btnCrosshair" class="glass-box w-12 h-12 flex items-center justify-center rounded-full shadow-lg text-green-400 hover:bg-white/10 transition" title="กลับไปที่พิกัดรถ">
           <i class="fas fa-crosshairs text-[18px]"></i>
       </button>
-      <button onclick="fitAllWaypoints()" id="btnOverview" class="hidden glass-box w-12 h-12 flex items-center justify-center rounded-full shadow-lg text-gray-300 hover:bg-white/10 transition" title="ดูแผนที่รวม">
+      <button onclick="fitRouteBounds()" id="btnOverview" class="hidden glass-box w-12 h-12 flex items-center justify-center rounded-full shadow-lg text-gray-300 hover:bg-white/10 transition" title="ดูแผนที่รวม">
           <i class="fas fa-route text-[18px]"></i>
       </button>
   </div>
@@ -195,9 +230,9 @@
                     </div>
                 </div>
                 <div id="contactPassengerBox" class="flex items-center gap-1.5 shrink-0">
-                    <button onclick="openLineOA()" class="bg-gray-700 text-white px-2.5 py-1.5 rounded-lg font-bold text-[11px] shadow-sm border border-gray-600 flex gap-1 items-center hover:bg-gray-600 transition">
+                    <a href="https://line.me/R/ti/p/%40805zvmii" target="_blank" class="bg-gray-700 text-white px-2.5 py-1.5 rounded-lg font-bold text-[11px] shadow-sm border border-gray-600 flex gap-1 items-center hover:bg-gray-600 transition">
                         <i class="fas fa-comment-dots"></i> แชท
-                    </button>
+                    </a>
                     <a href="#" id="btnCallPassenger" class="bg-green-600/90 text-white px-2.5 py-1.5 rounded-lg font-bold text-[11px] shadow-sm border border-green-500/50 flex gap-1 items-center hover:bg-green-500 transition">
                         <i class="fas fa-phone-alt"></i> โทร
                     </a>
@@ -641,7 +676,7 @@
                     setTimeout(() => {
                         google.maps.event.trigger(map, 'resize');
                         map.setOptions({ padding: { top: 180, bottom: getSafeBottomPadding(), left: 0, right: 0 } });
-                        reDrawActiveJobOnMap(); // ดึงประวัติเส้นทางกลับมาวาดใหม่ทันที
+                        reDrawActiveJobOnMap(); 
                     }, 50);
                 }
             } else {
@@ -787,6 +822,61 @@
             }
         }
         return false;
+    }
+
+    // === BUG FIX: ดึงงานจากฐานข้อมูลได้แม่นยำขึ้น ===
+    function processBookings() {
+        if(!driverPin) return; 
+
+        myActiveJobs = [];
+        let foundCurrentViewing = false;
+
+        if (allBookings) {
+            for (let key in allBookings) {
+                let b = allBookings[key];
+                let s = b.status || "";
+                
+                // ตรวจสอบว่างานเป็นของคนขับคนนี้ และยังไม่ถูกยกเลิก (ครอบคลุมทุกสถานะระหว่างทาง)
+                if (b.driverPin === driverPin && !s.includes("ยกเลิก") && !s.includes("เสร็จสิ้น") && s !== "รอผู้ขับขี่ตอบรับ") {
+                    myActiveJobs.push({id: key, data: b});
+                    if(key === currentViewingJobId) foundCurrentViewing = true;
+                }
+            }
+        }
+
+        myActiveJobs.sort((a, b) => (a.data.timestamp || 0) - (b.data.timestamp || 0));
+
+        if (myActiveJobs.length > 0) {
+            if(!foundCurrentViewing) currentViewingJobId = myActiveJobs[0].id;
+            activeJobId = currentViewingJobId; 
+            activeJobData = myActiveJobs.find(j => j.id === currentViewingJobId).data;
+            
+            if(markerDriver && isOnline) markerDriver.setMap(map);
+
+            updateActiveJobUI();
+            renderActiveJobTabs();
+            updateMapMarkersForStackedJobs();
+            
+            if(!document.getElementById('activeJobPanel').classList.contains('hidden')) {
+                renderWaypointsOnMap(activeJobData.waypoints);
+            }
+        } else {
+            currentViewingJobId = null;
+            activeJobId = null;
+            activeJobData = null;
+            updateActiveJobUI();
+            clearMapRoutes();
+            
+            if(markerDriver && !selectedJobId && !isOnline) markerDriver.setMap(null);
+
+            let actP = document.getElementById('activeJobPanel');
+            let tab2Btn = document.getElementById('navBtn2');
+            if (actP && !actP.classList.contains('hidden') && tab2Btn && !tab2Btn.classList.contains('text-green-400')) {
+                actP.classList.add('hidden');
+            }
+        }
+        
+        renderJobList(); 
     }
 
     function initFirebaseListeners() {
@@ -1115,7 +1205,6 @@
         });
     }
 
-    // === BUG FIX: Recovery Logic ตรวจจับความค้างของงานเพื่อบังคับดึงหมุดและรถขึ้นมาใหม่ ===
     function reDrawActiveJobOnMap() {
         if(activeJobData && map) {
             renderWaypointsOnMap(activeJobData.waypoints);
@@ -1175,7 +1264,7 @@
       });
       
       markerDriver = new google.maps.Marker({
-          map: isOnline ? map : null, // โชว์ทันทีเมื่อระบุว่าออนไลน์อยู่
+          map: isOnline ? map : null,
           position: {lat: driverLat, lng: driverLng}, 
           icon: {url: "https://img.icons8.com/color/48/car-top-view.png", scaledSize: new google.maps.Size(44, 44), anchor: new google.maps.Point(22, 22)}, 
           zIndex: 9999
@@ -1193,7 +1282,6 @@
           });
       }
 
-      // ตรวจสอบและดึงหมุดวาดใหม่กรณีที่เปิดเข้าแท็บงานปัจจุบันทันที
       reDrawActiveJobOnMap();
     }
 
@@ -1227,504 +1315,6 @@
             strokeLinecap: 'round',
             strokeLinejoin: 'round',
             map: map
-        });
-    }
-
-    function toggleOnlineWithPermission() {
-        let tg = document.getElementById('onlineToggle');
-        if(!driverPin) {
-            tg.checked = false;
-            document.getElementById('loginModal').classList.remove('hidden');
-            return;
-        }
-        
-        if (tg.checked) {
-            if(navigator.geolocation) {
-                navigator.geolocation.getCurrentPosition(
-                    (pos) => {
-                        driverLat = pos.coords.latitude;
-                        driverLng = pos.coords.longitude;
-                        executeToggleOnline(true);
-                    },
-                    (err) => {
-                        tg.checked = false;
-                        showAlert("แอปต้องการพิกัด GPS", "กรุณาเปิด 'ตำแหน่งที่ตั้ง' (Location) บนมือถือและอนุญาตให้เบราว์เซอร์เข้าถึง GPS ก่อนกดออนไลน์ครับ", "error");
-                    },
-                    { enableHighAccuracy: true, timeout: 10000 }
-                );
-            } else {
-                tg.checked = false;
-                showAlert("ไม่รองรับ GPS", "เบราว์เซอร์นี้ไม่รองรับการระบุตำแหน่ง", "error");
-            }
-        } else {
-            executeToggleOnline(false);
-        }
-    }
-
-    function executeToggleOnline(state) {
-        isOnline = state;
-        const statusEl = document.getElementById('statusText');
-        const gpsEl = document.getElementById('gpsStatus');
-        
-        let activeTab = document.getElementById('navBtn1').classList.contains('text-green-400') ? 1 : null;
-        let floatGps = document.getElementById('floatingGpsBox');
-
-        localStorage.setItem('isDriverOnline', isOnline);
-
-        if(isOnline) {
-            if(statusEl) {
-                statusEl.innerText = "🟢 ออนไลน์ (พร้อมรับงาน)";
-                statusEl.className = "text-[11px] font-bold text-green-400";
-            }
-            if(gpsEl) gpsEl.innerText = "กำลังค้นหาพิกัด GPS ของคุณ...";
-            if(activeTab === 1) floatGps.classList.remove('hidden');
-            
-            if(markerDriver && map) markerDriver.setMap(map); 
-
-            isFirstGps = true; 
-            requestWakeLock(); 
-
-            db.ref('driver/status').onDisconnect().set("ออฟไลน์");
-            db.ref('driver').update({ status: "ออนไลน์" });
-
-            if (navigator.geolocation) {
-                watchId = navigator.geolocation.watchPosition((pos) => {
-                    driverLat = pos.coords.latitude;
-                    driverLng = pos.coords.longitude;
-                    
-                    let posObj = {lat: driverLat, lng: driverLng};
-                    if(markerDriver) markerDriver.setPosition(posObj);
-                    
-                    if(isTrackingMode && map && !selectedJobId && (!document.getElementById('activeJobPanel').classList.contains('hidden') || !document.getElementById('idlePanel').classList.contains('hidden'))) {
-                        map.panTo(posObj);
-                    }
-                    
-                    if(isFirstGps) {
-                        if(!activeJobId && !selectedJobId && isTrackingMode && map) map.setZoom(18); 
-                        if(activeJobId && !document.getElementById('activeJobPanel').classList.contains('hidden')) updateRoute(true); 
-                        isFirstGps = false;
-                    }
-
-                    if(activeJobId && (Date.now() - lastRouteUpdate > 8000) && !document.getElementById('activeJobPanel').classList.contains('hidden')) {
-                        lastRouteUpdate = Date.now();
-                        updateRoute(false); 
-                    }
-
-                    db.ref('driver').update({ 
-                        lat: driverLat, 
-                        lng: driverLng,
-                        driverPhone: currentDriverProfile ? currentDriverProfile.phone : "0946379669",
-                        pin: driverPin
-                    });
-                    if(gpsEl) gpsEl.innerText = `พิกัดอัปเดตล่าสุด: ${new Date().toLocaleTimeString('th-TH')}`;
-                    
-                    requestWakeLock();
-                    
-                }, 
-                (err) => { if(gpsEl) gpsEl.innerText = "GPS Error: กรุณาเปิด Location (ตำแหน่งที่ตั้ง)"; }, 
-                { enableHighAccuracy: true, maximumAge: 0, timeout: 5000 });
-            }
-            
-            let pBar = document.getElementById('searchProgressBar');
-            if(pBar && myActiveJobs.length === 0) pBar.classList.remove('hidden');
-
-        } else {
-            if(statusEl) {
-                statusEl.innerText = "🔴 ออฟไลน์";
-                statusEl.className = "text-[11px] font-bold text-red-500";
-            }
-            if(gpsEl) gpsEl.innerText = "ระบบถูกปิดชั่วคราว";
-            floatGps.classList.add('hidden');
-            
-            releaseWakeLock(); 
-            
-            db.ref('driver/status').onDisconnect().cancel();
-            db.ref('driver').update({ status: "ออฟไลน์" });
-            
-            if(watchId) navigator.geolocation.clearWatch(watchId);
-            stopAlarm(); 
-            
-            let pBar = document.getElementById('searchProgressBar');
-            if(pBar) pBar.classList.add('hidden');
-            
-            if(markerDriver) markerDriver.setMap(null); 
-        }
-        renderJobList();
-    }
-
-    function processBookings() {
-        if(!driverPin) return; 
-
-        myActiveJobs = [];
-        let foundCurrentViewing = false;
-
-        if (allBookings) {
-            for (let key in allBookings) {
-                let b = allBookings[key];
-                let s = b.status || "";
-                if ((s.includes("รับงานแล้ว") || s.includes("มาถึงจุดรับ") || s.includes("ออกเดินทาง") || s.includes("ไปยังจุดส่ง") || s.includes("รับผู้โดยสารแล้ว")) && b.driverPin === driverPin) {
-                    myActiveJobs.push({id: key, data: b});
-                    if(key === currentViewingJobId) foundCurrentViewing = true;
-                }
-            }
-        }
-
-        myActiveJobs.sort((a, b) => (a.data.timestamp || 0) - (b.data.timestamp || 0));
-
-        if (myActiveJobs.length > 0) {
-            if(!foundCurrentViewing) currentViewingJobId = myActiveJobs[0].id;
-            activeJobId = currentViewingJobId; 
-            activeJobData = myActiveJobs.find(j => j.id === currentViewingJobId).data;
-            
-            if(markerDriver && isOnline) markerDriver.setMap(map);
-
-            updateActiveJobUI();
-            renderActiveJobTabs();
-            updateMapMarkersForStackedJobs();
-            
-            // ข้อมูลเปลี่ยนแปลง ให้วาดหมุดบนแผนที่อัปเดตตลอดเวลาป้องกันการหลุดหาย
-            if(!document.getElementById('activeJobPanel').classList.contains('hidden')) {
-                renderWaypointsOnMap(activeJobData.waypoints);
-            }
-        } else {
-            currentViewingJobId = null;
-            activeJobId = null;
-            activeJobData = null;
-            updateActiveJobUI();
-            clearMapRoutes();
-            
-            if(markerDriver && !selectedJobId && !isOnline) markerDriver.setMap(null);
-
-            let actP = document.getElementById('activeJobPanel');
-            let tab2Btn = document.getElementById('navBtn2');
-            if (actP && !actP.classList.contains('hidden') && tab2Btn && !tab2Btn.classList.contains('text-green-400')) {
-                actP.classList.add('hidden');
-            }
-        }
-        
-        renderJobList(); 
-    }
-
-    function renderActiveJobTabs() {
-        let tabBox = document.getElementById('stackedJobsTabs');
-        if(!tabBox) return;
-
-        if(myActiveJobs.length <= 1) {
-            tabBox.classList.add('hidden');
-            return;
-        }
-
-        tabBox.classList.remove('hidden');
-        let html = '';
-        myActiveJobs.forEach((job, index) => {
-            let isActive = job.id === currentViewingJobId;
-            let bg = isActive ? 'bg-green-600 text-white' : 'bg-gray-800 text-gray-400 border border-gray-700';
-            html += `<button onclick="switchViewingJob('${job.id}')" class="shrink-0 px-3 py-1.5 rounded-lg font-bold text-[11px] shadow-sm transition ${bg}">
-                งานที่ ${index + 1}
-            </button>`;
-        });
-        tabBox.innerHTML = html;
-    }
-
-    function switchViewingJob(jobId) {
-        currentViewingJobId = jobId;
-        activeJobId = jobId;
-        activeJobData = myActiveJobs.find(j => j.id === jobId).data;
-        updateActiveJobUI();
-        renderActiveJobTabs();
-        updateRoute(true);
-    }
-
-    function updateMapMarkersForStackedJobs() {
-        activeJobMarkers.forEach(m => m.setMap(null));
-        activeJobMarkers = [];
-
-        if(myActiveJobs.length <= 1 || !map) return;
-
-        myActiveJobs.forEach((job, index) => {
-            if(job.id === currentViewingJobId) return; 
-            
-            let seqNum = (index + 1).toString();
-            let b = job.data;
-            
-            let mPick = new google.maps.Marker({
-                map: map,
-                position: {lat: b.pLat, lng: b.pLng},
-                label: { text: "P" + seqNum, className: "marker-label" },
-                icon: {
-                    path: "M 0,0 C -12,-16 -18,-22 -18,-32 A 18,18 0 1,1 18,-32 C 18,-22 12,-16 0,0 Z",
-                    fillColor: '#059669', fillOpacity: 0.8, strokeWeight: 2, strokeColor: '#ffffff', scale: 0.8,
-                    anchor: typeof google !== 'undefined' && google.maps ? new google.maps.Point(0, 0) : null
-                }
-            });
-            activeJobMarkers.push(mPick);
-
-            let mDrop = new google.maps.Marker({
-                map: map,
-                position: {lat: b.dLat, lng: b.dLng},
-                label: { text: "D" + seqNum, className: "marker-label" },
-                icon: {
-                    path: "M 0,0 C -12,-16 -18,-22 -18,-32 A 18,18 0 1,1 18,-32 C 18,-22 12,-16 0,0 Z",
-                    fillColor: '#b91c1c', fillOpacity: 0.8, strokeWeight: 2, strokeColor: '#ffffff', scale: 0.8,
-                    anchor: typeof google !== 'undefined' && google.maps ? new google.maps.Point(0, 0) : null
-                }
-            });
-            activeJobMarkers.push(mDrop);
-        });
-    }
-
-    function renderJobList() {
-        const listContainer = document.getElementById('jobListContainer');
-        const pBar = document.getElementById('searchProgressBar');
-        const emptyText = document.getElementById('jobListEmptyText');
-        if(!listContainer) return;
-        
-        if (!isOnline) { 
-            if(emptyText) emptyText.classList.remove('hidden');
-            if(pBar) pBar.classList.add('hidden');
-            return; 
-        }
-        
-        if(pBar && myActiveJobs.length === 0) pBar.classList.remove('hidden');
-        else if(pBar) pBar.classList.add('hidden');
-
-        if (!allBookings) { 
-            if(emptyText) emptyText.classList.remove('hidden');
-            return; 
-        }
-
-        let html = ''; let jobCount = 0;
-        let currentPendingJobs = []; 
-
-        for (let key in allBookings) {
-            let b = allBookings[key];
-            let isHidden = window.hiddenJobs[key] && window.hiddenJobs[key] === b.timestamp;
-            
-            if (isPassengerBlocked(b.name, b.phone)) continue;
-
-            if (b.status === "รอผู้ขับขี่ตอบรับ" && !isHidden) {
-                jobCount++;
-                currentPendingJobs.push(key);
-
-                let priceDisplay = '';
-                if(b.promoCode) {
-                    priceDisplay = `<div class="flex flex-col items-end"><span class="text-[10px] text-gray-500 line-through leading-none mb-0.5">฿${b.originalPrice}</span><span class="font-black text-green-400 px-1 text-[16px]">฿${b.price}</span></div>`;
-                } else {
-                    priceDisplay = `<span class="font-black text-green-400 px-1 text-[16px]">฿${b.price}</span>`;
-                }
-
-                html += `<div onclick="openJobDetail('${key}')" class="glass-box p-3 rounded-xl shadow-sm border border-gray-600 cursor-pointer active:bg-gray-700 hover:bg-white/10 transition-colors mb-2 relative overflow-hidden">
-                    <div class="absolute left-[1.1rem] top-[2.2rem] bottom-[0.8rem] w-0.5 border-l-[1.5px] border-dashed border-gray-600 z-0"></div>
-                    <div class="flex justify-between items-center mb-1.5 relative z-10">
-                        <span class="font-bold text-sm text-green-400"><i class="fas fa-user-circle"></i> ${b.name || 'ลูกค้า'}</span>
-                        ${priceDisplay}
-                    </div>
-                    <div class="flex items-center gap-2 relative z-10 mb-1">
-                        <div><i class="fas fa-circle text-[8px] text-green-500"></i></div>
-                        <p class="text-[11px] text-gray-300 truncate font-medium flex-1">${b.pName}</p>
-                    </div>
-                    <div class="flex items-center gap-2 relative z-10">
-                        <div><i class="fas fa-circle text-[8px] text-red-500"></i></div>
-                        <p class="text-[11px] text-gray-300 truncate font-medium flex-1">${b.dName}</p>
-                    </div>
-                </div>`;
-            }
-        }
-
-        if (isOnline && currentPendingJobs.length > previousPendingJobsList.length && myActiveJobs.length > 0) {
-            let snd = document.getElementById('jobAlertSound');
-            if (snd) { snd.muted = false; snd.volume = 1; snd.load(); snd.play().catch(e=>{}); }
-            if (navigator.vibrate) navigator.vibrate([500, 200, 500]); 
-            showAlert("🔔 มีงานใหม่เข้ามา!", "ลูกค้าเรียกซ้อนเข้ามา ตรวจสอบดูที่กระดานรับงานครับ", "success");
-        }
-        previousPendingJobsList = currentPendingJobs;
-
-        if (jobCount === 0) {
-            if(emptyText) emptyText.classList.remove('hidden');
-            let existingJobs = listContainer.querySelectorAll('.cursor-pointer');
-            existingJobs.forEach(el => el.remove());
-        } else {
-            if(emptyText) emptyText.classList.add('hidden');
-            let existingJobs = listContainer.querySelectorAll('.cursor-pointer');
-            existingJobs.forEach(el => el.remove());
-            listContainer.insertAdjacentHTML('afterbegin', html);
-        }
-    }
-
-    function openJobDetail(jobId) {
-        selectedJobId = jobId; 
-        let job = allBookings[jobId];
-        if(!job) return;
-        
-        let n = document.getElementById('detailName');
-        let pr = document.getElementById('detailPrice');
-        let oldPrBox = document.getElementById('detailPromoBox');
-
-        if(n) n.innerText = job.name || "ลูกค้า";
-        if(pr) pr.innerText = "฿" + job.price;
-
-        if(job.promoCode) {
-            document.getElementById('detailOldPrice').innerText = "฿" + job.originalPrice;
-            document.getElementById('detailPromoTag').innerText = "ลด ฿" + job.discount;
-            if(oldPrBox) { oldPrBox.classList.remove('hidden'); oldPrBox.classList.add('flex'); }
-        } else {
-            if(oldPrBox) { oldPrBox.classList.add('hidden'); oldPrBox.classList.remove('flex'); }
-        }
-        
-        let tE = document.getElementById('detailTotalEta');
-        if(tE) tE.innerText = `ระยะทางรวม: กำลังคำนวณ...`;
-        
-        let mod = document.getElementById('jobDetailModal');
-        let bO = document.getElementById('btnOverview');
-        if(bO) bO.classList.remove('hidden'); 
-        if(mod) mod.classList.remove('hidden');
-
-        let container = document.getElementById('modalWaypointsContainer');
-        if(container) {
-            let html = '';
-            let waypoints = job.waypoints || [];
-            let pCount = 1, dCount = 1;
-            waypoints.forEach((wp, idx) => {
-                let num = wp.type === 'pick' ? pCount++ : dCount++;
-                let colorClass = wp.type === 'pick' ? 'text-green-500 border-gray-800' : (wp.type === 'drop' ? 'text-red-500 border-gray-800' : 'text-yellow-500 border-gray-800');
-                
-                html += `
-                <div class="flex items-start gap-3 mb-3 relative z-10 w-full min-w-0">
-                    <div class="shrink-0 mt-1"><i class="fas fa-circle text-[10px] ${colorClass} rounded-full"></i></div>
-                    <div class="flex-1 overflow-hidden min-w-0">
-                        <p class="text-[13px] text-gray-200 truncate font-medium leading-tight mb-1 cursor-pointer hover:text-green-300" onclick="focusLocation(${wp.lat}, ${wp.lng}, 'wp${idx}')">${wp.name}</p>
-                        ${idx === 0 ? `<p class="text-[12px] font-bold text-green-400 mt-1 block" id="modalEtaToPick"><i class="fas fa-car-side"></i> ห่างจากคุณ: กำลังคำนวณ...</p>` : ''}
-                        ${idx === waypoints.length - 1 ? `<p class="text-[12px] font-bold text-blue-400 mt-1 block" id="modalEtaToDrop"><i class="fas fa-road"></i> ระยะทางไปส่ง: กำลังคำนวณ...</p>` : ''}
-                    </div>
-                </div>`;
-            });
-            container.innerHTML = html;
-        }
-
-        renderWaypointsOnMap(job.waypoints);
-
-        let origin = {lat: driverLat, lng: driverLng}; 
-        let dest = {lat: job.dLat, lng: job.dLng};
-        
-        let request = {
-            origin: origin,
-            destination: dest,
-            travelMode: 'DRIVING'
-        };
-
-        if(directionsService) {
-            directionsService.route(request, (res, stat) => {
-                if(stat === 'OK') {
-                    if(directionsRenderer) directionsRenderer.setDirections(res);
-                    drawCustomPolylines(res, '#3b82f6'); 
-                    
-                    currentRouteBounds = res.routes[0].bounds;
-
-                    let leg = res.routes[0].legs[0]; 
-                    let totalDist = leg.distance.value / 1000;
-                    let totalMins = Math.round(leg.duration.value / 60);
-
-                    if(tE) tE.innerText = `ระยะทางรวม (จุดรับไปส่ง): ${totalDist.toFixed(1)} กม. • เวลาประเมิน: ${totalMins} นาที`;
-
-                    if(map) {
-                        setTimeout(() => { map.fitBounds(currentRouteBounds, { top: 120, right: 30, bottom: getSafeBottomPadding() + 20, left: 30 }); }, 100);
-                    }
-                }
-            });
-        }
-    }
-
-    function clearMapRoutes() {
-        if(directionsRenderer) directionsRenderer.setDirections({routes: []});
-        if(polylinePick) { polylinePick.setMap(null); polylinePick = null; }
-        renderWaypointsOnMap([]);
-        currentRouteBounds = null;
-        
-        let bO = document.getElementById('btnOverview');
-        if(bO) bO.classList.add('hidden'); 
-    }
-
-    function closeJobDetail() {
-        let md = document.getElementById('jobDetailModal');
-        if(md) md.classList.add('hidden'); 
-        selectedJobId = null;
-        
-        if (activeJobId && !document.getElementById('activeJobPanel').classList.contains('hidden')) {
-            updateRoute(true);
-        } else {
-            clearMapRoutes(); 
-            centerToDriver(); 
-        }
-    }
-
-    function promptRejectPendingJob() { 
-        showConfirm("ยืนยันปฏิเสธงานนี้?", "หากยืนยัน ระบบจะยกเลิกการเรียกรถและแจ้งเตือนผู้โดยสารว่าไม่มีรถว่างทันที", "red", "ยืนยันปฏิเสธ", executeRejectPendingJob);
-    }
-
-    function executeRejectPendingJob() {
-        if(isProcessingAction) return; isProcessingAction = true;
-        
-        if(!selectedJobId) { isProcessingAction = false; return; }
-        
-        let jobIdToCancel = selectedJobId;
-        closeJobDetail(); 
-
-        db.ref('bookings/' + jobIdToCancel).update({ status: "ยกเลิกโดยคนขับ" }).then(() => {
-            sendLineNotify(jobIdToCancel, "", 'cancel_driver');
-            showAlert("ยกเลิกสำเร็จ", "ปฏิเสธและยกเลิกงานเรียบร้อยแล้ว", "success", () => {
-                isProcessingAction = false;
-                renderJobList(); 
-            });
-        }).catch(()=>{ isProcessingAction = false; });
-    }
-
-    function executeAcceptJob() {
-        if(isProcessingAction) return; isProcessingAction = true;
-        
-        if(!selectedJobId) {
-            isProcessingAction = false; return;
-        }
-
-        let jobIdToAccept = selectedJobId;
-        let phoneNumber = currentDriverProfile ? currentDriverProfile.phone : "ไม่ระบุเบอร์โทร";
-
-        let jd = document.getElementById('jobDetailModal');
-        if(jd) jd.classList.add('hidden');
-        
-        db.ref('bookings/' + jobIdToAccept).transaction(function(currentData) {
-            if (currentData === null) return null; 
-            if (currentData.status === "รอผู้ขับขี่ตอบรับ") {
-                currentData.status = "รับงานแล้ว กำลังเดินทางไปหา";
-                currentData.driverPhone = phoneNumber;
-                currentData.driverPin = driverPin;
-                return currentData; 
-            } else {
-                return; 
-            }
-        }, function(error, committed, snapshot) {
-            if (error) {
-                showAlert("ข้อผิดพลาด", "การเชื่อมต่อมีปัญหา กรุณาลองใหม่", "error");
-                isProcessingAction = false;
-                closeJobDetail();
-            } else if (!committed) {
-                showAlert("ไม่ทันแล้ว!", "เสียใจด้วยครับ งานนี้ถูกคนขับท่านอื่นรับไปแล้ว 🥲", "error");
-                closeJobDetail();
-                isProcessingAction = false;
-                selectedJobId = null;
-                renderJobList(); 
-            } else {
-                activeJobId = jobIdToAccept;
-                activeJobData = snapshot.val();
-                localStorage.setItem('activeJobId', activeJobId);
-                selectedJobId = null; 
-                
-                sendLineNotify(activeJobId, "🏎️ คนขับตอบรับงานของคุณแล้ว! กำลังรีบเดินทางไปหาคุณครับ");
-                isProcessingAction = false;
-                
-                switchDriverTab(2);
-                updateActiveJobUI();
-                updateRoute(true); 
-            }
         });
     }
 
@@ -1793,15 +1383,13 @@
                 wpHtml += `<div class="flex items-start gap-3 relative z-10 w-full mb-2">
                     <div class="shrink-0 mt-1"><i class="fas fa-circle text-[10px] ${iconClass} border ${bgCircle} rounded-full"></i></div>
                     <div class="flex-1 overflow-hidden min-w-0 cursor-pointer hover:text-green-300 transition" onclick="focusLocation(${wp.lat}, ${wp.lng}, 'wp${index}')">
-                        <p class="text-[13px] ${textClass} truncate font-medium leading-tight flex items-center">${wp.name}</p>
+                        <p class="text-[13px] ${textClass} truncate font-medium leading-tight">${wp.name}</p>
                         ${index === unpassedIndex ? `<p class="text-[11px] font-bold text-blue-400 mt-1" id="dynamicEtaText">กำลังคำนวณ...</p>` : ''}
                     </div>
                 </div>`;
             });
             wpContainer.innerHTML = wpHtml;
         }
-
-        renderWaypointsOnMap(waypoints);
 
         let statusText = document.getElementById('jobStatusHeader'); 
         let btnAction = document.getElementById('btnAction');
@@ -1848,164 +1436,7 @@
         if(bO) bO.classList.remove('hidden');
     }
 
-    function handleMainActionClick() {
-        if(!activeJobId || !activeJobData) return;
-        let waypoints = activeJobData.waypoints || [];
-        let unpassedIndex = waypoints.findIndex(w => !w.passed);
-        
-        if (unpassedIndex === -1) {
-            executeFinishJob(waypoints.length - 1);
-            return;
-        }
-
-        let currentWp = waypoints[unpassedIndex];
-        let s = activeJobData.status || "";
-
-        if (currentWp.type === 'pick') {
-            if (s.includes("กำลังเดินทางไปหา") || s.includes("รับงานแล้ว") || !s.includes("มาถึงจุดรับ")) {
-                showConfirm("ยืนยันมาถึงจุดรับ?", `คุณได้เดินทางมาถึง:\n${currentWp.name}\nเรียบร้อยแล้วใช่หรือไม่?`, "green", "มาถึงแล้ว", () => executeArrivePick(unpassedIndex));
-            } else if (s.includes("มาถึงจุดรับ")) {
-                showConfirm("ผู้โดยสารขึ้นรถแล้ว?", "ผู้โดยสารขึ้นรถเรียบร้อย และพร้อมออกเดินทางใช่หรือไม่?", "yellow", "ขึ้นรถแล้ว", () => executeBoarded(unpassedIndex));
-            }
-        } else if (currentWp.type === 'waypoint') {
-            showConfirm("ยืนยันมาถึงจุดแวะ?", `คุณได้เดินทางมาถึง:\n${currentWp.name}\nเรียบร้อยแล้วใช่หรือไม่?`, "green", "มาถึงแล้ว", () => executePassWaypoint(unpassedIndex));
-        } else if (currentWp.type === 'drop') {
-            showConfirm("ยืนยันจบงานและรับเงิน?", `คุณได้ส่งผู้โดยสารถึง:\n${currentWp.name}\nอย่างปลอดภัยแล้วใช่หรือไม่?`, "green", "ยืนยันจบงาน!", () => executeFinishJob(unpassedIndex));
-        }
-    }
-
-    function executeArrivePick(index) {
-        if(isProcessingAction) return; isProcessingAction = true;
-        db.ref('bookings/' + activeJobId).update({ status: "มาถึงจุดรับแล้ว" }).then(() => {
-            sendLineNotify(activeJobId, "📍 คนขับเดินทางมาถึงจุดรับของคุณเรียบร้อยแล้วครับ!");
-            setTimeout(() => { isProcessingAction = false; }, 1500);
-        });
-    }
-
-    // แก้ไข Logic ระบบ Passed ในฝั่งคนขับให้ซิงค์พารามิเตอร์ passed ไป Firebase อัตโนมัติ (ขีดทับหมุดเทา)
-    function executeBoarded(index) {
-        if(isProcessingAction) return; isProcessingAction = true;
-        let updates = {};
-        
-        // ส่ง passed: true ไปให้พิกัดนี้บน Firebase (เพื่อให้แอปผู้โดยสารเปลี่ยนตาม)
-        updates[`bookings/${activeJobId}/waypoints/${index}/passed`] = true;
-        
-        let waypoints = activeJobData.waypoints || [];
-        let nextIndex = index + 1;
-        let nextWp = waypoints[nextIndex];
-        let nextStatus = "รับผู้โดยสารแล้ว ออกเดินทาง";
-        if (nextWp) {
-            if (nextWp.type === 'pick') nextStatus = "กำลังไปจุดรับถัดไป";
-            else if (nextWp.type === 'waypoint') nextStatus = "กำลังไปจุดแวะ";
-            else nextStatus = "ไปยังจุดส่ง";
-        }
-        updates[`bookings/${activeJobId}/status`] = nextStatus;
-        
-        if (!activeJobData.tripStartTime) {
-            updates[`bookings/${activeJobId}/tripStartTime`] = firebase.database.ServerValue.TIMESTAMP;
-        }
-
-        db.ref().update(updates).then(() => {
-            sendLineNotify(activeJobId, "✨ ผู้โดยสารขึ้นรถเรียบร้อยแล้ว! " + nextStatus);
-            updateRoute(true); 
-            setTimeout(() => { centerToDriver(); isProcessingAction = false; }, 1000);
-        });
-    }
-
-    function executePassWaypoint(index) {
-        if(isProcessingAction) return; isProcessingAction = true;
-        let updates = {};
-        
-        // ส่ง passed: true ไปให้พิกัดนี้บน Firebase
-        updates[`bookings/${activeJobId}/waypoints/${index}/passed`] = true;
-        
-        let waypoints = activeJobData.waypoints || [];
-        let nextIndex = index + 1;
-        let nextWp = waypoints[nextIndex];
-        let nextStatus = "ออกเดินทาง ไปยังจุดถัดไป";
-        if (nextWp) {
-            if (nextWp.type === 'pick') nextStatus = "กำลังไปจุดรับถัดไป";
-            else if (nextWp.type === 'waypoint') nextStatus = "กำลังไปจุดแวะ";
-            else nextStatus = "ไปยังจุดส่ง";
-        }
-        updates[`bookings/${activeJobId}/status`] = nextStatus;
-
-        db.ref().update(updates).then(() => {
-            sendLineNotify(activeJobId, "📍 ถึงจุดแวะแล้ว! " + nextStatus);
-            updateRoute(true); 
-            setTimeout(() => { centerToDriver(); isProcessingAction = false; }, 1000);
-        });
-    }
-
-    function executeFinishJob(index) {
-        if(isProcessingAction) return; isProcessingAction = true;
-        
-        let dist = activeJobData.distance || 0; 
-        let price = activeJobData.price || 0; 
-        let pName = activeJobData.pName || ""; 
-        let dName = activeJobData.dName || "";
-        let actualDur = activeJobData.duration || 0;
-        if (activeJobData.tripStartTime) actualDur = Math.max(1, Math.ceil((Date.now() - activeJobData.tripStartTime) / 60000)); 
-
-        sendLineNotify(activeJobId, `🏁 การเดินทางสิ้นสุดลงแล้วเรียบร้อย!\n\n📍 จุดรับ: ${pName}\n🏁 จุดส่ง: ${dName}\n🛣️ ระยะทาง: ${dist} กม.\n⏱️ เวลาเดินทางจริง: ${actualDur} นาที\n💵 ราคาเหมาจ่าย: ${price} บาท\n\nขอบคุณที่ใช้บริการ F1 Driver ครับ!`);
-
-        let completedData = {
-            ...activeJobData,
-            status: "เสร็จสิ้น",
-            actualDuration: actualDur,
-            completedAt: firebase.database.ServerValue.TIMESTAMP
-        };
-        if(index !== undefined && completedData.waypoints[index]) {
-            completedData.waypoints[index].passed = true;
-        }
-
-        db.ref('completed_jobs').push().set(completedData).then(() => {
-            return db.ref('bookings/' + activeJobId).remove(); 
-        }).then(() => {
-            showAlert("สำเร็จ!", "ส่งผู้โดยสารเรียบร้อย รอรับงานถัดไป", "success", () => { isProcessingAction = false; resetToIdle(); });
-        }).catch(()=>{ isProcessingAction = false; });
-    }
-
-    function promptCancelJob() { 
-        showConfirm("ยืนยันยกเลิกงานนี้?", "หากยกเลิก ผู้โดยสารจะถูกแจ้งเตือนว่าคุณไม่สามารถไปรับได้ และงานจะถูกลบออก", "red", "ยืนยันยกเลิก", executeCancelJob);
-    }
-
-    function executeCancelJob() {
-        if(isProcessingAction) return; isProcessingAction = true;
-        
-        if(activeJobId) {
-            let oldJobId = activeJobId;
-            db.ref('bookings/' + activeJobId).update({ status: "ยกเลิกโดยคนขับ" }).then(() => {
-                sendLineNotify(oldJobId, "", 'cancel_driver');
-                showAlert("ยกเลิกงานแล้ว", "ระบบได้ทำการยกเลิกงานนี้เรียบร้อยแล้ว", "error", () => { 
-                    isProcessingAction = false; resetToIdle(); 
-                });
-            }).catch(()=>{ isProcessingAction = false; });
-        } else { isProcessingAction = false; }
-    }
-
-    function resetToIdle() {
-        localStorage.removeItem('activeJobId'); activeJobId = null; activeJobData = null; selectedJobId = null;
-        
-        let actP = document.getElementById('activeJobPanel');
-        if(actP) actP.classList.add('hidden');
-        
-        updateActiveJobUI(); 
-        
-        let bo = document.getElementById('btnOverview');
-        let ed = document.getElementById('etaDisplay');
-        if(bo) bo.classList.add('hidden'); 
-        if(ed) ed.classList.add('hidden'); 
-        
-        lastNotifiedMsg = ""; 
-        clearMapRoutes(); 
-        
-        centerToDriver(); 
-        renderJobList(); 
-        
-        switchDriverTab(1);
-    }
-
+    // === BUG FIX: อัปเดตและตีเส้นทางสากลตลอดการวิ่งงาน ===
     function updateRoute(forceZoom = false) {
         if(!activeJobData || !directionsService) return;
         
@@ -2015,20 +1446,14 @@
         if (unpassedIndex === -1) return; 
         
         let origin = {lat: driverLat, lng: driverLng};
-        let nextWp = waypoints[unpassedIndex];
         
+        // จุดหมายปลายทางในการคำนวณและวาดเส้น คือจุดที่คนขับกำลังจะไปหา (unpassed)
+        let remaining = waypoints.slice(unpassedIndex);
+        let dest = {lat: remaining[remaining.length - 1].lat, lng: remaining[remaining.length - 1].lng};
         let routeWaypoints = [];
-        let dest = {lat: nextWp.lat, lng: nextWp.lng};
         
-        // ระบบกรองสเต็ป Overview อัตโนมัติ: บังคับคำนวณ bounds ปลายทางเฉพาะจุดคิวถัดไป (Passed จะถูกข้าม)
-        if (activeJobData.status.includes("ออกเดินทาง") || activeJobData.status.includes("ไปยังจุดส่ง") || activeJobData.status.includes("รับผู้โดยสารแล้ว")) {
-            let remaining = waypoints.slice(unpassedIndex);
-            if (remaining.length > 0) {
-                dest = {lat: remaining[remaining.length - 1].lat, lng: remaining[remaining.length - 1].lng};
-                if (remaining.length > 1) {
-                    routeWaypoints = remaining.slice(0, -1).map(w => ({location: {lat: w.lat, lng: w.lng}, stopover: true}));
-                }
-            }
+        if (remaining.length > 1) {
+            routeWaypoints = remaining.slice(0, -1).map(w => ({location: {lat: w.lat, lng: w.lng}, stopover: true}));
         }
 
         let routeRequest = {origin: origin, destination: dest, travelMode: 'DRIVING'};
@@ -2038,28 +1463,29 @@
             if(stat === 'OK') {
                 if(directionsRenderer) directionsRenderer.setDirections(res); 
                 
-                let polyColor = nextWp.type === 'pick' ? '#22c55e' : '#3b82f6';
+                let polyColor = remaining[0].type === 'pick' ? '#22c55e' : '#3b82f6';
                 drawCustomPolylines(res, polyColor); 
                 
                 currentRouteBounds = res.routes[0].bounds; 
 
+                // leg[0] จะเป็นระยะจาก รถ -> จุดแรกที่ต้องไปหาเสมอ 
                 let leg = res.routes[0].legs[0]; 
                 
                 let dynEta = document.getElementById('dynamicEtaText');
                 let topEta = document.getElementById('etaDisplay');
                 
-                if (dynEta) dynEta.innerText = `ระยะทาง: ${leg.distance.text} • ${leg.duration.text}`;
+                if (dynEta) dynEta.innerText = `ห่างจากคุณ: ${leg.distance.text} • ${leg.duration.text}`;
                 if (topEta) {
                     topEta.innerText = `ระยะทาง ${leg.distance.text} • ${leg.duration.text}`;
                     topEta.classList.remove('hidden');
                 }
 
                 let distKm = leg.distance.value / 1000;
-                if(nextWp.type === 'pick' && distKm <= 2.0 && !activeJobData.notifiedPick) {
+                if(remaining[0].type === 'pick' && distKm <= 2.0 && !activeJobData.notifiedPick) {
                     activeJobData.notifiedPick = true; 
                     db.ref('bookings/' + activeJobId).update({ notifiedPick: true });
                     setTimeout(() => { sendLineNotify(activeJobId, `⚡ คนขับใกล้ถึงจุดรับแล้วครับ! (ระยะห่างอีกประมาณ ${distKm.toFixed(1)} กม.)`); }, 3000);
-                } else if(nextWp.type === 'drop' && distKm <= 2.0 && !activeJobData.notifiedDrop) {
+                } else if(remaining[0].type === 'drop' && distKm <= 2.0 && !activeJobData.notifiedDrop) {
                     activeJobData.notifiedDrop = true; 
                     db.ref('bookings/' + activeJobId).update({ notifiedDrop: true });
                     setTimeout(() => { sendLineNotify(activeJobId, `⚡ ใกล้ถึงจุดหมายปลายทางแล้วครับ! (ระยะห่างอีกประมาณ ${distKm.toFixed(1)} กม.)`); }, 3000);
@@ -2069,16 +1495,7 @@
                 if(bO) bO.classList.remove('hidden');
 
                 if (forceZoom && map && document.getElementById('navBtn2').classList.contains('text-green-400')) {
-                    if (activeJobData.status.includes("ออกเดินทาง") || activeJobData.status.includes("ไปยังจุดส่ง") || activeJobData.status.includes("รับผู้โดยสารแล้ว")) {
-                        centerToDriver(); 
-                    } else {
-                        isTrackingMode = false; 
-                        let btnC = document.getElementById('btnCrosshair');
-                        if(btnC) { btnC.classList.remove('text-green-400'); btnC.classList.add('text-gray-300'); }
-                        if(bO) { bO.classList.remove('text-gray-300'); bO.classList.add('text-green-400'); }
-                        
-                        setTimeout(() => { map.fitBounds(currentRouteBounds, { top: 180, right: 50, bottom: getSafeBottomPadding(), left: 50 }); }, 200);
-                    }
+                    centerToDriver(); // ล็อกเป้าที่รถทุกครั้งที่มีการเปลี่ยนคิวและบังคับซูม
                 }
             }
         });
