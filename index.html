@@ -417,9 +417,9 @@
               </div>
           </div>
 
-          <div class="mb-5 relative max-h-[150px] flex flex-col pl-1">
-              <div class="absolute left-[0.55rem] top-3 bottom-3 w-0.5 border-l-[1.5px] border-dashed border-gray-600 z-0"></div>
-              <div id="modalWaypointsContainer" class="flex flex-col w-full relative z-10 gap-1.5 overflow-y-auto slim-scroll">
+          <div class="mb-4 glass-box py-2 px-3 rounded-2xl border border-gray-700 relative shadow-sm max-h-[140px] flex flex-col">
+              <div class="absolute left-[1.3rem] top-5 bottom-5 w-0.5 border-l-[1.5px] border-dashed border-gray-700 z-0"></div>
+              <div id="modalWaypointsContainer" class="flex flex-col w-full relative z-10 gap-1 overflow-y-auto slim-scroll pr-1">
               </div>
           </div>
 
@@ -512,6 +512,33 @@
       appId: "1:1048189690454:web:7c2c4c9bbf12b9c77ed1f7"
     });
     const db = firebase.database();
+
+    const darkMapStyle = [
+        { elementType: "geometry", stylers: [{ color: "#242f3e" }] },
+        { elementType: "labels.text.stroke", stylers: [{ color: "#242f3e" }] },
+        { elementType: "labels.text.fill", stylers: [{ color: "#746855" }] },
+        { featureType: "administrative.locality", elementType: "labels.text.fill", stylers: [{ color: "#d59563" }] },
+        { featureType: "landscape.man_made", elementType: "geometry.fill", stylers: [{ color: "#364559" }] }, 
+        { featureType: "landscape.man_made", elementType: "geometry.stroke", stylers: [{ color: "#546a82" }] }, 
+        { featureType: "landscape.man_made.building", elementType: "geometry.fill", stylers: [{ color: "#506680" }] }, 
+        { featureType: "landscape.man_made.building", elementType: "geometry.stroke", stylers: [{ color: "#7089a6" }] },
+        { featureType: "landscape.natural", elementType: "geometry", stylers: [{ color: "#1e2836" }] }, 
+        { featureType: "poi", elementType: "labels.text.fill", stylers: [{ color: "#d59563" }] },
+        { featureType: "poi", elementType: "geometry", stylers: [{ color: "#283d3b" }] },
+        { featureType: "poi.park", elementType: "geometry", stylers: [{ color: "#263c3f" }] },
+        { featureType: "poi.park", elementType: "labels.text.fill", stylers: [{ color: "#6b9a76" }] },
+        { featureType: "road", elementType: "geometry", stylers: [{ color: "#111720" }] },
+        { featureType: "road", elementType: "geometry.stroke", stylers: [{ color: "#212a37" }] },
+        { featureType: "road", elementType: "labels.text.fill", stylers: [{ color: "#9ca5b3" }] },
+        { featureType: "road.highway", elementType: "geometry", stylers: [{ color: "#746855" }] },
+        { featureType: "road.highway", elementType: "geometry.stroke", stylers: [{ color: "#1f2835" }] },
+        { featureType: "road.highway", elementType: "labels.text.fill", stylers: [{ color: "#f3d19c" }] },
+        { featureType: "transit", elementType: "geometry", stylers: [{ color: "#2f3948" }] },
+        { featureType: "transit.station", elementType: "labels.text.fill", stylers: [{ color: "#d59563" }] },
+        { featureType: "water", elementType: "geometry", stylers: [{ color: "#17263c" }] },
+        { featureType: "water", elementType: "labels.text.fill", stylers: [{ color: "#515c6d" }] },
+        { featureType: "water", elementType: "labels.text.stroke", stylers: [{ color: "#17263c" }] }
+    ];
 
     window.toggleWpHighlight = function(element, lat, lng, elementId) {
         if(!map) return;
@@ -982,7 +1009,6 @@
             } else {
                 let pBar = document.getElementById('searchProgressBar');
                 if(pBar) pBar.classList.add('hidden');
-                document.getElementById('jobListContainer').innerHTML = '<p class="text-center text-gray-500 text-[12px] font-bold py-6">กรุณาเปิดออนไลน์เพื่อดูงาน</p>';
             }
         } else {
             document.getElementById('loginModal').classList.remove('hidden');
@@ -1543,12 +1569,11 @@
     function renderJobList() {
         const listContainer = document.getElementById('jobListContainer');
         const pBar = document.getElementById('searchProgressBar');
-        const emptyText = document.getElementById('jobListEmptyText');
         if(!listContainer) return;
         
         if (!isOnline) { 
-            if(emptyText) emptyText.classList.remove('hidden');
             if(pBar) pBar.classList.add('hidden');
+            listContainer.innerHTML = '<p class="text-center text-gray-500 text-[12px] font-bold py-6">กรุณาเปิดออนไลน์เพื่อดูงาน</p>';
             return; 
         }
         
@@ -1556,7 +1581,7 @@
         else if(pBar) pBar.classList.add('hidden');
 
         if (!allBookings) { 
-            if(emptyText) emptyText.classList.remove('hidden');
+            listContainer.innerHTML = '<p class="text-center text-gray-500 text-[12px] font-bold py-6">กำลังรอรับงานใหม่...</p>';
             return; 
         }
 
@@ -1616,14 +1641,9 @@
         previousPendingJobsList = currentPendingJobs;
 
         if (jobCount === 0) {
-            if(emptyText) emptyText.classList.remove('hidden');
-            let existingJobs = listContainer.querySelectorAll('.cursor-pointer');
-            existingJobs.forEach(el => el.remove());
+            listContainer.innerHTML = '<p class="text-center text-gray-500 text-[12px] font-bold py-6">กำลังรอรับงานใหม่...</p>';
         } else {
-            if(emptyText) emptyText.classList.add('hidden');
-            let existingJobs = listContainer.querySelectorAll('.cursor-pointer');
-            existingJobs.forEach(el => el.remove());
-            listContainer.insertAdjacentHTML('afterbegin', html);
+            listContainer.innerHTML = html;
         }
     }
 
@@ -1826,6 +1846,7 @@
                 switchDriverTab(2);
                 updateActiveJobUI();
                 
+                // รับงานปุ๊บ เล็งกล้องไปที่รถทันที
                 setTimeout(() => { centerToDriver(); }, 500);
             }
         });
@@ -1934,7 +1955,7 @@
 
                 let extraText = wp.passed ? '' : `<p class="text-[10px] font-bold text-gray-500 mt-0.5" id="eta_active_${index}">กำลังคำนวณ...</p>`;
 
-                wpHtml += `<div class="flex items-start gap-2.5 w-full min-w-0 p-1.5 rounded-lg transition cursor-pointer hover:bg-gray-700" onclick="toggleWpHighlight(this, ${wp.lat}, ${wp.lng}, 'wp${index}')" id="wp${index}">
+                wpHtml += `<div class="flex items-start gap-2.5 w-full min-w-0 p-1.5 rounded-lg transition cursor-pointer hover:bg-white/10" onclick="toggleWpHighlight(this, ${wp.lat}, ${wp.lng}, 'wp${index}')" id="wp${index}">
                     <div class="shrink-0 mt-0.5"><i class="fas fa-circle text-[10px] ${iconClass}"></i></div>
                     <div class="flex-1 overflow-hidden min-w-0">
                         <p class="text-[12px] ${textClass} truncate font-medium leading-tight">${wp.name}</p>
@@ -1971,6 +1992,7 @@
                 if(floatStatus) floatStatus.classList.add('border-green-500', 'shadow-[0_0_15px_rgba(34,197,94,0.4)]');
                 if(statusText) { statusText.innerText = "กำลังไปจุดรับ: " + shortName; statusText.className = "font-black text-[15px] leading-tight text-green-400 truncate"; }
                 
+                // คืนชีพปุ่ม มาถึงจุดรับ > ผู้โดยสารขึ้นรถ
                 if (s.includes("มาถึงจุดรับแล้ว") || s.includes("มาถึงจุดรับ")) {
                     if(btnAction) { btnAction.innerText = "ผู้โดยสารขึ้นรถแล้ว"; btnAction.className = "flex-[3] bg-yellow-500/90 border border-yellow-400/50 text-gray-900 py-1.5 rounded-lg font-bold text-[13px] shadow-md hover:bg-yellow-400 transition"; }
                 } else {
@@ -2028,6 +2050,7 @@
 
         if (currentWp.type === 'pick') {
             if (s.includes("มาถึงจุดรับแล้ว") || s.includes("มาถึงจุดรับ")) {
+                // ข้ามการถามซ้ำ
                 executeBoarded(unpassedIndex);
             } else {
                 showConfirm("ยืนยันมาถึงจุดรับ?", `คุณได้เดินทางมาถึง:\n${currentWp.name}\nเรียบร้อยแล้วใช่หรือไม่?`, "green", "มาถึงแล้ว", () => executeArrivePick(unpassedIndex));
@@ -2203,6 +2226,7 @@
         switchDriverTab(1);
     }
 
+    // ฟังก์ชันคำนวณช่วงต่อช่วง สำหรับหน้างานปัจจุบัน (Active Job) แบบแยกบรรทัด
     function updateRoute(forceZoom = false) {
         if(!activeJobData || !directionsService) return;
         
@@ -2238,6 +2262,7 @@
                         topEta.classList.remove('hidden');
                     }
 
+                    // แจ้งเตือนเมื่อใกล้ถึง
                     let distKm = res.routes[0].legs[0].distance.value / 1000;
                     if(target.type === 'pick' && distKm <= 2.0 && !activeJobData.notifiedPick) {
                         activeJobData.notifiedPick = true; 
