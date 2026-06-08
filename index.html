@@ -205,7 +205,8 @@
     <h3 class="text-xs font-black text-blue-400 mb-2 flex items-center gap-1.5 tracking-widest"><i class="fas fa-list-ul"></i> งานใหม่ที่รอรับ</h3>
     
     <div id="jobListContainer" class="job-scroll space-y-2 flex-1 max-h-[35vh] glass-box !bg-gray-900/50 p-2 rounded-xl border border-gray-800 shadow-inner relative overflow-hidden">
-        <p class="text-center text-gray-500 text-[12px] font-bold py-6" id="jobListEmptyText">กรุณาเปิดออนไลน์เพื่อดูงาน</p>
+        <p class="text-center text-gray-500 text-[12px] font-bold py-6 hidden" id="jobListEmptyText">กรุณาเปิดออนไลน์เพื่อดูงาน</p>
+        <div id="activeJobsListWrap" class="w-full flex flex-col gap-2"></div>
         <div id="searchProgressBar" class="absolute bottom-0 left-0 w-full h-[2px] bg-gray-700/50 hidden">
             <div class="h-full bg-blue-500 w-1/3 rounded-full animate-loading-scan"></div>
         </div>
@@ -512,40 +513,41 @@
     });
     const db = firebase.database();
 
-    // ประกาศตัวแปรทั้งหมด
+    // ประกาศฟังก์ชันให้เป็น Global ป้องกัน undefined
+    window.toggleWpHighlight = function(element, lat, lng, elementId) {
+        if(!map) return;
+        let isHighlighted = element.classList.contains('bg-gray-700');
+        
+        document.querySelectorAll('#activeJobWaypointsContainer .cursor-pointer, #modalWaypointsContainer .cursor-pointer').forEach(c => {
+            c.classList.remove('bg-gray-700');
+        });
+
+        if (isHighlighted) {
+            if (activeJobData || selectedJobId) {
+                fitRouteBounds();
+            }
+        } else {
+            element.classList.add('bg-gray-700');
+            map.panTo({lat: lat, lng: lng});
+            if(map.getZoom() < 17) {
+                setTimeout(() => { map.setZoom(17); }, 200);
+            }
+            
+            isTrackingMode = false;
+            currentMapFocus = elementId;
+            let btnC = document.getElementById('btnCrosshair');
+            let btnO = document.getElementById('btnOverview');
+            if(btnC) { btnC.classList.remove('text-green-400'); btnC.classList.add('text-gray-300'); }
+            if(btnO) { btnO.classList.remove('text-gray-300'); btnO.classList.add('text-green-400'); }
+        }
+    };
+
     window.hiddenJobs = window.hiddenJobs || {};
     let driverPin = localStorage.getItem('driverPin');
     let driverSessionId = localStorage.getItem('driverSessionId');
     let currentDriverProfile = null; 
     let myBlockedPassengers = {};
     let isAppInitialLoad = true; 
-
-    const darkMapStyle = [
-        { elementType: "geometry", stylers: [{ color: "#242f3e" }] },
-        { elementType: "labels.text.stroke", stylers: [{ color: "#242f3e" }] },
-        { elementType: "labels.text.fill", stylers: [{ color: "#746855" }] },
-        { featureType: "administrative.locality", elementType: "labels.text.fill", stylers: [{ color: "#d59563" }] },
-        { featureType: "landscape.man_made", elementType: "geometry.fill", stylers: [{ color: "#364559" }] }, 
-        { featureType: "landscape.man_made", elementType: "geometry.stroke", stylers: [{ color: "#546a82" }] }, 
-        { featureType: "landscape.man_made.building", elementType: "geometry.fill", stylers: [{ color: "#506680" }] }, 
-        { featureType: "landscape.man_made.building", elementType: "geometry.stroke", stylers: [{ color: "#7089a6" }] },
-        { featureType: "landscape.natural", elementType: "geometry", stylers: [{ color: "#1e2836" }] }, 
-        { featureType: "poi", elementType: "labels.text.fill", stylers: [{ color: "#d59563" }] },
-        { featureType: "poi", elementType: "geometry", stylers: [{ color: "#283d3b" }] },
-        { featureType: "poi.park", elementType: "geometry", stylers: [{ color: "#263c3f" }] },
-        { featureType: "poi.park", elementType: "labels.text.fill", stylers: [{ color: "#6b9a76" }] },
-        { featureType: "road", elementType: "geometry", stylers: [{ color: "#111720" }] },
-        { featureType: "road", elementType: "geometry.stroke", stylers: [{ color: "#212a37" }] },
-        { featureType: "road", elementType: "labels.text.fill", stylers: [{ color: "#9ca5b3" }] },
-        { featureType: "road.highway", elementType: "geometry", stylers: [{ color: "#746855" }] },
-        { featureType: "road.highway", elementType: "geometry.stroke", stylers: [{ color: "#1f2835" }] },
-        { featureType: "road.highway", elementType: "labels.text.fill", stylers: [{ color: "#f3d19c" }] },
-        { featureType: "transit", elementType: "geometry", stylers: [{ color: "#2f3948" }] },
-        { featureType: "transit.station", elementType: "labels.text.fill", stylers: [{ color: "#d59563" }] },
-        { featureType: "water", elementType: "geometry", stylers: [{ color: "#17263c" }] },
-        { featureType: "water", elementType: "labels.text.fill", stylers: [{ color: "#515c6d" }] },
-        { featureType: "water", elementType: "labels.text.stroke", stylers: [{ color: "#17263c" }] }
-    ];
 
     let map, directionsService, directionsRenderer;
     let histMap = null, histDirectionsRenderer = null;
@@ -688,7 +690,6 @@
         let floatGps = document.getElementById('floatingGpsBox');
         let mapCtrl = document.getElementById('mapControls');
 
-        // รีเซ็ตการแสดงผลทุกหน้าต่าง
         idleP.classList.add('hidden');
         actP.classList.add('hidden');
         noActState.classList.add('hidden');
@@ -701,7 +702,6 @@
         mapCtrl.classList.add('top-[76px]');
 
         if(tabIndex === 1) { 
-            // ลบการซ่อนกรอบที่หายไปตอนจบงาน ทำให้มันโชว์กลับมา 100%
             idleP.classList.remove('hidden');
             idleP.classList.remove('panel-collapsed'); 
             
@@ -983,7 +983,6 @@
             } else {
                 let pBar = document.getElementById('searchProgressBar');
                 if(pBar) pBar.classList.add('hidden');
-                document.getElementById('jobListContainer').innerHTML = '<p class="text-center text-gray-500 text-[12px] font-bold py-6">กรุณาเปิดออนไลน์เพื่อดูงาน</p>';
             }
         } else {
             document.getElementById('loginModal').classList.remove('hidden');
@@ -1070,34 +1069,6 @@
         }
     });
 
-    window.toggleWpHighlight = function(element, lat, lng, elementId) {
-        if(!map) return;
-        let isHighlighted = element.classList.contains('bg-gray-700');
-        
-        document.querySelectorAll('#activeJobWaypointsContainer .cursor-pointer, #modalWaypointsContainer .cursor-pointer').forEach(c => {
-            c.classList.remove('bg-gray-700');
-        });
-
-        if (isHighlighted) {
-            if (activeJobData || selectedJobId) {
-                fitRouteBounds();
-            }
-        } else {
-            element.classList.add('bg-gray-700');
-            map.panTo({lat: lat, lng: lng});
-            if(map.getZoom() < 17) {
-                setTimeout(() => { map.setZoom(17); }, 200);
-            }
-            
-            isTrackingMode = false;
-            currentMapFocus = elementId;
-            let btnC = document.getElementById('btnCrosshair');
-            let btnO = document.getElementById('btnOverview');
-            if(btnC) { btnC.classList.remove('text-green-400'); btnC.classList.add('text-gray-300'); }
-            if(btnO) { btnO.classList.remove('text-gray-300'); btnO.classList.add('text-green-400'); }
-        }
-    };
-
     function centerToDriver() {
         isTrackingMode = true;
         currentMapFocus = null;
@@ -1149,6 +1120,33 @@
             centerToDriver();
         }
     }
+
+    const darkMapStyle = [
+        { elementType: "geometry", stylers: [{ color: "#242f3e" }] },
+        { elementType: "labels.text.stroke", stylers: [{ color: "#242f3e" }] },
+        { elementType: "labels.text.fill", stylers: [{ color: "#746855" }] },
+        { featureType: "administrative.locality", elementType: "labels.text.fill", stylers: [{ color: "#d59563" }] },
+        { featureType: "landscape.man_made", elementType: "geometry.fill", stylers: [{ color: "#364559" }] }, 
+        { featureType: "landscape.man_made", elementType: "geometry.stroke", stylers: [{ color: "#546a82" }] }, 
+        { featureType: "landscape.man_made.building", elementType: "geometry.fill", stylers: [{ color: "#506680" }] }, 
+        { featureType: "landscape.man_made.building", elementType: "geometry.stroke", stylers: [{ color: "#7089a6" }] },
+        { featureType: "landscape.natural", elementType: "geometry", stylers: [{ color: "#1e2836" }] }, 
+        { featureType: "poi", elementType: "labels.text.fill", stylers: [{ color: "#d59563" }] },
+        { featureType: "poi", elementType: "geometry", stylers: [{ color: "#283d3b" }] },
+        { featureType: "poi.park", elementType: "geometry", stylers: [{ color: "#263c3f" }] },
+        { featureType: "poi.park", elementType: "labels.text.fill", stylers: [{ color: "#6b9a76" }] },
+        { featureType: "road", elementType: "geometry", stylers: [{ color: "#111720" }] },
+        { featureType: "road", elementType: "geometry.stroke", stylers: [{ color: "#212a37" }] },
+        { featureType: "road", elementType: "labels.text.fill", stylers: [{ color: "#9ca5b3" }] },
+        { featureType: "road.highway", elementType: "geometry", stylers: [{ color: "#746855" }] },
+        { featureType: "road.highway", elementType: "geometry.stroke", stylers: [{ color: "#1f2835" }] },
+        { featureType: "road.highway", elementType: "labels.text.fill", stylers: [{ color: "#f3d19c" }] },
+        { featureType: "transit", elementType: "geometry", stylers: [{ color: "#2f3948" }] },
+        { featureType: "transit.station", elementType: "labels.text.fill", stylers: [{ color: "#d59563" }] },
+        { featureType: "water", elementType: "geometry", stylers: [{ color: "#17263c" }] },
+        { featureType: "water", elementType: "labels.text.fill", stylers: [{ color: "#515c6d" }] },
+        { featureType: "water", elementType: "labels.text.stroke", stylers: [{ color: "#17263c" }] }
+    ];
 
     function toggleMapStyle() {
         if(!map) return;
@@ -1326,9 +1324,9 @@
                     },
                     (err) => {
                         tg.checked = false;
-                        showAlert("แอปต้องการพิกัด GPS", "กรุณาเปิด 'ตำแหน่งที่ตั้ง' (Location) บนมือถือและอนุญาตให้เบราว์เซอร์เข้าถึง GPS ก่อนกดออนไลน์ครับ", "error");
+                        showAlert("ไม่สามารถออนไลน์ได้", "กรุณาเปิด 'ตำแหน่งที่ตั้ง' (Location) บนมือถือ และอนุญาตให้เบราว์เซอร์เข้าถึง GPS ของคุณก่อนกดออนไลน์", "error");
                     },
-                    { enableHighAccuracy: true, timeout: 10000 }
+                    { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
                 );
             } else {
                 tg.checked = false;
@@ -1403,8 +1401,7 @@
                 { enableHighAccuracy: true, maximumAge: 0, timeout: 5000 });
             }
             
-            let pBar = document.getElementById('searchProgressBar');
-            if(pBar && myActiveJobs.length === 0) pBar.classList.remove('hidden');
+            renderJobList();
 
         } else {
             if(statusEl) {
@@ -1422,12 +1419,9 @@
             if(watchId) navigator.geolocation.clearWatch(watchId);
             stopAlarm(); 
             
-            let pBar = document.getElementById('searchProgressBar');
-            if(pBar) pBar.classList.add('hidden');
-            
+            renderJobList();
             if(markerDriver) markerDriver.setMap(null); 
         }
-        renderJobList();
     }
 
     function processBookings() {
@@ -1570,22 +1564,21 @@
     }
 
     function renderJobList() {
-        const listContainer = document.getElementById('jobListContainer');
-        const pBar = document.getElementById('searchProgressBar');
+        const wrapContainer = document.getElementById('activeJobsListWrap');
         const emptyText = document.getElementById('jobListEmptyText');
-        if(!listContainer) return;
+        if(!wrapContainer || !emptyText) return;
         
         if (!isOnline) { 
-            if(emptyText) emptyText.classList.remove('hidden');
-            if(pBar) pBar.classList.add('hidden');
+            emptyText.innerText = "กรุณาเปิดออนไลน์เพื่อดูงาน";
+            emptyText.classList.remove('hidden');
+            wrapContainer.innerHTML = '';
             return; 
         }
-        
-        if(pBar && myActiveJobs.length === 0) pBar.classList.remove('hidden');
-        else if(pBar) pBar.classList.add('hidden');
 
         if (!allBookings) { 
-            if(emptyText) emptyText.classList.remove('hidden');
+            emptyText.innerText = "กำลังรอรับงานใหม่...";
+            emptyText.classList.remove('hidden');
+            wrapContainer.innerHTML = '';
             return; 
         }
 
@@ -1645,14 +1638,12 @@
         previousPendingJobsList = currentPendingJobs;
 
         if (jobCount === 0) {
-            if(emptyText) emptyText.classList.remove('hidden');
-            let existingJobs = listContainer.querySelectorAll('.cursor-pointer');
-            existingJobs.forEach(el => el.remove());
+            emptyText.innerText = "กำลังรอรับงานใหม่...";
+            emptyText.classList.remove('hidden');
+            wrapContainer.innerHTML = '';
         } else {
-            if(emptyText) emptyText.classList.add('hidden');
-            let existingJobs = listContainer.querySelectorAll('.cursor-pointer');
-            existingJobs.forEach(el => el.remove());
-            listContainer.insertAdjacentHTML('afterbegin', html);
+            emptyText.classList.add('hidden');
+            wrapContainer.innerHTML = html;
         }
     }
 
@@ -1712,63 +1703,47 @@
 
         renderWaypointsOnMap(job.waypoints);
 
-        let origin = {lat: driverLat, lng: driverLng}; 
-        let dest = {lat: job.dLat, lng: job.dLng};
-        let wps = [];
+        let wps = job.waypoints || [];
+        calculateSequentialRouteForModal(wps, 0, {lat: driverLat, lng: driverLng});
+    }
 
-        if (job.waypoints && job.waypoints.length > 0) {
-            dest = {lat: job.waypoints[job.waypoints.length-1].lat, lng: job.waypoints[job.waypoints.length-1].lng};
-            wps = job.waypoints.slice(0, -1).map(w => ({location: {lat: w.lat, lng: w.lng}, stopover: true}));
-        }
+    // ฟังก์ชันคำนวณช่วงต่อช่วง สำหรับหน้า Modal ก่อนรับงาน ป้องกัน API โดนแบน
+    function calculateSequentialRouteForModal(waypoints, index, currentPos) {
+        if (!directionsService || index >= waypoints.length) return;
         
-        let request = { origin: origin, destination: dest, travelMode: 'DRIVING' };
-        if (wps.length > 0) request.waypoints = wps;
-
-        if(directionsService) {
-            directionsService.route(request, (res, stat) => {
-                if(stat === 'OK') {
+        let target = waypoints[index];
+        let req = { origin: currentPos, destination: {lat: target.lat, lng: target.lng}, travelMode: 'DRIVING' };
+        
+        directionsService.route(req, (res, stat) => {
+            if (stat === 'OK') {
+                if (index === 0) {
                     if(directionsRenderer) directionsRenderer.setDirections(res);
-                    drawCustomPolylines(res, '#3b82f6'); 
-                    
                     currentRouteBounds = res.routes[0].bounds;
-
-                    let totalDistMeters = 0;
-                    let totalDurSeconds = 0;
-                    
-                    res.routes[0].legs.forEach((leg, idx) => {
-                        totalDistMeters += leg.distance.value;
-                        totalDurSeconds += leg.duration.value;
-                        
-                        let dKm = (totalDistMeters / 1000).toFixed(1);
-                        let mins = Math.round(totalDurSeconds / 60);
-                        let hrs = Math.floor(mins / 60);
-                        let remMins = mins % 60;
-                        let tStr = hrs > 0 ? `${hrs} ชม. ${remMins} นาที` : `${remMins} นาที`;
-                        
-                        let el = document.getElementById(`eta_modal_${idx}`);
-                        let wp = job.waypoints[idx];
-                        if(el && wp) {
-                            el.innerText = `ระยะทาง: ${dKm} กม. • ${tStr}`;
-                            if(wp.type === 'pick') el.className = 'text-[11px] font-bold text-green-400 mt-0.5';
-                            else if(wp.type === 'drop') el.className = 'text-[11px] font-bold text-red-400 mt-0.5';
-                            else el.className = 'text-[11px] font-bold text-yellow-500 mt-0.5';
-                        }
-                    });
-
-                    let totalDist = totalDistMeters / 1000;
-                    let totalMins = Math.round(totalDurSeconds / 60);
-                    let hrs = Math.floor(totalMins / 60);
-                    let mins = totalMins % 60;
-                    let timeStr = hrs > 0 ? `${hrs} ชม. ${mins} นาที` : `${mins} นาที`;
-
-                    if(tE) tE.innerText = `ระยะทางรวม (รถ -> จุดหมายสุดท้าย): ${totalDist.toFixed(1)} กม. • เวลาประเมิน: ${timeStr}`;
-
-                    if(map) {
-                        setTimeout(() => { map.fitBounds(currentRouteBounds, { top: 120, right: 30, bottom: getSafeBottomPadding() + 20, left: 30 }); }, 100);
-                    }
+                    drawCustomPolylines(res, '#3b82f6');
+                    setTimeout(() => { map.fitBounds(currentRouteBounds, { top: 120, right: 30, bottom: getSafeBottomPadding() + 20, left: 30 }); }, 100);
                 }
-            });
-        }
+
+                let leg = res.routes[0].legs[0];
+                let dKm = (leg.distance.value / 1000).toFixed(1);
+                let mins = Math.round(leg.duration.value / 60);
+                let hrs = Math.floor(mins / 60);
+                let remMins = mins % 60;
+                let tStr = hrs > 0 ? `${hrs} ชม. ${remMins} นาที` : `${remMins} นาที`;
+
+                let el = document.getElementById(`eta_modal_${index}`);
+                if(el) {
+                    el.innerText = `ระยะทาง: ${dKm} กม. • ${tStr}`;
+                    if(target.type === 'pick') el.className = 'text-[11px] font-bold text-green-400 mt-0.5';
+                    else if(target.type === 'drop') el.className = 'text-[11px] font-bold text-red-400 mt-0.5';
+                    else el.className = 'text-[11px] font-bold text-yellow-500 mt-0.5';
+                }
+
+                // สั่งคำนวณอันต่อไปแบบหน่วงเวลาเพื่อป้องกัน Query limit
+                setTimeout(() => {
+                    calculateSequentialRouteForModal(waypoints, index + 1, {lat: target.lat, lng: target.lng});
+                }, 400);
+            }
+        });
     }
 
     function clearMapRoutes() {
@@ -1866,9 +1841,45 @@
                 
                 switchDriverTab(2);
                 updateActiveJobUI();
-                updateRoute(true); 
+                
+                // รับงานปุ๊บ เล็งกล้องไปที่รถทันที
+                setTimeout(() => { centerToDriver(); }, 500);
             }
         });
+    }
+
+    function openInAppChatModal() {
+        document.getElementById('inAppChatModal').classList.remove('hidden');
+        const box = document.getElementById('inAppChatMessages');
+        
+        if(!activeJobId) return;
+        if(!activeChatListenerRef) {
+            activeChatListenerRef = db.ref('bookings/' + activeJobId + '/chats');
+            activeChatListenerRef.on('child_added', snap => {
+                let messageData = snap.val();
+                let isSenderMe = messageData.sender === 'driver';
+                let messageDiv = document.createElement('div');
+                messageDiv.className = `flex w-full ${isSenderMe ? 'justify-end' : 'justify-start'} animate-fade-in`;
+                messageDiv.innerHTML = `<div class="${isSenderMe ? 'bg-green-600' : 'bg-gray-800 border border-gray-700'} text-white px-4 py-2.5 rounded-2xl max-w-[75%] text-[13px] font-bold shadow-sm">${messageData.text}</div>`;
+                box.appendChild(messageDiv);
+                box.scrollTop = box.scrollHeight;
+            });
+        }
+    }
+    
+    function closeInAppChatModal() { 
+        document.getElementById('inAppChatModal').classList.add('hidden'); 
+    }
+    
+    function sendInAppChatMessage() {
+        let inputEl = document.getElementById('inAppChatInput');
+        let textVal = inputEl.value.trim();
+        if(!textVal || !activeJobId) return;
+        db.ref('bookings/' + activeJobId + '/chats').push({
+            sender: 'driver',
+            text: textVal,
+            timestamp: firebase.database.ServerValue.TIMESTAMP
+        }).then(() => { inputEl.value = ''; });
     }
 
     function updateActiveJobUI() {
@@ -1977,6 +1988,7 @@
                 if(floatStatus) floatStatus.classList.add('border-green-500', 'shadow-[0_0_15px_rgba(34,197,94,0.4)]');
                 if(statusText) { statusText.innerText = "กำลังไปจุดรับ: " + shortName; statusText.className = "font-black text-[15px] leading-tight text-green-400 truncate"; }
                 
+                // คืนชีพปุ่ม มาถึงจุดรับ > ผู้โดยสารขึ้นรถ
                 if (s.includes("มาถึงจุดรับแล้ว") || s.includes("มาถึงจุดรับ")) {
                     if(btnAction) { btnAction.innerText = "ผู้โดยสารขึ้นรถแล้ว"; btnAction.className = "flex-[3] bg-yellow-500/90 border border-yellow-400/50 text-gray-900 py-1.5 rounded-lg font-bold text-[13px] shadow-md hover:bg-yellow-400 transition"; }
                 } else {
@@ -1986,7 +1998,6 @@
                 if(cjb) cjb.classList.remove('hidden');
                 if(contactBox) contactBox.classList.remove('hidden'); 
                 if(rerouteBox) rerouteBox.classList.add('hidden');
-
             } else if (currentWp.type === 'waypoint') {
                 if(floatStatus) floatStatus.classList.add('border-yellow-500', 'shadow-[0_0_15px_rgba(234,179,8,0.4)]');
                 if(statusText) { statusText.innerText = "กำลังไปจุดแวะ: " + shortName; statusText.className = "font-black text-[15px] leading-tight text-yellow-500 truncate"; }
@@ -2035,7 +2046,8 @@
 
         if (currentWp.type === 'pick') {
             if (s.includes("มาถึงจุดรับแล้ว") || s.includes("มาถึงจุดรับ")) {
-                showConfirm("ผู้โดยสารขึ้นรถแล้ว?", "ผู้โดยสารขึ้นรถเรียบร้อย และพร้อมออกเดินทางใช่หรือไม่?", "yellow", "ขึ้นรถแล้ว", () => executeBoarded(unpassedIndex));
+                // แก้ไขข้อ 4: ไม่ต้องมี Modal ถามซ้ำแล้ว กดปุ๊บทำงานเลย
+                executeBoarded(unpassedIndex);
             } else {
                 showConfirm("ยืนยันมาถึงจุดรับ?", `คุณได้เดินทางมาถึง:\n${currentWp.name}\nเรียบร้อยแล้วใช่หรือไม่?`, "green", "มาถึงแล้ว", () => executeArrivePick(unpassedIndex));
             }
@@ -2210,6 +2222,7 @@
         switchDriverTab(1);
     }
 
+    // ฟังก์ชันคำนวณช่วงต่อช่วง สำหรับหน้างานปัจจุบัน (Active Job) แบบแยกบรรทัด
     function updateRoute(forceZoom = false) {
         if(!activeJobData || !directionsService) return;
         
@@ -2219,86 +2232,76 @@
         if (unpassedIndex === -1) return; 
         
         let origin = {lat: driverLat, lng: driverLng};
-        let nextWp = waypoints[unpassedIndex];
+        let wps = waypoints.slice(unpassedIndex);
         
-        let routeWaypoints = [];
-        let dest = {lat: nextWp.lat, lng: nextWp.lng};
+        // ให้มันคำนวณช่วงของตัวมันเองแยกทีละอัน
+        calculateSequentialRouteForActiveJob(wps, 0, origin, unpassedIndex, forceZoom);
+    }
+
+    function calculateSequentialRouteForActiveJob(wps, i, origin, baseIndex, forceZoom) {
+        if (!directionsService || i >= wps.length) return;
         
-        if (activeJobData.status.includes("ออกเดินทาง") || activeJobData.status.includes("ไปยังจุดส่ง") || activeJobData.status.includes("รับผู้โดยสารแล้ว")) {
-            let remaining = waypoints.slice(unpassedIndex);
-            if (remaining.length > 0) {
-                dest = {lat: remaining[remaining.length - 1].lat, lng: remaining[remaining.length - 1].lng};
-                if (remaining.length > 1) {
-                    routeWaypoints = remaining.slice(0, -1).map(w => ({location: {lat: w.lat, lng: w.lng}, stopover: true}));
-                }
-            }
-        }
+        let target = wps[i];
+        let req = { origin: origin, destination: {lat: target.lat, lng: target.lng}, travelMode: 'DRIVING' };
 
-        let routeRequest = {origin: origin, destination: dest, travelMode: 'DRIVING'};
-        if (routeWaypoints.length > 0) routeRequest.waypoints = routeWaypoints;
-
-        directionsService.route(routeRequest, (res, stat) => {
+        directionsService.route(req, (res, stat) => {
             if(stat === 'OK') {
-                if(directionsRenderer) directionsRenderer.setDirections(res); 
-                
-                let polyColor = nextWp.type === 'pick' ? '#22c55e' : '#3b82f6';
-                drawCustomPolylines(res, polyColor); 
-                
-                currentRouteBounds = res.routes[0].bounds; 
+                if (i === 0) {
+                    if(directionsRenderer) directionsRenderer.setDirections(res); 
+                    let polyColor = target.type === 'pick' ? '#22c55e' : '#3b82f6';
+                    drawCustomPolylines(res, polyColor); 
+                    
+                    currentRouteBounds = res.routes[0].bounds; 
 
-                let accumDist = 0; let accumDur = 0;
-                res.routes[0].legs.forEach((leg, idx) => {
-                    accumDist += leg.distance.value;
-                    accumDur += leg.duration.value;
-                    
-                    let actualIndex = unpassedIndex + idx;
-                    let wp = activeJobData.waypoints[actualIndex];
-                    
-                    let dKm = (accumDist / 1000).toFixed(1);
-                    let mins = Math.round(accumDur / 60);
-                    let hrs = Math.floor(mins / 60);
-                    let remMins = mins % 60;
-                    let tStr = hrs > 0 ? `${hrs} ชม. ${remMins} นาที` : `${remMins} นาที`;
-                    
-                    let el = document.getElementById(`eta_active_${actualIndex}`);
-                    if(el && wp) {
-                        el.innerText = `ระยะทาง: ${dKm} กม. • ${tStr}`;
-                        if(wp.type === 'pick') el.className = 'text-[11px] font-bold text-green-400 mt-0.5';
-                        else if(wp.type === 'drop') el.className = 'text-[11px] font-bold text-red-400 mt-0.5';
-                        else el.className = 'text-[11px] font-bold text-yellow-500 mt-0.5';
+                    let topEta = document.getElementById('etaDisplay');
+                    if (topEta) {
+                        topEta.innerText = `ระยะทาง ${res.routes[0].legs[0].distance.text} • ${res.routes[0].legs[0].duration.text}`;
+                        topEta.classList.remove('hidden');
                     }
-                });
 
-                let firstLeg = res.routes[0].legs[0]; 
-                let topEta = document.getElementById('etaDisplay');
-                
-                if (topEta) {
-                    topEta.innerText = `ระยะทาง ${firstLeg.distance.text} • ${firstLeg.duration.text}`;
-                    topEta.classList.remove('hidden');
-                }
-
-                let distKm = firstLeg.distance.value / 1000;
-                if(nextWp.type === 'pick' && distKm <= 2.0 && !activeJobData.notifiedPick) {
-                    activeJobData.notifiedPick = true; 
-                    db.ref('bookings/' + activeJobId).update({ notifiedPick: true });
-                    setTimeout(() => { sendLineNotify(activeJobId, `⚡ คนขับใกล้ถึงจุดรับแล้วครับ! (ระยะห่างอีกประมาณ ${distKm.toFixed(1)} กม.)`); }, 3000);
-                } else if(nextWp.type === 'drop' && distKm <= 2.0 && !activeJobData.notifiedDrop) {
-                    activeJobData.notifiedDrop = true; 
-                    db.ref('bookings/' + activeJobId).update({ notifiedDrop: true });
-                    setTimeout(() => { sendLineNotify(activeJobId, `⚡ ใกล้ถึงจุดหมายปลายทางแล้วครับ! (ระยะห่างอีกประมาณ ${distKm.toFixed(1)} กม.)`); }, 3000);
-                }
-                
-                let bO = document.getElementById('btnOverview');
-                if(bO) bO.classList.remove('hidden');
-
-                if (forceZoom && map && document.getElementById('navBtn2').classList.contains('text-green-400')) {
-                    isTrackingMode = false; 
-                    let btnC = document.getElementById('btnCrosshair');
-                    if(btnC) { btnC.classList.remove('text-green-400'); btnC.classList.add('text-gray-300'); }
-                    if(bO) { bO.classList.remove('text-gray-300'); bO.classList.add('text-green-400'); }
+                    // แจ้งเตือนเมื่อใกล้ถึง
+                    let distKm = res.routes[0].legs[0].distance.value / 1000;
+                    if(target.type === 'pick' && distKm <= 2.0 && !activeJobData.notifiedPick) {
+                        activeJobData.notifiedPick = true; 
+                        db.ref('bookings/' + activeJobId).update({ notifiedPick: true });
+                        setTimeout(() => { sendLineNotify(activeJobId, `⚡ คนขับใกล้ถึงจุดรับแล้วครับ! (ระยะห่างอีกประมาณ ${distKm.toFixed(1)} กม.)`); }, 3000);
+                    } else if(target.type === 'drop' && distKm <= 2.0 && !activeJobData.notifiedDrop) {
+                        activeJobData.notifiedDrop = true; 
+                        db.ref('bookings/' + activeJobId).update({ notifiedDrop: true });
+                        setTimeout(() => { sendLineNotify(activeJobId, `⚡ ใกล้ถึงจุดหมายปลายทางแล้วครับ! (ระยะห่างอีกประมาณ ${distKm.toFixed(1)} กม.)`); }, 3000);
+                    }
                     
-                    setTimeout(() => { map.fitBounds(currentRouteBounds, { top: 180, right: 50, bottom: getSafeBottomPadding(), left: 50 }); }, 200);
+                    let bO = document.getElementById('btnOverview');
+                    if(bO) bO.classList.remove('hidden');
+
+                    if (forceZoom && map && document.getElementById('navBtn2').classList.contains('text-green-400')) {
+                        isTrackingMode = false; 
+                        let btnC = document.getElementById('btnCrosshair');
+                        if(btnC) { btnC.classList.remove('text-green-400'); btnC.classList.add('text-gray-300'); }
+                        if(bO) { bO.classList.remove('text-gray-300'); bO.classList.add('text-green-400'); }
+                        setTimeout(() => { map.fitBounds(currentRouteBounds, { top: 180, right: 50, bottom: getSafeBottomPadding(), left: 50 }); }, 200);
+                    }
                 }
+
+                let dKm = (res.routes[0].legs[0].distance.value / 1000).toFixed(1);
+                let mins = Math.round(res.routes[0].legs[0].duration.value / 60);
+                let hrs = Math.floor(mins / 60);
+                let remMins = mins % 60;
+                let tStr = hrs > 0 ? `${hrs} ชม. ${remMins} นาที` : `${remMins} นาที`;
+                
+                let actualIndex = baseIndex + i;
+                let el = document.getElementById(`eta_active_${actualIndex}`);
+                if(el) {
+                    el.innerText = `ระยะทาง: ${dKm} กม. • ${tStr}`;
+                    if(target.type === 'pick') el.className = 'text-[11px] font-bold text-green-400 mt-0.5';
+                    else if(target.type === 'drop') el.className = 'text-[11px] font-bold text-red-400 mt-0.5';
+                    else el.className = 'text-[11px] font-bold text-yellow-500 mt-0.5';
+                }
+
+                // สั่งคำนวณอันต่อไปแบบหน่วงเวลาเพื่อป้องกัน Query limit
+                setTimeout(() => {
+                    calculateSequentialRouteForActiveJob(wps, i + 1, {lat: target.lat, lng: target.lng}, baseIndex, false);
+                }, 400);
             }
         });
     }
