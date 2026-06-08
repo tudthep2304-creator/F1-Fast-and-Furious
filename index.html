@@ -417,9 +417,9 @@
               </div>
           </div>
 
-          <div class="mb-4 glass-box py-2 px-3 rounded-2xl border border-gray-700 relative shadow-sm max-h-[140px] flex flex-col">
-              <div class="absolute left-[1.3rem] top-5 bottom-5 w-0.5 border-l-[1.5px] border-dashed border-gray-700 z-0"></div>
-              <div id="modalWaypointsContainer" class="flex flex-col w-full relative z-10 gap-1 overflow-y-auto slim-scroll pr-1">
+          <div class="mb-5 relative max-h-[150px] flex flex-col pl-1">
+              <div class="absolute left-[0.55rem] top-3 bottom-3 w-0.5 border-l-[1.5px] border-dashed border-gray-600 z-0"></div>
+              <div id="modalWaypointsContainer" class="flex flex-col w-full relative z-10 gap-1.5 overflow-y-auto slim-scroll">
               </div>
           </div>
 
@@ -513,7 +513,6 @@
     });
     const db = firebase.database();
 
-    // ประกาศฟังก์ชันให้เป็น Global ป้องกัน undefined
     window.toggleWpHighlight = function(element, lat, lng, elementId) {
         if(!map) return;
         let isHighlighted = element.classList.contains('bg-gray-700');
@@ -983,6 +982,7 @@
             } else {
                 let pBar = document.getElementById('searchProgressBar');
                 if(pBar) pBar.classList.add('hidden');
+                document.getElementById('jobListContainer').innerHTML = '<p class="text-center text-gray-500 text-[12px] font-bold py-6">กรุณาเปิดออนไลน์เพื่อดูงาน</p>';
             }
         } else {
             document.getElementById('loginModal').classList.remove('hidden');
@@ -1120,33 +1120,6 @@
             centerToDriver();
         }
     }
-
-    const darkMapStyle = [
-        { elementType: "geometry", stylers: [{ color: "#242f3e" }] },
-        { elementType: "labels.text.stroke", stylers: [{ color: "#242f3e" }] },
-        { elementType: "labels.text.fill", stylers: [{ color: "#746855" }] },
-        { featureType: "administrative.locality", elementType: "labels.text.fill", stylers: [{ color: "#d59563" }] },
-        { featureType: "landscape.man_made", elementType: "geometry.fill", stylers: [{ color: "#364559" }] }, 
-        { featureType: "landscape.man_made", elementType: "geometry.stroke", stylers: [{ color: "#546a82" }] }, 
-        { featureType: "landscape.man_made.building", elementType: "geometry.fill", stylers: [{ color: "#506680" }] }, 
-        { featureType: "landscape.man_made.building", elementType: "geometry.stroke", stylers: [{ color: "#7089a6" }] },
-        { featureType: "landscape.natural", elementType: "geometry", stylers: [{ color: "#1e2836" }] }, 
-        { featureType: "poi", elementType: "labels.text.fill", stylers: [{ color: "#d59563" }] },
-        { featureType: "poi", elementType: "geometry", stylers: [{ color: "#283d3b" }] },
-        { featureType: "poi.park", elementType: "geometry", stylers: [{ color: "#263c3f" }] },
-        { featureType: "poi.park", elementType: "labels.text.fill", stylers: [{ color: "#6b9a76" }] },
-        { featureType: "road", elementType: "geometry", stylers: [{ color: "#111720" }] },
-        { featureType: "road", elementType: "geometry.stroke", stylers: [{ color: "#212a37" }] },
-        { featureType: "road", elementType: "labels.text.fill", stylers: [{ color: "#9ca5b3" }] },
-        { featureType: "road.highway", elementType: "geometry", stylers: [{ color: "#746855" }] },
-        { featureType: "road.highway", elementType: "geometry.stroke", stylers: [{ color: "#1f2835" }] },
-        { featureType: "road.highway", elementType: "labels.text.fill", stylers: [{ color: "#f3d19c" }] },
-        { featureType: "transit", elementType: "geometry", stylers: [{ color: "#2f3948" }] },
-        { featureType: "transit.station", elementType: "labels.text.fill", stylers: [{ color: "#d59563" }] },
-        { featureType: "water", elementType: "geometry", stylers: [{ color: "#17263c" }] },
-        { featureType: "water", elementType: "labels.text.fill", stylers: [{ color: "#515c6d" }] },
-        { featureType: "water", elementType: "labels.text.stroke", stylers: [{ color: "#17263c" }] }
-    ];
 
     function toggleMapStyle() {
         if(!map) return;
@@ -1401,7 +1374,8 @@
                 { enableHighAccuracy: true, maximumAge: 0, timeout: 5000 });
             }
             
-            renderJobList();
+            let pBar = document.getElementById('searchProgressBar');
+            if(pBar && myActiveJobs.length === 0) pBar.classList.remove('hidden');
 
         } else {
             if(statusEl) {
@@ -1419,9 +1393,12 @@
             if(watchId) navigator.geolocation.clearWatch(watchId);
             stopAlarm(); 
             
-            renderJobList();
+            let pBar = document.getElementById('searchProgressBar');
+            if(pBar) pBar.classList.add('hidden');
+            
             if(markerDriver) markerDriver.setMap(null); 
         }
+        renderJobList();
     }
 
     function processBookings() {
@@ -1564,21 +1541,22 @@
     }
 
     function renderJobList() {
-        const wrapContainer = document.getElementById('activeJobsListWrap');
+        const listContainer = document.getElementById('jobListContainer');
+        const pBar = document.getElementById('searchProgressBar');
         const emptyText = document.getElementById('jobListEmptyText');
-        if(!wrapContainer || !emptyText) return;
+        if(!listContainer) return;
         
         if (!isOnline) { 
-            emptyText.innerText = "กรุณาเปิดออนไลน์เพื่อดูงาน";
-            emptyText.classList.remove('hidden');
-            wrapContainer.innerHTML = '';
+            if(emptyText) emptyText.classList.remove('hidden');
+            if(pBar) pBar.classList.add('hidden');
             return; 
         }
+        
+        if(pBar && myActiveJobs.length === 0) pBar.classList.remove('hidden');
+        else if(pBar) pBar.classList.add('hidden');
 
         if (!allBookings) { 
-            emptyText.innerText = "กำลังรอรับงานใหม่...";
-            emptyText.classList.remove('hidden');
-            wrapContainer.innerHTML = '';
+            if(emptyText) emptyText.classList.remove('hidden');
             return; 
         }
 
@@ -1638,12 +1616,14 @@
         previousPendingJobsList = currentPendingJobs;
 
         if (jobCount === 0) {
-            emptyText.innerText = "กำลังรอรับงานใหม่...";
-            emptyText.classList.remove('hidden');
-            wrapContainer.innerHTML = '';
+            if(emptyText) emptyText.classList.remove('hidden');
+            let existingJobs = listContainer.querySelectorAll('.cursor-pointer');
+            existingJobs.forEach(el => el.remove());
         } else {
-            emptyText.classList.add('hidden');
-            wrapContainer.innerHTML = html;
+            if(emptyText) emptyText.classList.add('hidden');
+            let existingJobs = listContainer.querySelectorAll('.cursor-pointer');
+            existingJobs.forEach(el => el.remove());
+            listContainer.insertAdjacentHTML('afterbegin', html);
         }
     }
 
@@ -1671,7 +1651,13 @@
         }
         
         let tE = document.getElementById('detailTotalEta');
-        if(tE) tE.innerText = `ระยะทางรวม: กำลังคำนวณ...`;
+        let dist = job.distance || 0;
+        let dur = job.duration || 0;
+        let hrs = Math.floor(dur / 60);
+        let mins = dur % 60;
+        let timeStr = hrs > 0 ? `${hrs} ชม. ${mins} นาที` : `${mins} นาที`;
+
+        if(tE) tE.innerText = `ระยะทางรวม (ทั้งหมด): ${dist} กม. • ${timeStr}`;
         
         let mod = document.getElementById('jobDetailModal');
         let bO = document.getElementById('btnOverview');
@@ -1682,19 +1668,15 @@
         if(container) {
             let html = '';
             let waypoints = job.waypoints || [];
-            let pCount = 1, dCount = 1;
             waypoints.forEach((wp, idx) => {
-                let num = wp.type === 'pick' ? pCount++ : dCount++;
                 let colorClass = wp.type === 'pick' ? 'text-green-500' : (wp.type === 'drop' ? 'text-red-500' : 'text-yellow-500');
                 
-                let extraText = `<p class="text-[10px] font-bold text-gray-500 mt-0.5" id="eta_modal_${idx}">กำลังคำนวณ...</p>`;
-
                 html += `
-                <div class="flex items-start gap-2.5 w-full min-w-0 p-1.5 rounded-lg transition cursor-pointer hover:bg-white/10" onclick="toggleWpHighlight(this, ${wp.lat}, ${wp.lng}, 'mdl_wp${idx}')" id="mdl_wp${idx}">
+                <div class="flex items-start gap-2.5 w-full min-w-0 p-1.5 rounded-lg transition cursor-pointer hover:bg-gray-700" onclick="toggleWpHighlight(this, ${wp.lat}, ${wp.lng}, 'mdl_wp${idx}')" id="mdl_wp${idx}">
                     <div class="shrink-0 mt-0.5"><i class="fas fa-circle text-[10px] ${colorClass}"></i></div>
                     <div class="flex-1 overflow-hidden min-w-0">
                         <p class="text-[12px] text-gray-200 truncate font-medium leading-tight">${wp.name}</p>
-                        ${extraText}
+                        <p class="text-[10px] font-bold text-gray-500 mt-0.5" id="eta_modal_${idx}">กำลังคำนวณ...</p>
                     </div>
                 </div>`;
             });
@@ -1703,11 +1685,14 @@
 
         renderWaypointsOnMap(job.waypoints);
 
+        // คำนวณช่วงต่อช่วง
+        let origin = {lat: driverLat, lng: driverLng}; 
         let wps = job.waypoints || [];
-        calculateSequentialRouteForModal(wps, 0, {lat: driverLat, lng: driverLng});
+        if(wps.length > 0) {
+            calculateSequentialRouteForModal(wps, 0, origin);
+        }
     }
 
-    // ฟังก์ชันคำนวณช่วงต่อช่วง สำหรับหน้า Modal ก่อนรับงาน ป้องกัน API โดนแบน
     function calculateSequentialRouteForModal(waypoints, index, currentPos) {
         if (!directionsService || index >= waypoints.length) return;
         
@@ -1738,7 +1723,6 @@
                     else el.className = 'text-[11px] font-bold text-yellow-500 mt-0.5';
                 }
 
-                // สั่งคำนวณอันต่อไปแบบหน่วงเวลาเพื่อป้องกัน Query limit
                 setTimeout(() => {
                     calculateSequentialRouteForModal(waypoints, index + 1, {lat: target.lat, lng: target.lng});
                 }, 400);
@@ -1842,7 +1826,6 @@
                 switchDriverTab(2);
                 updateActiveJobUI();
                 
-                // รับงานปุ๊บ เล็งกล้องไปที่รถทันที
                 setTimeout(() => { centerToDriver(); }, 500);
             }
         });
@@ -1951,7 +1934,7 @@
 
                 let extraText = wp.passed ? '' : `<p class="text-[10px] font-bold text-gray-500 mt-0.5" id="eta_active_${index}">กำลังคำนวณ...</p>`;
 
-                wpHtml += `<div class="flex items-start gap-2.5 w-full min-w-0 p-1.5 rounded-lg transition cursor-pointer hover:bg-white/10" onclick="toggleWpHighlight(this, ${wp.lat}, ${wp.lng}, 'wp${index}')" id="wp${index}">
+                wpHtml += `<div class="flex items-start gap-2.5 w-full min-w-0 p-1.5 rounded-lg transition cursor-pointer hover:bg-gray-700" onclick="toggleWpHighlight(this, ${wp.lat}, ${wp.lng}, 'wp${index}')" id="wp${index}">
                     <div class="shrink-0 mt-0.5"><i class="fas fa-circle text-[10px] ${iconClass}"></i></div>
                     <div class="flex-1 overflow-hidden min-w-0">
                         <p class="text-[12px] ${textClass} truncate font-medium leading-tight">${wp.name}</p>
@@ -1988,7 +1971,6 @@
                 if(floatStatus) floatStatus.classList.add('border-green-500', 'shadow-[0_0_15px_rgba(34,197,94,0.4)]');
                 if(statusText) { statusText.innerText = "กำลังไปจุดรับ: " + shortName; statusText.className = "font-black text-[15px] leading-tight text-green-400 truncate"; }
                 
-                // คืนชีพปุ่ม มาถึงจุดรับ > ผู้โดยสารขึ้นรถ
                 if (s.includes("มาถึงจุดรับแล้ว") || s.includes("มาถึงจุดรับ")) {
                     if(btnAction) { btnAction.innerText = "ผู้โดยสารขึ้นรถแล้ว"; btnAction.className = "flex-[3] bg-yellow-500/90 border border-yellow-400/50 text-gray-900 py-1.5 rounded-lg font-bold text-[13px] shadow-md hover:bg-yellow-400 transition"; }
                 } else {
@@ -2046,7 +2028,6 @@
 
         if (currentWp.type === 'pick') {
             if (s.includes("มาถึงจุดรับแล้ว") || s.includes("มาถึงจุดรับ")) {
-                // แก้ไขข้อ 4: ไม่ต้องมี Modal ถามซ้ำแล้ว กดปุ๊บทำงานเลย
                 executeBoarded(unpassedIndex);
             } else {
                 showConfirm("ยืนยันมาถึงจุดรับ?", `คุณได้เดินทางมาถึง:\n${currentWp.name}\nเรียบร้อยแล้วใช่หรือไม่?`, "green", "มาถึงแล้ว", () => executeArrivePick(unpassedIndex));
@@ -2222,7 +2203,6 @@
         switchDriverTab(1);
     }
 
-    // ฟังก์ชันคำนวณช่วงต่อช่วง สำหรับหน้างานปัจจุบัน (Active Job) แบบแยกบรรทัด
     function updateRoute(forceZoom = false) {
         if(!activeJobData || !directionsService) return;
         
@@ -2234,7 +2214,6 @@
         let origin = {lat: driverLat, lng: driverLng};
         let wps = waypoints.slice(unpassedIndex);
         
-        // ให้มันคำนวณช่วงของตัวมันเองแยกทีละอัน
         calculateSequentialRouteForActiveJob(wps, 0, origin, unpassedIndex, forceZoom);
     }
 
@@ -2259,7 +2238,6 @@
                         topEta.classList.remove('hidden');
                     }
 
-                    // แจ้งเตือนเมื่อใกล้ถึง
                     let distKm = res.routes[0].legs[0].distance.value / 1000;
                     if(target.type === 'pick' && distKm <= 2.0 && !activeJobData.notifiedPick) {
                         activeJobData.notifiedPick = true; 
@@ -2298,7 +2276,6 @@
                     else el.className = 'text-[11px] font-bold text-yellow-500 mt-0.5';
                 }
 
-                // สั่งคำนวณอันต่อไปแบบหน่วงเวลาเพื่อป้องกัน Query limit
                 setTimeout(() => {
                     calculateSequentialRouteForActiveJob(wps, i + 1, {lat: target.lat, lng: target.lng}, baseIndex, false);
                 }, 400);
