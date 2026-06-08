@@ -451,7 +451,7 @@
                   <span class="font-black text-green-400 text-[16px] bg-gray-800 px-3 py-1 rounded-lg shadow-inner" id="histDetPrice">฿0</span>
               </div>
 
-              <div class="bg-gray-900 p-3.5 rounded-xl border border-gray-700 relative shadow-sm">
+              <div class="bg-gray-900 p-3.5 rounded-xl border border-gray-700 relative shadow-sm max-h-[150px] overflow-y-auto slim-scroll">
                   <div class="absolute left-[1.35rem] top-6 bottom-6 w-0.5 border-l-[1.5px] border-dashed border-gray-700"></div>
                   <div id="historyDetailWaypointsContainer" class="flex flex-col w-full relative z-10 gap-2"></div>
               </div>
@@ -587,6 +587,7 @@
     let isSatelliteMode = false;
     let activeChatListenerRef = null;
 
+    let currentConfirmCallback = null;
     function showConfirm(title, message, type, confirmText, callback) {
         document.getElementById('confirmTitle').innerText = title;
         document.getElementById('confirmMessage').innerText = message;
@@ -1065,24 +1066,24 @@
         }
     });
 
-    function toggleWpHighlight(element, lat, lng, elementId) {
+    windowContext.toggleWpHighlight = function(element, lat, lng, elementId) {
         if(!map) return;
-        let isHighlighted = element.classList.contains('bg-gray-700');
+        let isHighlighted = element.classList.contains('bg-white/10');
         
-        document.querySelectorAll('#activeJobWaypointsContainer .cursor-pointer, #modalWaypointsContainer .cursor-pointer').forEach(c => {
-            c.classList.remove('bg-gray-700');
-        });
+        let container = document.getElementById('activeJobWaypointsContainer') || document.getElementById('modalWaypointsContainer');
+        if(container) {
+            let children = container.querySelectorAll('.cursor-pointer');
+            children.forEach(c => c.classList.remove('bg-white/10'));
+        }
 
         if (isHighlighted) {
             if (activeJobData || selectedJobId) {
                 fitRouteBounds();
             }
         } else {
-            element.classList.add('bg-gray-700');
+            element.classList.add('bg-white/10');
             map.panTo({lat: lat, lng: lng});
-            if(map.getZoom() < 17) {
-                setTimeout(() => { map.setZoom(17); }, 200);
-            }
+            setTimeout(() => { map.setZoom(17); }, 200);
             
             isTrackingMode = false;
             currentMapFocus = elementId;
@@ -1091,15 +1092,17 @@
             if(btnC) { btnC.classList.remove('text-green-400'); btnC.classList.add('text-gray-300'); }
             if(btnO) { btnO.classList.remove('text-gray-300'); btnO.classList.add('text-green-400'); }
         }
-    }
+    };
 
     function centerToDriver() {
         isTrackingMode = true;
         currentMapFocus = null;
         
-        document.querySelectorAll('#activeJobWaypointsContainer .cursor-pointer, #modalWaypointsContainer .cursor-pointer').forEach(c => {
-            c.classList.remove('bg-gray-700');
-        });
+        let container = document.getElementById('activeJobWaypointsContainer');
+        if(container) {
+            let children = container.querySelectorAll('.cursor-pointer');
+            children.forEach(c => c.classList.remove('bg-white/10'));
+        }
 
         let btnC = document.getElementById('btnCrosshair');
         let btnO = document.getElementById('btnOverview');
@@ -1122,9 +1125,11 @@
         isTrackingMode = false;
         currentMapFocus = null;
 
-        document.querySelectorAll('#activeJobWaypointsContainer .cursor-pointer, #modalWaypointsContainer .cursor-pointer').forEach(c => {
-            c.classList.remove('bg-gray-700');
-        });
+        let container = document.getElementById('activeJobWaypointsContainer');
+        if(container) {
+            let children = container.querySelectorAll('.cursor-pointer');
+            children.forEach(c => c.classList.remove('bg-white/10'));
+        }
 
         let btnC = document.getElementById('btnCrosshair');
         let btnO = document.getElementById('btnOverview');
@@ -1689,17 +1694,15 @@
             let pCount = 1, dCount = 1;
             waypoints.forEach((wp, idx) => {
                 let num = wp.type === 'pick' ? pCount++ : dCount++;
-                let colorClass = wp.type === 'pick' ? 'text-green-500' : (wp.type === 'drop' ? 'text-red-500' : 'text-yellow-500');
-                let textClass = 'text-gray-200';
+                let colorClass = wp.type === 'pick' ? 'text-green-500 border-gray-800' : (wp.type === 'drop' ? 'text-red-500 border-gray-800' : 'text-yellow-500 border-gray-800');
                 
-                let extraText = '';
-                if (idx === 0) extraText = `<p class="text-[10px] font-bold text-green-400 mt-0.5" id="modalEtaToPick"><i class="fas fa-car-side"></i> ห่างจากคุณ: กำลังคำนวณ...</p>`;
+                let extraText = `<p class="text-[10px] font-bold text-gray-500 mt-0.5" id="eta_modal_${idx}">กำลังคำนวณ...</p>`;
 
                 html += `
                 <div class="flex items-start gap-2.5 w-full min-w-0 p-1.5 rounded-lg transition cursor-pointer hover:bg-white/10" onclick="toggleWpHighlight(this, ${wp.lat}, ${wp.lng}, 'mdl_wp${idx}')" id="mdl_wp${idx}">
-                    <div class="shrink-0 mt-0.5"><i class="fas fa-circle text-[10px] ${colorClass}"></i></div>
+                    <div class="shrink-0 mt-0.5"><i class="fas fa-circle text-[10px] ${colorClass} rounded-full"></i></div>
                     <div class="flex-1 overflow-hidden min-w-0">
-                        <p class="text-[12px] ${textClass} truncate font-medium leading-tight">${wp.name}</p>
+                        <p class="text-[12px] text-gray-200 truncate font-medium leading-tight">${wp.name}</p>
                         ${extraText}
                     </div>
                 </div>`;
@@ -1731,11 +1734,27 @@
 
                     let totalDistMeters = 0;
                     let totalDurSeconds = 0;
-                    res.routes[0].legs.forEach(leg => {
+                    
+                    res.routes[0].legs.forEach((leg, idx) => {
                         totalDistMeters += leg.distance.value;
                         totalDurSeconds += leg.duration.value;
+                        
+                        let dKm = (totalDistMeters / 1000).toFixed(1);
+                        let mins = Math.round(totalDurSeconds / 60);
+                        let hrs = Math.floor(mins / 60);
+                        let remMins = mins % 60;
+                        let tStr = hrs > 0 ? `${hrs} ชม. ${remMins} นาที` : `${remMins} นาที`;
+                        
+                        let el = document.getElementById(`eta_modal_${idx}`);
+                        let wp = job.waypoints[idx];
+                        if(el && wp) {
+                            el.innerText = `ระยะทาง: ${dKm} กม. • ${tStr}`;
+                            if(wp.type === 'pick') el.className = 'text-[11px] font-bold text-green-400 mt-0.5';
+                            else if(wp.type === 'drop') el.className = 'text-[11px] font-bold text-red-400 mt-0.5';
+                            else el.className = 'text-[11px] font-bold text-yellow-500 mt-0.5';
+                        }
                     });
-                    
+
                     let totalDist = totalDistMeters / 1000;
                     let totalMins = Math.round(totalDurSeconds / 60);
                     let hrs = Math.floor(totalMins / 60);
@@ -1919,10 +1938,7 @@
                 let textClass = wp.passed ? 'text-gray-500 line-through opacity-60' : 'text-gray-200';
                 let iconClass = wp.passed ? 'text-gray-600' : colorClass;
 
-                let extraText = '';
-                if (index === unpassedIndex) {
-                    extraText = `<p class="text-[10px] font-bold text-blue-400 mt-0.5" id="dynamicEtaText">กำลังคำนวณ...</p>`;
-                }
+                let extraText = wp.passed ? '' : `<p class="text-[10px] font-bold text-gray-500 mt-0.5" id="eta_active_${index}">กำลังคำนวณ...</p>`;
 
                 wpHtml += `<div class="flex items-start gap-2.5 w-full min-w-0 p-1.5 rounded-lg transition cursor-pointer hover:bg-white/10" onclick="toggleWpHighlight(this, ${wp.lat}, ${wp.lng}, 'wp${index}')" id="wp${index}">
                     <div class="shrink-0 mt-0.5"><i class="fas fa-circle text-[10px] ${iconClass}"></i></div>
@@ -1935,8 +1951,10 @@
             wpContainer.innerHTML = wpHtml;
             
             setTimeout(() => {
-                let dynamicEta = document.getElementById('dynamicEtaText');
-                if(dynamicEta) dynamicEta.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                if(unpassedIndex !== -1) {
+                    let activeWp = document.getElementById(`wp${unpassedIndex}`);
+                    if(activeWp) activeWp.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
             }, 100);
         }
 
@@ -1957,18 +1975,19 @@
             
             if (currentWp.type === 'pick') {
                 if(floatStatus) floatStatus.classList.add('border-green-500', 'shadow-[0_0_15px_rgba(34,197,94,0.4)]');
-                if(statusText) { statusText.innerText = "กำลังไปจุดรับ: " + shortName; statusText.className = "font-black text-[15px] leading-tight text-green-400 truncate"; }
                 
-                // คืนชีพปุ่ม "มาถึงจุดรับ" -> "ผู้โดยสารขึ้นรถ" -> "จบงาน" ตามคำขอ
                 if (s.includes("มาถึงจุดรับแล้ว") || s.includes("มาถึงจุดรับ")) {
+                    if(statusText) { statusText.innerText = "รอผู้โดยสารขึ้นรถ"; statusText.className = "font-black text-[15px] leading-tight text-yellow-500 truncate"; }
                     if(btnAction) { btnAction.innerText = "ผู้โดยสารขึ้นรถแล้ว"; btnAction.className = "flex-[3] bg-yellow-500/90 border border-yellow-400/50 text-gray-900 py-1.5 rounded-lg font-bold text-[13px] shadow-md hover:bg-yellow-400 transition"; }
                 } else {
+                    if(statusText) { statusText.innerText = "กำลังไปจุดรับ: " + shortName; statusText.className = "font-black text-[15px] leading-tight text-green-400 truncate"; }
                     if(btnAction) { btnAction.innerText = "มาถึงจุดรับ"; btnAction.className = "flex-[3] bg-green-600/90 border border-green-500/50 text-white py-1.5 rounded-lg font-bold text-[13px] shadow-md hover:bg-green-500 transition"; }
                 }
                 
                 if(cjb) cjb.classList.remove('hidden');
                 if(contactBox) contactBox.classList.remove('hidden'); 
                 if(rerouteBox) rerouteBox.classList.add('hidden');
+
             } else if (currentWp.type === 'waypoint') {
                 if(floatStatus) floatStatus.classList.add('border-yellow-500', 'shadow-[0_0_15px_rgba(234,179,8,0.4)]');
                 if(statusText) { statusText.innerText = "กำลังไปจุดแวะ: " + shortName; statusText.className = "font-black text-[15px] leading-tight text-yellow-500 truncate"; }
@@ -2164,6 +2183,13 @@
     }
 
     function resetToIdle() {
+        if(activeChatListenerRef && activeJobId) {
+            db.ref('bookings/' + activeJobId + '/chats').off();
+            activeChatListenerRef = null;
+            let chatBox = document.getElementById('inAppChatMessages');
+            if(chatBox) chatBox.innerHTML = '<p class="text-center text-xs text-gray-600 my-4">เริ่มต้นการสนทนากับผู้โดยสารที่นี่</p>';
+        }
+
         localStorage.removeItem('activeJobId'); activeJobId = null; activeJobData = null; selectedJobId = null;
         
         let actP = document.getElementById('activeJobPanel');
@@ -2221,18 +2247,38 @@
                 
                 currentRouteBounds = res.routes[0].bounds; 
 
-                let leg = res.routes[0].legs[0]; 
-                
-                let dynEta = document.getElementById('dynamicEtaText');
+                let accumDist = 0; let accumDur = 0;
+                res.routes[0].legs.forEach((leg, idx) => {
+                    accumDist += leg.distance.value;
+                    accumDur += leg.duration.value;
+                    
+                    let actualIndex = unpassedIndex + idx;
+                    let wp = activeJobData.waypoints[actualIndex];
+                    
+                    let dKm = (accumDist / 1000).toFixed(1);
+                    let mins = Math.round(accumDur / 60);
+                    let hrs = Math.floor(mins / 60);
+                    let remMins = mins % 60;
+                    let tStr = hrs > 0 ? `${hrs} ชม. ${remMins} นาที` : `${remMins} นาที`;
+                    
+                    let el = document.getElementById(`eta_active_${actualIndex}`);
+                    if(el && wp) {
+                        el.innerText = `ระยะทาง: ${dKm} กม. • ${tStr}`;
+                        if(wp.type === 'pick') el.className = 'text-[11px] font-bold text-green-400 mt-0.5';
+                        else if(wp.type === 'drop') el.className = 'text-[11px] font-bold text-red-400 mt-0.5';
+                        else el.className = 'text-[11px] font-bold text-yellow-500 mt-0.5';
+                    }
+                });
+
+                let firstLeg = res.routes[0].legs[0]; 
                 let topEta = document.getElementById('etaDisplay');
                 
-                if (dynEta) dynEta.innerText = `ระยะทาง: ${leg.distance.text} • ${leg.duration.text}`;
                 if (topEta) {
-                    topEta.innerText = `ระยะทาง ${leg.distance.text} • ${leg.duration.text}`;
+                    topEta.innerText = `ระยะทาง ${firstLeg.distance.text} • ${firstLeg.duration.text}`;
                     topEta.classList.remove('hidden');
                 }
 
-                let distKm = leg.distance.value / 1000;
+                let distKm = firstLeg.distance.value / 1000;
                 if(nextWp.type === 'pick' && distKm <= 2.0 && !activeJobData.notifiedPick) {
                     activeJobData.notifiedPick = true; 
                     db.ref('bookings/' + activeJobId).update({ notifiedPick: true });
@@ -2482,8 +2528,6 @@
                 totalTime += parseInt(d.actualDuration || d.duration || 0);
 
                 let dateStr = new Date(job.time).toLocaleString('th-TH', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
-                
-                let dNameShort = d.dName.length > 25 ? d.dName.substring(0,25)+'...' : d.dName;
                 
                 html += `
                 <div onclick="openHistoryDetail('${job.id}')" class="glass-box p-3 rounded-xl border border-gray-700 cursor-pointer hover:bg-gray-700 transition">
