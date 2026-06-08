@@ -92,7 +92,7 @@
 </head>
 <body class="h-screen w-screen m-0 overflow-hidden bg-gray-900">
 
-  <div id="loginModal" class="fixed inset-0 z-[999] bg-gray-900/95 backdrop-blur-md flex flex-col items-center justify-center p-6 transition-opacity duration-300">
+  <div id="loginModal" class="fixed inset-0 z-[999] bg-gray-900/95 backdrop-blur-md flex flex-col items-center justify-center p-6">
       <div class="w-20 h-20 bg-gray-800 text-green-500 rounded-full flex items-center justify-center mb-6 text-4xl shadow-inner border border-gray-700">
           <i class="fas fa-id-card opacity-100"></i>
       </div>
@@ -519,33 +519,6 @@
     let myBlockedPassengers = {};
     let isAppInitialLoad = true; 
 
-    const darkMapStyle = [
-        { elementType: "geometry", stylers: [{ color: "#242f3e" }] },
-        { elementType: "labels.text.stroke", stylers: [{ color: "#242f3e" }] },
-        { elementType: "labels.text.fill", stylers: [{ color: "#746855" }] },
-        { featureType: "administrative.locality", elementType: "labels.text.fill", stylers: [{ color: "#d59563" }] },
-        { featureType: "landscape.man_made", elementType: "geometry.fill", stylers: [{ color: "#364559" }] }, 
-        { featureType: "landscape.man_made", elementType: "geometry.stroke", stylers: [{ color: "#546a82" }] }, 
-        { featureType: "landscape.man_made.building", elementType: "geometry.fill", stylers: [{ color: "#506680" }] }, 
-        { featureType: "landscape.man_made.building", elementType: "geometry.stroke", stylers: [{ color: "#7089a6" }] },
-        { featureType: "landscape.natural", elementType: "geometry", stylers: [{ color: "#1e2836" }] }, 
-        { featureType: "poi", elementType: "labels.text.fill", stylers: [{ color: "#d59563" }] },
-        { featureType: "poi", elementType: "geometry", stylers: [{ color: "#283d3b" }] },
-        { featureType: "poi.park", elementType: "geometry", stylers: [{ color: "#263c3f" }] },
-        { featureType: "poi.park", elementType: "labels.text.fill", stylers: [{ color: "#6b9a76" }] },
-        { featureType: "road", elementType: "geometry", stylers: [{ color: "#111720" }] },
-        { featureType: "road", elementType: "geometry.stroke", stylers: [{ color: "#212a37" }] },
-        { featureType: "road", elementType: "labels.text.fill", stylers: [{ color: "#9ca5b3" }] },
-        { featureType: "road.highway", elementType: "geometry", stylers: [{ color: "#746855" }] },
-        { featureType: "road.highway", elementType: "geometry.stroke", stylers: [{ color: "#1f2835" }] },
-        { featureType: "road.highway", elementType: "labels.text.fill", stylers: [{ color: "#f3d19c" }] },
-        { featureType: "transit", elementType: "geometry", stylers: [{ color: "#2f3948" }] },
-        { featureType: "transit.station", elementType: "labels.text.fill", stylers: [{ color: "#d59563" }] },
-        { featureType: "water", elementType: "geometry", stylers: [{ color: "#17263c" }] },
-        { featureType: "water", elementType: "labels.text.fill", stylers: [{ color: "#515c6d" }] },
-        { featureType: "water", elementType: "labels.text.stroke", stylers: [{ color: "#17263c" }] }
-    ];
-
     let map, directionsService, directionsRenderer;
     let histMap = null, histDirectionsRenderer = null;
     let geocoder = null;
@@ -758,18 +731,11 @@
     }
 
     function checkLogin() {
-        let pinInp = document.getElementById('pinInput');
-        if (pinInp) {
-            pinInp.addEventListener('keypress', function (e) {
-                if (e.key === 'Enter') submitLogin();
-            });
-        }
-
         if (!driverPin) {
             document.getElementById('loginModal').classList.remove('hidden');
         } else {
             document.getElementById('loginModal').classList.add('hidden');
-            db.ref('drivers_profile/' + driverPin).once('value').then(snap => {
+            db.ref('drivers_profile/' + driverPin).once('value', snap => {
                 if (snap.exists()) {
                     currentDriverProfile = snap.val();
                     let nameEl = document.getElementById('driverNameDisplay');
@@ -789,8 +755,6 @@
                 } else {
                     forceLogoutAction("รหัสพนักงานถูกลบออกจากระบบ กรุณาติดต่อแอดมิน");
                 }
-            }).catch(e => {
-                showAlert("ข้อผิดพลาด", "ไม่สามารถเชื่อมต่อฐานข้อมูลได้: " + e.message, "error");
             });
         }
     }
@@ -890,64 +854,55 @@
     }
 
     function unlockAudio() {
-        try {
-            let snd = document.getElementById('jobAlertSound');
-            if (snd) {
-                snd.muted = true;
-                let playPromise = snd.play();
-                if(playPromise !== undefined) {
-                    playPromise.then(() => {
-                        snd.pause();
-                        snd.muted = false;
-                        snd.currentTime = 0;
-                    }).catch(e => console.log('Audio unlock prevented'));
-                }
-            }
-        } catch(e){}
+        let snd = document.getElementById('jobAlertSound');
+        if (snd) {
+            snd.muted = true;
+            snd.play().then(() => {
+                snd.pause();
+                snd.muted = false;
+                snd.currentTime = 0;
+            }).catch(e => console.log('Audio unlock prevented'));
+        }
     }
 
+    document.getElementById('pinInput').addEventListener('keypress', function (e) {
+        if (e.key === 'Enter') submitLogin();
+    });
+
     function submitLogin() {
-        try {
-            let pin = document.getElementById('pinInput').value.trim();
-            if(pin.length !== 4) { showAlert("แจ้งเตือน", "กรุณาระบุรหัส PIN 4 หลักให้ครบถ้วน", "error"); return; }
-            
-            document.getElementById('loginBtnText').classList.add('hidden');
-            document.getElementById('loginSpinner').classList.remove('hidden');
+        let pin = document.getElementById('pinInput').value.trim();
+        if(pin.length !== 4) { showAlert("แจ้งเตือน", "กรุณาระบุรหัส PIN 4 หลักให้ครบถ้วน", "error"); return; }
+        
+        document.getElementById('loginBtnText').classList.add('hidden');
+        document.getElementById('loginSpinner').classList.remove('hidden');
 
-            unlockAudio(); 
+        unlockAudio(); 
 
-            db.ref('drivers_profile/' + pin).once('value').then(snap => {
-                document.getElementById('loginBtnText').classList.remove('hidden');
-                document.getElementById('loginSpinner').classList.add('hidden');
+        db.ref('drivers_profile/' + pin).once('value', snap => {
+            document.getElementById('loginBtnText').classList.remove('hidden');
+            document.getElementById('loginSpinner').classList.add('hidden');
 
-                if(snap.exists()) {
-                    currentDriverProfile = snap.val();
-                    driverPin = pin;
-                    driverSessionId = generateUUID();
-                    localStorage.setItem('driverPin', driverPin);
-                    localStorage.setItem('driverSessionId', driverSessionId);
-                    
-                    db.ref('driver_sessions/' + driverPin).set(driverSessionId);
-                    document.getElementById('loginModal').classList.add('hidden');
-                    checkLogin();
-                    
-                    let savedOnlineState = localStorage.getItem('isDriverOnline');
-                    if (savedOnlineState === 'true') {
-                        document.getElementById('onlineToggle').checked = true;
-                        toggleOnlineWithPermission();
-                    }
-                } else {
-                    showAlert("เข้าสู่ระบบล้มเหลว", "รหัส PIN ไม่ถูกต้อง หรือยังไม่ได้ลงทะเบียนในระบบ", "error");
-                    document.getElementById('pinInput').value = '';
+            if(snap.exists()) {
+                currentDriverProfile = snap.val();
+                driverPin = pin;
+                driverSessionId = generateUUID();
+                localStorage.setItem('driverPin', driverPin);
+                localStorage.setItem('driverSessionId', driverSessionId);
+                
+                db.ref('driver_sessions/' + driverPin).set(driverSessionId);
+                document.getElementById('loginModal').classList.add('hidden');
+                checkLogin();
+                
+                let savedOnlineState = localStorage.getItem('isDriverOnline');
+                if (savedOnlineState === 'true') {
+                    document.getElementById('onlineToggle').checked = true;
+                    toggleOnlineWithPermission();
                 }
-            }).catch(error => {
-                document.getElementById('loginBtnText').classList.remove('hidden');
-                document.getElementById('loginSpinner').classList.add('hidden');
-                showAlert("ข้อผิดพลาด", "ไม่สามารถเชื่อมต่อฐานข้อมูลได้: " + error.message, "error");
-            });
-        } catch(e) {
-            alert("เกิดข้อผิดพลาด: " + e.message);
-        }
+            } else {
+                showAlert("เข้าสู่ระบบล้มเหลว", "รหัส PIN ไม่ถูกต้อง หรือยังไม่ได้ลงทะเบียนในระบบ", "error");
+                document.getElementById('pinInput').value = '';
+            }
+        });
     }
 
     function forceLogoutAction(msg) {
@@ -1002,12 +957,6 @@
                 document.getElementById('jobListContainer').innerHTML = '<p class="text-center text-gray-500 text-[12px] font-bold py-6">กรุณาเปิดออนไลน์เพื่อดูงาน</p>';
             }
         } else {
-            let pinInp = document.getElementById('pinInput');
-            if(pinInp) {
-                pinInp.addEventListener('keypress', function(e) {
-                    if(e.key === 'Enter') submitLogin();
-                });
-            }
             document.getElementById('loginModal').classList.remove('hidden');
         }
     };
@@ -1092,43 +1041,41 @@
         }
     });
 
-    windowContext.toggleWpHighlight = function(element, lat, lng, elementId) {
+    function toggleWpHighlight(element, lat, lng, elementId) {
         if(!map) return;
-        let isHighlighted = element.classList.contains('bg-white/10');
+        let isHighlighted = element.classList.contains('bg-gray-700');
         
-        let container = document.getElementById('activeJobWaypointsContainer') || document.getElementById('modalWaypointsContainer');
-        if(container) {
-            let children = container.querySelectorAll('.cursor-pointer');
-            children.forEach(c => c.classList.remove('bg-white/10'));
-        }
+        document.querySelectorAll('#activeJobWaypointsContainer .cursor-pointer, #modalWaypointsContainer .cursor-pointer').forEach(c => {
+            c.classList.remove('bg-gray-700');
+        });
 
         if (isHighlighted) {
             if (activeJobData || selectedJobId) {
                 fitRouteBounds();
             }
         } else {
-            element.classList.add('bg-white/10');
+            element.classList.add('bg-gray-700');
             map.panTo({lat: lat, lng: lng});
-            setTimeout(() => { map.setZoom(17); }, 200);
+            if(map.getZoom() < 17) {
+                setTimeout(() => { map.setZoom(17); }, 200);
+            }
             
             isTrackingMode = false;
             currentMapFocus = elementId;
             let btnC = document.getElementById('btnCrosshair');
             let btnO = document.getElementById('btnOverview');
             if(btnC) { btnC.classList.remove('text-green-400'); btnC.classList.add('text-gray-300'); }
-            if(btnO) { btnO.classList.remove('text-green-400'); btnO.classList.add('text-gray-300'); }
+            if(btnO) { btnO.classList.remove('text-gray-300'); btnO.classList.add('text-green-400'); }
         }
-    };
+    }
 
     function centerToDriver() {
         isTrackingMode = true;
         currentMapFocus = null;
         
-        let container = document.getElementById('activeJobWaypointsContainer');
-        if(container) {
-            let children = container.querySelectorAll('.cursor-pointer');
-            children.forEach(c => c.classList.remove('bg-white/10'));
-        }
+        document.querySelectorAll('#activeJobWaypointsContainer .cursor-pointer, #modalWaypointsContainer .cursor-pointer').forEach(c => {
+            c.classList.remove('bg-gray-700');
+        });
 
         let btnC = document.getElementById('btnCrosshair');
         let btnO = document.getElementById('btnOverview');
@@ -1151,11 +1098,9 @@
         isTrackingMode = false;
         currentMapFocus = null;
 
-        let container = document.getElementById('activeJobWaypointsContainer');
-        if(container) {
-            let children = container.querySelectorAll('.cursor-pointer');
-            children.forEach(c => c.classList.remove('bg-white/10'));
-        }
+        document.querySelectorAll('#activeJobWaypointsContainer .cursor-pointer, #modalWaypointsContainer .cursor-pointer').forEach(c => {
+            c.classList.remove('bg-gray-700');
+        });
 
         let btnC = document.getElementById('btnCrosshair');
         let btnO = document.getElementById('btnOverview');
@@ -1175,6 +1120,33 @@
             centerToDriver();
         }
     }
+
+    const darkMapStyle = [
+        { elementType: "geometry", stylers: [{ color: "#242f3e" }] },
+        { elementType: "labels.text.stroke", stylers: [{ color: "#242f3e" }] },
+        { elementType: "labels.text.fill", stylers: [{ color: "#746855" }] },
+        { featureType: "administrative.locality", elementType: "labels.text.fill", stylers: [{ color: "#d59563" }] },
+        { featureType: "landscape.man_made", elementType: "geometry.fill", stylers: [{ color: "#364559" }] }, 
+        { featureType: "landscape.man_made", elementType: "geometry.stroke", stylers: [{ color: "#546a82" }] }, 
+        { featureType: "landscape.man_made.building", elementType: "geometry.fill", stylers: [{ color: "#506680" }] }, 
+        { featureType: "landscape.man_made.building", elementType: "geometry.stroke", stylers: [{ color: "#7089a6" }] },
+        { featureType: "landscape.natural", elementType: "geometry", stylers: [{ color: "#1e2836" }] }, 
+        { featureType: "poi", elementType: "labels.text.fill", stylers: [{ color: "#d59563" }] },
+        { featureType: "poi", elementType: "geometry", stylers: [{ color: "#283d3b" }] },
+        { featureType: "poi.park", elementType: "geometry", stylers: [{ color: "#263c3f" }] },
+        { featureType: "poi.park", elementType: "labels.text.fill", stylers: [{ color: "#6b9a76" }] },
+        { featureType: "road", elementType: "geometry", stylers: [{ color: "#111720" }] },
+        { featureType: "road", elementType: "geometry.stroke", stylers: [{ color: "#212a37" }] },
+        { featureType: "road", elementType: "labels.text.fill", stylers: [{ color: "#9ca5b3" }] },
+        { featureType: "road.highway", elementType: "geometry", stylers: [{ color: "#746855" }] },
+        { featureType: "road.highway", elementType: "geometry.stroke", stylers: [{ color: "#1f2835" }] },
+        { featureType: "road.highway", elementType: "labels.text.fill", stylers: [{ color: "#f3d19c" }] },
+        { featureType: "transit", elementType: "geometry", stylers: [{ color: "#2f3948" }] },
+        { featureType: "transit.station", elementType: "labels.text.fill", stylers: [{ color: "#d59563" }] },
+        { featureType: "water", elementType: "geometry", stylers: [{ color: "#17263c" }] },
+        { featureType: "water", elementType: "labels.text.fill", stylers: [{ color: "#515c6d" }] },
+        { featureType: "water", elementType: "labels.text.stroke", stylers: [{ color: "#17263c" }] }
+    ];
 
     function toggleMapStyle() {
         if(!map) return;
@@ -1720,14 +1692,14 @@
             let pCount = 1, dCount = 1;
             waypoints.forEach((wp, idx) => {
                 let num = wp.type === 'pick' ? pCount++ : dCount++;
-                let colorClass = wp.type === 'pick' ? 'text-green-500 border-gray-800' : (wp.type === 'drop' ? 'text-red-500 border-gray-800' : 'text-yellow-500 border-gray-800');
+                let colorClass = wp.type === 'pick' ? 'text-green-500' : (wp.type === 'drop' ? 'text-red-500' : 'text-yellow-500');
                 
                 let extraText = '';
                 if (idx === 0) extraText = `<p class="text-[11px] font-bold text-green-400 mt-0.5" id="modalEtaToPick"><i class="fas fa-car-side"></i> ห่างจากคุณ: กำลังคำนวณ...</p>`;
 
                 html += `
                 <div class="flex items-start gap-2.5 w-full min-w-0 p-1.5 rounded-lg transition cursor-pointer hover:bg-white/10" onclick="toggleWpHighlight(this, ${wp.lat}, ${wp.lng}, 'mdl_wp${idx}')" id="mdl_wp${idx}">
-                    <div class="shrink-0 mt-0.5"><i class="fas fa-circle text-[10px] ${colorClass} rounded-full"></i></div>
+                    <div class="shrink-0 mt-0.5"><i class="fas fa-circle text-[10px] ${colorClass}"></i></div>
                     <div class="flex-1 overflow-hidden min-w-0">
                         <p class="text-[12px] text-gray-200 truncate font-medium leading-tight">${wp.name}</p>
                         ${extraText}
@@ -2205,6 +2177,9 @@
         let actP = document.getElementById('activeJobPanel');
         if(actP) actP.classList.add('hidden');
         
+        let idleP = document.getElementById('idlePanel');
+        if(idleP) idleP.classList.remove('panel-collapsed'); 
+        
         updateActiveJobUI(); 
         
         let bo = document.getElementById('btnOverview');
@@ -2218,9 +2193,6 @@
         centerToDriver(); 
         renderJobList(); 
         
-        let idleP = document.getElementById('idlePanel');
-        if(idleP) idleP.classList.remove('panel-collapsed'); 
-
         switchDriverTab(1);
     }
 
@@ -2521,6 +2493,8 @@
                 totalTime += parseInt(d.actualDuration || d.duration || 0);
 
                 let dateStr = new Date(job.time).toLocaleString('th-TH', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+                
+                let dNameShort = d.dName.length > 25 ? d.dName.substring(0,25)+'...' : d.dName;
                 
                 html += `
                 <div onclick="openHistoryDetail('${job.id}')" class="glass-box p-3 rounded-xl border border-gray-700 cursor-pointer hover:bg-gray-700 transition">
