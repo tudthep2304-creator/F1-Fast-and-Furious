@@ -688,6 +688,7 @@
         let floatGps = document.getElementById('floatingGpsBox');
         let mapCtrl = document.getElementById('mapControls');
 
+        // รีเซ็ตการแสดงผลทุกหน้าต่าง
         idleP.classList.add('hidden');
         actP.classList.add('hidden');
         noActState.classList.add('hidden');
@@ -700,7 +701,10 @@
         mapCtrl.classList.add('top-[76px]');
 
         if(tabIndex === 1) { 
+            // ลบการซ่อนกรอบที่หายไปตอนจบงาน ทำให้มันโชว์กลับมา 100%
             idleP.classList.remove('hidden');
+            idleP.classList.remove('panel-collapsed'); 
+            
             if(isOnline) floatGps.classList.remove('hidden');
             if(map) {
                 setTimeout(() => {
@@ -1066,7 +1070,7 @@
         }
     });
 
-    windowContext.toggleWpHighlight = function(element, lat, lng, elementId) {
+    window.toggleWpHighlight = function(element, lat, lng, elementId) {
         if(!map) return;
         let isHighlighted = element.classList.contains('bg-gray-700');
         
@@ -1690,13 +1694,13 @@
             let pCount = 1, dCount = 1;
             waypoints.forEach((wp, idx) => {
                 let num = wp.type === 'pick' ? pCount++ : dCount++;
-                let colorClass = wp.type === 'pick' ? 'text-green-500 border-gray-800' : (wp.type === 'drop' ? 'text-red-500 border-gray-800' : 'text-yellow-500 border-gray-800');
+                let colorClass = wp.type === 'pick' ? 'text-green-500' : (wp.type === 'drop' ? 'text-red-500' : 'text-yellow-500');
                 
                 let extraText = `<p class="text-[10px] font-bold text-gray-500 mt-0.5" id="eta_modal_${idx}">กำลังคำนวณ...</p>`;
 
                 html += `
                 <div class="flex items-start gap-2.5 w-full min-w-0 p-1.5 rounded-lg transition cursor-pointer hover:bg-white/10" onclick="toggleWpHighlight(this, ${wp.lat}, ${wp.lng}, 'mdl_wp${idx}')" id="mdl_wp${idx}">
-                    <div class="shrink-0 mt-0.5"><i class="fas fa-circle text-[10px] ${colorClass} rounded-full"></i></div>
+                    <div class="shrink-0 mt-0.5"><i class="fas fa-circle text-[10px] ${colorClass}"></i></div>
                     <div class="flex-1 overflow-hidden min-w-0">
                         <p class="text-[12px] text-gray-200 truncate font-medium leading-tight">${wp.name}</p>
                         ${extraText}
@@ -1982,6 +1986,7 @@
                 if(cjb) cjb.classList.remove('hidden');
                 if(contactBox) contactBox.classList.remove('hidden'); 
                 if(rerouteBox) rerouteBox.classList.add('hidden');
+
             } else if (currentWp.type === 'waypoint') {
                 if(floatStatus) floatStatus.classList.add('border-yellow-500', 'shadow-[0_0_15px_rgba(234,179,8,0.4)]');
                 if(statusText) { statusText.innerText = "กำลังไปจุดแวะ: " + shortName; statusText.className = "font-black text-[15px] leading-tight text-yellow-500 truncate"; }
@@ -2030,7 +2035,7 @@
 
         if (currentWp.type === 'pick') {
             if (s.includes("มาถึงจุดรับแล้ว") || s.includes("มาถึงจุดรับ")) {
-                showConfirm("ผู้โดยสารขึ้นรถแล้ว?", "ผู้โดยสารขึ้นรถเรียบร้อย และพร้อมออกเดินทางใช่หรือไม่?", "green", "ขึ้นรถแล้ว", () => executeBoarded(unpassedIndex));
+                showConfirm("ผู้โดยสารขึ้นรถแล้ว?", "ผู้โดยสารขึ้นรถเรียบร้อย และพร้อมออกเดินทางใช่หรือไม่?", "yellow", "ขึ้นรถแล้ว", () => executeBoarded(unpassedIndex));
             } else {
                 showConfirm("ยืนยันมาถึงจุดรับ?", `คุณได้เดินทางมาถึง:\n${currentWp.name}\nเรียบร้อยแล้วใช่หรือไม่?`, "green", "มาถึงแล้ว", () => executeArrivePick(unpassedIndex));
             }
