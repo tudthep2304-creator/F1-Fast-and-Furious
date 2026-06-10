@@ -417,7 +417,7 @@
             );
         } else { window.showAlert("ข้อผิดพลาด", "อุปกรณ์ของคุณไม่รองรับ GPS", "error"); document.getElementById('loginBtnText').classList.remove('hidden'); document.getElementById('loginSpinner').classList.add('hidden'); }
     }
-// ... โค้ดส่วนบน ...
+
     function unlockAudio() {
         let snd = document.getElementById('jobAlertSound');
         if (snd) {
@@ -429,11 +429,7 @@
             }).catch(e => console.log('Audio unlock prevented'));
         }
     }
-
-    function executeFirebaseLoginCheck(pin) {
-        unlockAudio(); 
-        db.ref('drivers_profile/' + pin).once('value', snap => {
-    // ... โค้ดส่วนล่าง ...
+    
     function executeFirebaseLoginCheck(pin) {
         unlockAudio(); 
         db.ref('drivers_profile/' + pin).once('value', snap => {
