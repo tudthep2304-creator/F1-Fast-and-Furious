@@ -1005,11 +1005,13 @@
         return false;
     }
 
+    // 🌟 3. อัปเดตตัวดักจับ Firebase ให้ทำงานตลอดเวลา
     function initFirebaseListeners() {
+        // ฟังข้อมูลงานเรียกรถทั้งหมดแบบ Real-time ทันทีที่มีการเปลี่ยนแปลง
         db.ref('bookings').on('value', snap => {
             if(!driverPin) return; 
-            allBookings = snap.val();
-            processBookings(); 
+            allBookings = snap.val() || {};
+            processBookings(); // ไปเรียก renderJobList ต่อเพื่อโชว์งาน
             
             let t3 = document.getElementById('tab3-History');
             if(t3 && !t3.classList.contains('hidden')) {
@@ -1441,7 +1443,10 @@
         });
     }
 
-    function renderJobList() {
+
+
+    // 🌟 4. อัปเดตระบบโชว์คิวงาน (รองรับการยิงงานจากแอดมินแบบ Real-time)
+    window.renderJobList = function() {
         const listContainer = document.getElementById('jobListContainer');
         const pBar = document.getElementById('searchProgressBar');
         if(!listContainer) return;
@@ -1460,7 +1465,8 @@
             return; 
         }
 
-        let html = ''; let jobCount = 0;
+        let html = ''; 
+        let jobCount = 0;
         let currentPendingJobs = []; 
 
         for (let key in allBookings) {
@@ -1470,12 +1476,16 @@
             if (isPassengerBlocked(b.name, b.phone)) continue;
 
             if (b.status === "รอผู้ขับขี่ตอบรับ" && !isHidden) {
-                // เช็กว่าถ้างานนี้โดนล็อกเป้ามาให้คนขับคนนี้เท่านั้น
-                let isAssignedToMe = b.assignedDriver && String(b.assignedDriver) === String(driverPin);
                 
-                // ถ้าระบบนี้แอดมินต้องเป็นคนจ่ายงาน "เท่านั้น" (ไม่อนุญาตให้กดแย่งกันเอง) 
-                // ให้ซ่อนงานที่ไม่ได้ส่งให้ตัวเอง
-                if (!isAssignedToMe) continue; 
+                // --- กรองงานที่แอดมินจ่ายให้ ---
+                // 1. ถ้างานนี้แอดมินระบุคนขับมา แต่ไม่ใช่ PIN เรา -> ให้ข้าม (ซ่อน)
+                if (b.assignedDriver && String(b.assignedDriver) !== String(driverPin)) {
+                    continue; 
+                }
+                
+                // 2. ถ้างานนี้เจาะจงยิงมาที่ PIN เรา -> เตรียมขึ้นป้ายกำกับ
+                let isAssignedToMe = b.assignedDriver && String(b.assignedDriver) === String(driverPin);
+                let adminBadge = isAssignedToMe ? `<span class="bg-blue-900/50 text-blue-400 border border-blue-500/30 text-[9px] px-2 py-0.5 rounded font-bold ml-2 animate-pulse"><i class="fas fa-headset"></i> ศูนย์จ่ายงานให้คุณ</span>` : '';
 
                 jobCount++;
                 currentPendingJobs.push(key);
@@ -1487,21 +1497,21 @@
                     priceDisplay = `<span class="font-black text-green-400 px-1 text-[16px]">฿${b.price}</span>`;
                 }
 
-                // เพิ่มป้ายกำกับว่ารับงานจากศูนย์
-                let adminBadge = isAssignedToMe ? `<span class="bg-blue-900/50 text-blue-400 border border-blue-500/30 text-[9px] px-2 py-0.5 rounded font-bold ml-2 animate-pulse"><i class="fas fa-headset"></i> ศูนย์จ่ายงานให้คุณ</span>` : '';
-
-                // ... คำนวณจุดรับส่งและระยะทางเหมือนเดิม ...
                 let pCount = 1, dCount = 1;
                 if (b.waypoints && b.waypoints.length > 0) {
                     pCount = b.waypoints.filter(w => w.type === 'pick').length;
                     dCount = b.waypoints.filter(w => w.type === 'drop' || w.type === 'waypoint').length;
                 }
+                
                 let dist = b.distance || 0;
                 let hrs = Math.floor((b.duration || 0) / 60);
                 let mins = (b.duration || 0) % 60;
                 let timeStr = hrs > 0 ? `${hrs} ชม. ${mins} นาที` : `${mins} นาที`;
 
-                html += `<div onclick="window.openJobDetail('${key}')" class="glass-box p-4 rounded-2xl shadow-[0_0_15px_rgba(37,99,235,0.2)] border border-blue-500/50 cursor-pointer active:scale-[0.98] transition-all mb-3 relative overflow-hidden">
+                // ถ้ารับงานจากศูนย์ ขอบกล่องจะเป็นสีฟ้ากระพริบ
+                let borderColor = isAssignedToMe ? 'border-blue-500/50 shadow-[0_0_15px_rgba(37,99,235,0.2)]' : 'border-gray-700 shadow-md';
+
+                html += `<div onclick="window.openJobDetail('${key}')" class="glass-box p-4 rounded-2xl ${borderColor} cursor-pointer active:scale-[0.98] transition-all mb-3 relative overflow-hidden">
                     <div class="flex justify-between items-center mb-2">
                         <span class="font-black text-sm text-green-400 flex items-center"><i class="fas fa-user-circle text-lg mr-1.5"></i> ${b.name || 'ลูกค้า'} ${adminBadge}</span>
                         ${priceDisplay}
@@ -1514,11 +1524,11 @@
             }
         }
 
-        if (isOnline && currentPendingJobs.length > previousPendingJobsList.length && myActiveJobs.length > 0) {
+        // แจ้งเตือนเสียงและสั่นเมื่อมีงานใหม่เด้งเข้ามา
+        if (isOnline && currentPendingJobs.length > previousPendingJobsList.length) {
             let snd = document.getElementById('jobAlertSound');
             if (snd) { snd.muted = false; snd.volume = 1; snd.load(); snd.play().catch(e=>{}); }
             if (navigator.vibrate) navigator.vibrate([500, 200, 500]); 
-            window.showAlert("🔔 มีงานใหม่เข้ามา!", "ลูกค้าเรียกซ้อนเข้ามา ตรวจสอบดูที่กระดานรับงานครับ", "success");
         }
         previousPendingJobsList = currentPendingJobs;
 
@@ -1527,63 +1537,67 @@
         } else {
             listContainer.innerHTML = html;
         }
-    }
+    };
+            // 🌟 1. เพิ่มฟังก์ชันนี้เพื่อใช้วาดหมุด (Pins) บนแผนที่
+    window.renderWaypointsOnMap = function(waypoints) {
+        if (!map) return;
+        
+        // ลบหมุดเก่าทิ้งก่อนวาดใหม่
+        if (window.currentJobMarkers) {
+            window.currentJobMarkers.forEach(m => m.setMap(null));
+        }
+        window.currentJobMarkers = [];
+        
+        if (!waypoints || waypoints.length === 0) return;
 
-    window.openJobDetail = function(jobId) {
-        selectedJobId = jobId; 
-        let job = allBookings[jobId];
-        if(!job) return;
+        let pCount = 1, dCount = 1;
+        waypoints.forEach((wp) => {
+            let num = wp.type === 'pick' ? pCount++ : dCount++;
+            let colorHex = wp.type === 'pick' ? '#22c55e' : (wp.type === 'drop' ? '#ef4444' : '#eab308');
+            
+            let marker = new google.maps.Marker({
+                position: {lat: wp.lat, lng: wp.lng},
+                map: map,
+                icon: {
+                    path: "M 0,0 C -12,-16 -18,-22 -18,-32 A 18,18 0 1,1 18,-32 C 18,-22 12,-16 0,0 Z M -8,-32 A 8,8 0 1,0 8,-32 A 8,8 0 1,0 -8,-32 Z",
+                    fillColor: colorHex,
+                    fillOpacity: 1,
+                    strokeWeight: 2,
+                    strokeColor: '#ffffff',
+                    scale: 1.1,
+                    labelOrigin: new google.maps.Point(0, -17),
+                    anchor: new google.maps.Point(0, 0)
+                },
+                label: { text: num.toString(), color: 'white', fontWeight: 'bold' },
+                zIndex: 10
+            });
+            window.currentJobMarkers.push(marker);
+        });
+    };
+
+    // 🌟 2. อัปเดตฟังก์ชันปิดหน้าต่างงาน ให้เคลียร์หมุดทิ้งด้วย
+    window.closeJobDetail = function() {
+        let md = document.getElementById('jobDetailModal');
+        if(md) md.classList.add('hidden'); 
+        selectedJobId = null;
         
         let idleP = document.getElementById('idlePanel');
-        if(idleP) idleP.classList.add('panel-collapsed'); 
+        if(idleP) idleP.classList.remove('panel-collapsed'); 
+
+        // เคลียร์หมุดออกจากแผนที่เมื่อกดปิด (ป้องกันหมุดค้าง)
+        if (window.currentJobMarkers) {
+            window.currentJobMarkers.forEach(m => m.setMap(null));
+            window.currentJobMarkers = [];
+        }
         
-        let n = document.getElementById('detailName');
-        let pr = document.getElementById('detailPrice');
-        let oldPrBox = document.getElementById('detailPromoBox');
-
-        if(n) n.innerText = job.name || "ลูกค้า";
-        if(pr) pr.innerText = "฿" + job.price;
-
-        if(job.promoCode) {
-            document.getElementById('detailOldPrice').innerText = "฿" + job.originalPrice;
-            document.getElementById('detailPromoTag').innerText = "ลด ฿" + job.discount;
-            if(oldPrBox) { oldPrBox.classList.remove('hidden'); oldPrBox.classList.add('flex'); }
+        if (activeJobId && !document.getElementById('activeJobPanel').classList.contains('hidden')) {
+            updateRoute(true);
         } else {
-            if(oldPrBox) { oldPrBox.classList.add('hidden'); oldPrBox.classList.remove('flex'); }
+            clearMapRoutes(); 
+            window.centerToDriver(); 
         }
-        
-        let tE = document.getElementById('detailTotalEta');
-        let dist = job.distance || 0;
-        let dur = job.duration || 0;
-        let hrs = Math.floor(dur / 60);
-        let mins = dur % 60;
-        let timeStr = hrs > 0 ? `${hrs} ชม. ${mins} นาที` : `${mins} นาที`;
+    }
 
-        if(tE) tE.innerText = `ระยะทางรวม (ทั้งหมด): ${dist} กม. • ${timeStr}`;
-        
-        let mod = document.getElementById('jobDetailModal');
-        let bO = document.getElementById('btnOverview');
-        if(bO) bO.classList.remove('hidden'); 
-        if(mod) mod.classList.remove('hidden');
-
-        let container = document.getElementById('modalWaypointsContainer');
-        if(container) {
-            let html = '';
-            let waypoints = job.waypoints || [];
-            waypoints.forEach((wp, idx) => {
-                let colorClass = wp.type === 'pick' ? 'text-green-500' : (wp.type === 'drop' ? 'text-red-500' : 'text-yellow-500');
-                
-                html += `
-                <div class="flex items-start gap-2.5 w-full min-w-0 p-1.5 rounded-lg transition cursor-pointer hover:bg-gray-700" onclick="window.toggleWpHighlight(this, ${wp.lat}, ${wp.lng}, 'mdl_wp${idx}')" id="mdl_wp${idx}">
-                    <div class="shrink-0 mt-0.5"><i class="fas fa-circle text-[10px] ${colorClass}"></i></div>
-                    <div class="flex-1 overflow-hidden min-w-0">
-                        <p class="text-[12px] text-gray-200 truncate font-medium leading-tight">${wp.name}</p>
-                        <p class="text-[10px] font-bold text-gray-500 mt-0.5" id="eta_modal_${idx}">กำลังคำนวณ...</p>
-                    </div>
-                </div>`;
-            });
-            container.innerHTML = html;
-        }
 
         window.renderWaypointsOnMap(job.waypoints);
 
