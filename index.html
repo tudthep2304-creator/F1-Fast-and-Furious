@@ -443,7 +443,61 @@
             } else { window.showAlert("เข้าสู่ระบบล้มเหลว", "รหัส PIN ไม่ถูกต้อง หรือยังไม่ได้ลงทะเบียนในระบบ", "error"); document.getElementById('pinInput').value = ''; }
         });
     }
+// ================= ระบบแบล็กลิสต์ผู้โดยสาร =================
+    function fetchBlockedPassengers() {
+        db.ref('driver_blocks/' + driverPin).on('value', snap => {
+            myBlockedPassengers = snap.val() || {};
+            let t4 = document.getElementById('tab4-Profile');
+            if(t4 && !t4.classList.contains('hidden')) { renderBlockedList(); }
+            if(typeof window.renderJobList === 'function') window.renderJobList(); 
+        });
+    }
 
+    function renderBlockedList() {
+        let container = document.getElementById('blockedPassengersList');
+        if(!container) return;
+        if(Object.keys(myBlockedPassengers).length === 0) {
+            container.innerHTML = '<p class="text-xs text-gray-500 text-center py-2">ไม่มีข้อมูลบล็อก</p>';
+            return;
+        }
+        let html = '';
+        for(let key in myBlockedPassengers) {
+            let bp = myBlockedPassengers[key];
+            html += `<div class="flex justify-between items-center bg-gray-800 p-2 rounded border border-gray-700 mb-2">
+                <div class="flex-1 min-w-0 pr-2">
+                    <p class="text-[12px] text-gray-200 font-bold truncate">${bp.name}</p>
+                    <p class="text-[10px] text-gray-400 truncate">${bp.phone || '-'}</p>
+                </div>
+                <button onclick="unblockPassenger('${key}')" class="shrink-0 text-[10px] bg-red-900/40 text-red-400 px-2 py-1 rounded border border-red-500/30 hover:bg-red-600 hover:text-white transition">ปลดบล็อก</button>
+            </div>`;
+        }
+        container.innerHTML = html;
+    }
+
+    window.unblockPassenger = function(key) {
+        window.showConfirm(
+            "ปลดบล็อก", 
+            "ต้องการปลดบล็อกผู้โดยสารคนนี้ใช่หรือไม่?", 
+            "blue", 
+            "ปลดบล็อก", 
+            () => { db.ref('driver_blocks/' + driverPin + '/' + key).remove(); }
+        );
+    }
+
+    function isPassengerBlocked(name, phone) {
+        let n1 = (name || '').trim().toLowerCase();
+        let p1 = (phone || '').trim();
+        for(let key in myBlockedPassengers) {
+            let bp = myBlockedPassengers[key];
+            let bn = (bp.name || '').trim().toLowerCase();
+            let bpPhone = (bp.phone || '').trim();
+            if ((p1 && p1 === bpPhone) || (n1 && n1 === bn)) {
+                return true;
+            }
+        }
+        return false;
+    }
+    // ================= จบส่วนระบบแบล็กลิสต์ =================
     function checkLogin() {
         if (!driverPin) { document.getElementById('loginModal').classList.remove('hidden'); } 
         else {
