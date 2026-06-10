@@ -15,34 +15,16 @@
     .map-container { position: fixed; top: 0; left: 0; width: 100vw; height: calc(100vh - 70px); z-index: 0; background: #1e234e; }
     
     .ui-panel { 
-        position: fixed; 
-        bottom: 70px; 
-        left: 0; 
-        right: 0; 
-        background: #1e234e; 
-        border-top-left-radius: 30px; 
-        border-top-right-radius: 30px; 
-        box-shadow: 0 -10px 40px rgba(0,0,0,0.8); 
-        border-top: 1px solid rgba(250, 225, 0, 0.15); 
-        z-index: 10; 
-        display: flex; 
-        flex-direction: column; 
-        padding: 12px 20px 20px 20px; 
-        max-height: calc(85vh - 70px); 
-        overflow-y: hidden;
+        position: fixed; bottom: 70px; left: 0; right: 0; background: #1e234e; 
+        border-top-left-radius: 30px; border-top-right-radius: 30px; 
+        box-shadow: 0 -10px 40px rgba(0,0,0,0.8); border-top: 1px solid rgba(250, 225, 0, 0.15); 
+        z-index: 10; display: flex; flex-direction: column; padding: 12px 20px 20px 20px; 
+        max-height: calc(85vh - 70px); overflow-y: hidden;
         transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        transform: translateY(0);
-        pointer-events: auto;
+        transform: translateY(0); pointer-events: auto;
     }
 
-    .glass-box {
-        background: rgba(42, 47, 92, 0.85); 
-        backdrop-filter: blur(12px);
-        -webkit-backdrop-filter: blur(12px);
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
-    }
-
+    .glass-box { background: rgba(42, 47, 92, 0.85); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.1); box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3); }
     .panel-collapsed { transform: translateY(calc(100% - 90px)) !important; }
     .job-scroll { overflow-y: auto; scroll-behavior: smooth; }
     .job-scroll::-webkit-scrollbar { width: 4px; }
@@ -66,9 +48,7 @@
 <body class="h-screen w-screen m-0 overflow-hidden bg-[#1e234e]">
 
   <div id="loginModal" class="fixed inset-0 z-[999] bg-[#1e234e]/95 backdrop-blur-md flex flex-col items-center justify-center p-6">
-      <div class="w-20 h-20 bg-[#2a2f5c] text-[#fae100] rounded-full flex items-center justify-center mb-6 text-4xl shadow-inner border border-[#383d6a]">
-          <i class="fas fa-id-card opacity-100"></i>
-      </div>
+      <div class="w-20 h-20 bg-[#2a2f5c] text-[#fae100] rounded-full flex items-center justify-center mb-6 text-4xl shadow-inner border border-[#383d6a]"><i class="fas fa-id-card opacity-100"></i></div>
       <h2 class="text-2xl font-black text-white mb-2 tracking-wide">F1 DRIVER PRO</h2>
       <p class="text-gray-400 mb-8 text-sm">กรุณาใส่รหัสคนขับ 4 หลัก เพื่อเข้าใช้งาน</p>
       <div class="w-full max-w-xs space-y-4">
@@ -84,16 +64,17 @@
 
   <div id="map" class="map-container z-0"></div>
   
-  <div id="topBar" class="fixed top-0 w-full h-16 bg-[#1e234e] border-b border-[#2a2f5c] flex items-center justify-between px-4 z-20 text-white shadow-md pointer-events-auto">
-    <div class="flex items-center gap-2">
-        <h1 class="text-lg font-black text-[#fae100] tracking-wide"><i class="fas fa-car-side"></i> F1 Fast and Furious <span id="driverNameDisplay" class="text-xs text-gray-400 ml-2 font-normal hidden"></span></h1>
+  <div id="topBar" class="fixed top-0 w-full h-16 bg-[#1e234e] border-b border-[#2a2f5c] flex items-center justify-between px-4 z-30 text-white shadow-md">
+    <div class="flex items-center gap-3">
+        <button id="topBackBtn" onclick="switchDriverTab(1)" class="hidden w-10 h-10 flex items-center justify-center bg-[#2a2f5c] rounded-full border border-[#383d6a] text-[#fae100] transition active:scale-95"><i class="fas fa-arrow-left text-lg"></i></button>
+        <h1 id="topBarTitle" class="text-lg font-black text-[#fae100] tracking-wide"><i class="fas fa-car-side"></i> F1 Fast and Furious <span id="driverNameDisplay" class="text-xs text-gray-400 ml-2 font-normal hidden"></span></h1>
     </div>
     <button onclick="switchDriverTab(4)" id="topProfileBtn" class="flex items-center justify-center w-10 h-10 bg-[#2a2f5c] rounded-full border border-[#383d6a] text-gray-400 hover:text-[#fae100] hover:border-[#fae100]/50 transition-colors shadow-sm active:scale-95">
         <i class="fas fa-user-circle text-[20px]"></i>
     </button>
   </div>
 
-  <div id="floatingStatusBox" class="hidden fixed top-[76px] left-4 right-4 z-30 glass-box p-3.5 rounded-2xl flex justify-between items-center shadow-lg transition-all duration-300 border border-[#383d6a] pointer-events-auto">
+  <div id="floatingStatusBox" class="hidden fixed top-[76px] left-4 right-4 z-20 glass-box p-3.5 rounded-2xl flex justify-between items-center shadow-lg transition-all duration-300 border border-[#383d6a] pointer-events-auto">
       <div class="min-w-0 flex-1 pr-2">
           <div class="flex items-center gap-2 mb-0.5"><span class="text-[9px] font-black tracking-widest px-1.5 py-0.5 rounded uppercase" id="unifiedStatusLabel"><i class="fas fa-info-circle"></i> Status</span><h2 class="font-black text-[15px] leading-tight truncate" id="jobStatusHeader">กำลังเดินทางไปหา</h2></div>
           <p class="text-[14px] font-bold mt-1 text-white truncate" id="etaDisplay">ระยะทาง -- กม. • -- นาที</p>
@@ -109,7 +90,7 @@
       <p class="text-[10px] text-[#fae100] hidden mt-0.5" id="wakeLockStatus"><i class="fas fa-cog fa-spin"></i> หน้าจอจะเปิดค้างไว้ตลอดเวลา</p>
   </div>
 
-  <div id="mapControls" class="fixed top-[76px] right-4 z-40 flex flex-col gap-3 pointer-events-auto transition-all duration-300">
+  <div id="mapControls" class="fixed top-[76px] right-4 z-20 flex flex-col gap-3 pointer-events-auto transition-all duration-300">
       <button onclick="toggleMapStyle()" id="btnMapStyle" class="glass-box w-12 h-12 flex items-center justify-center rounded-full shadow-lg text-gray-300 hover:bg-white/10 transition" title="สลับโหมดแผนที่"><i class="fas fa-satellite text-[18px]"></i></button>
       <button onclick="centerToDriver()" id="btnCrosshair" class="glass-box w-12 h-12 flex items-center justify-center rounded-full shadow-lg text-[#fae100] hover:bg-white/10 transition" title="กลับไปที่พิกัดรถ"><i class="fas fa-crosshairs text-[18px]"></i></button>
       <button onclick="fitRouteBounds()" id="btnOverview" class="hidden glass-box w-12 h-12 flex items-center justify-center rounded-full shadow-lg text-gray-300 hover:bg-white/10 transition" title="ดูแผนที่รวม"><i class="fas fa-route text-[18px]"></i></button>
@@ -172,30 +153,36 @@
     </div>
   </div>
   
-  <div id="noActiveJobState" class="hidden fixed top-16 bottom-[70px] left-0 right-0 bg-[#1e234e] z-20 flex flex-col items-center justify-center">
+  <div id="noActiveJobState" class="hidden fixed top-16 bottom-[70px] left-0 right-0 bg-[#1e234e] z-10 flex flex-col items-center justify-center">
       <div class="w-20 h-20 bg-[#2a2f5c] rounded-full flex items-center justify-center border border-[#383d6a] mb-4 shadow-inner"><i class="fas fa-car-side text-4xl text-gray-500"></i></div>
       <h3 class="text-lg font-bold text-gray-300">ยังไม่มีงานปัจจุบัน</h3>
       <p class="text-sm text-gray-400 mt-2 text-center px-4 leading-relaxed">ระบบกำลังรอการจับคู่งานใหม่<br>กดกลับไปที่ <span class="text-[#fae100] font-bold cursor-pointer" onclick="switchDriverTab(1)">หน้าแรก</span> เพื่อกดรับงาน</p>
   </div>
 
-  <div id="tab3-History" class="hidden fixed inset-0 z-40 bg-[#1e234e] pt-8 pb-24 overflow-y-auto px-4 text-white">
+  <div id="tab3-History" class="hidden fixed top-16 bottom-[70px] w-full z-10 bg-[#1e234e] overflow-y-auto px-4 py-6 text-white">
       <h2 class="text-xl font-black text-[#fae100] mb-4 tracking-wide"><i class="fas fa-history"></i> ประวัติงานวิ่ง</h2>
       <div class="glass-box p-4 rounded-xl border border-[#383d6a] mb-4"><p class="text-xs text-gray-400 font-bold mb-2">เลือกช่วงวันที่ที่ต้องการดู</p><div class="flex gap-2 items-center"><input type="date" id="histStartDate" onchange="renderHistory()" class="flex-1 p-2 bg-[#2a2f5c] text-white rounded-lg border border-[#383d6a] outline-none text-xs text-center font-bold"><span class="text-gray-500 text-xs">-</span><input type="date" id="histEndDate" onchange="renderHistory()" class="flex-1 p-2 bg-[#2a2f5c] text-white rounded-lg border border-[#383d6a] outline-none text-xs text-center font-bold"></div></div>
       <div class="grid grid-cols-2 gap-3 mb-4">
-          <div class="glass-box p-3 rounded-xl border border-[#383d6a] flex flex-col items-center justify-center"><p class="text-[10px] text-gray-400 font-bold mb-1">ยอดรวมรายได้</p><p class="text-xl font-black text-[#fae100]" id="histTotalEarn">฿0</p></div><div class="glass-box p-3 rounded-xl border border-[#383d6a] flex flex-col items-center justify-center"><p class="text-[10px] text-gray-400 font-bold mb-1">จำนวนงานที่จบ</p><p class="text-xl font-black text-blue-400" id="histTotalJobs">0 งาน</p></div><div class="glass-box p-3 rounded-xl border border-[#383d6a] flex flex-col items-center justify-center"><p class="text-[10px] text-gray-400 font-bold mb-1">ระยะทางรวม</p><p class="text-xl font-black text-yellow-400" id="histTotalDist">0 กม.</p></div><div class="glass-box p-3 rounded-xl border border-[#383d6a] flex flex-col items-center justify-center"><p class="text-[10px] text-gray-400 font-bold mb-1">เวลาเดินทางรวม</p><p class="text-xl font-black text-pink-400" id="histTotalTime">0 นาที</p></div>
+          <div class="glass-box p-3 rounded-xl border border-[#383d6a] flex flex-col items-center justify-center"><p class="text-[10px] text-gray-400 font-bold mb-1">ยอดรวมรายได้</p><p class="text-xl font-black text-[#4ade80]" id="histTotalEarn">฿0</p></div>
+          <div class="glass-box p-3 rounded-xl border border-[#383d6a] flex flex-col items-center justify-center"><p class="text-[10px] text-gray-400 font-bold mb-1">จำนวนงานที่จบ</p><p class="text-xl font-black text-[#fae100]" id="histTotalJobs">0 งาน</p></div>
+          <div class="glass-box p-3 rounded-xl border border-[#383d6a] flex flex-col items-center justify-center"><p class="text-[10px] text-gray-400 font-bold mb-1">ระยะทางรวม</p><p class="text-xl font-black text-[#fae100]" id="histTotalDist">0 กม.</p></div>
+          <div class="glass-box p-3 rounded-xl border border-[#383d6a] flex flex-col items-center justify-center"><p class="text-[10px] text-gray-400 font-bold mb-1">เวลาเดินทางรวม</p><p class="text-xl font-black text-[#fae100]" id="histTotalTime">0 นาที</p></div>
       </div>
       <h3 class="text-xs font-black text-gray-400 mb-2 uppercase tracking-widest">รายการล่าสุด</h3>
       <div id="historyListContainer" class="space-y-3 pb-6"></div>
   </div>
 
-  <div id="tab4-Profile" class="hidden fixed inset-0 z-40 bg-[#1e234e] pt-8 pb-24 overflow-y-auto px-4 text-white flex flex-col items-center">
-      <h2 class="text-xl font-black text-[#fae100] mb-6 w-full tracking-wide"><i class="fas fa-user-circle"></i> โปรไฟล์คนขับ</h2>
+  <div id="tab4-Profile" class="hidden fixed top-16 bottom-[70px] w-full z-10 bg-[#1e234e] overflow-y-auto px-4 py-6 text-white flex flex-col items-center">
       <div class="w-24 h-24 bg-[#2a2f5c] text-[#fae100] rounded-full flex items-center justify-center text-5xl shadow-inner border-2 border-[#fae100]/50 mb-4"><i class="fas fa-id-badge"></i></div>
       <h3 class="text-2xl font-black text-white" id="profName">ชื่อ-นามสกุล</h3><p class="text-sm font-bold text-[#fae100] mb-6 mt-1" id="profPin">รหัส PIN: 0000</p>
-      <div class="w-full glass-box p-4 rounded-2xl border border-[#383d6a] space-y-4 mb-4">
-          <div class="flex items-center justify-between border-b border-[#383d6a] pb-3"><div class="flex items-center gap-3"><div class="w-8 h-8 rounded-full bg-[#2a2f5c] flex items-center justify-center text-blue-400"><i class="fas fa-car"></i></div><p class="text-sm text-gray-400 font-bold">ข้อมูลรถ</p></div><p class="text-sm font-bold text-white text-right" id="profCar">กำลังโหลด...</p></div>
-          <div class="flex items-center justify-between"><div class="flex items-center gap-3"><div class="w-8 h-8 rounded-full bg-[#2a2f5c] flex items-center justify-center text-blue-400"><i class="fas fa-phone-alt"></i></div><p class="text-sm text-gray-400 font-bold">เบอร์ติดต่อ</p></div><p class="text-sm font-bold text-white text-right" id="profPhone">กำลังโหลด...</p></div>
+      
+      <div class="w-full glass-box p-4 rounded-2xl border border-[#383d6a] mb-4">
+          <div class="flex items-center justify-between border-b border-[#383d6a] pb-3"><div class="flex items-center gap-3"><div class="w-8 h-8 rounded-full bg-[#2a2f5c] flex items-center justify-center text-[#fae100]"><i class="fas fa-car"></i></div><p class="text-sm text-gray-400 font-bold">ยี่ห้อรถ</p></div><p class="text-sm font-bold text-white text-right" id="profBrand">กำลังโหลด...</p></div>
+          <div class="flex items-center justify-between border-b border-[#383d6a] py-3"><div class="flex items-center gap-3"><div class="w-8 h-8 rounded-full bg-[#2a2f5c] flex items-center justify-center text-[#fae100]"><i class="fas fa-palette"></i></div><p class="text-sm text-gray-400 font-bold">สีรถ</p></div><p class="text-sm font-bold text-white text-right" id="profColor">กำลังโหลด...</p></div>
+          <div class="flex items-center justify-between border-b border-[#383d6a] py-3"><div class="flex items-center gap-3"><div class="w-8 h-8 rounded-full bg-[#2a2f5c] flex items-center justify-center text-[#fae100]"><i class="fas fa-id-card"></i></div><p class="text-sm text-gray-400 font-bold">ป้ายทะเบียนรถ</p></div><p class="text-sm font-bold text-white text-right" id="profPlate">กำลังโหลด...</p></div>
+          <div class="flex items-center justify-between pt-3"><div class="flex items-center gap-3"><div class="w-8 h-8 rounded-full bg-[#2a2f5c] flex items-center justify-center text-[#fae100]"><i class="fas fa-phone-alt"></i></div><p class="text-sm text-gray-400 font-bold">เบอร์ติดต่อ</p></div><p class="text-sm font-bold text-white text-right" id="profPhone">กำลังโหลด...</p></div>
       </div>
+
       <div class="w-full glass-box p-4 rounded-2xl border border-[#383d6a] mb-6">
           <h3 class="text-xs font-black text-red-400 mb-3 flex items-center gap-1.5 tracking-widest uppercase"><i class="fas fa-ban"></i> ผู้โดยสารที่ถูกบล็อก</h3>
           <div id="blockedPassengersList" class="space-y-2 max-h-40 overflow-y-auto hide-scrollbar"><p class="text-xs text-gray-500 text-center py-2">ไม่มีข้อมูลบล็อก</p></div>
@@ -203,15 +190,17 @@
       <button onclick="logoutDriver()" class="w-full glass-box !border-red-500/30 hover:bg-red-900/40 text-red-400 font-bold py-4 rounded-2xl shadow-sm transition flex items-center justify-center gap-2"><i class="fas fa-sign-out-alt"></i> ออกจากระบบ (Logout)</button>
   </div>
 
-  <div id="tab5-Community" class="hidden fixed inset-0 z-40 bg-[#1e234e] pt-8 pb-24 overflow-y-auto px-4 text-white">
-      <h2 class="text-xl font-black text-[#fae100] mb-4 tracking-wide"><i class="fas fa-bullhorn"></i> บอร์ดข่าวสาร & คอมมูนิตี้</h2>
+  <div id="tab5-News" class="hidden fixed top-16 bottom-[70px] w-full z-10 bg-[#1e234e] overflow-y-auto px-4 py-6 text-white">
+      <h2 class="text-xl font-black text-[#fae100] mb-4 tracking-wide"><i class="fas fa-newspaper"></i> บอร์ดข่าวสารส่วนกลาง</h2>
       <div class="glass-box p-4 rounded-xl border border-[#383d6a] mb-6">
-          <h3 class="text-xs font-black text-gray-400 mb-3 uppercase tracking-widest"><i class="fas fa-newspaper"></i> ประกาศจากระบบ</h3>
-          <div id="communityNewsList" class="space-y-3 max-h-56 overflow-y-auto slim-scroll pr-1"><div class="text-center py-4"><i class="fas fa-spinner fa-spin text-[#fae100]"></i> โหลดข้อมูล...</div></div>
+          <div id="communityNewsList" class="space-y-3 overflow-y-auto slim-scroll pr-1"><div class="text-center py-4"><i class="fas fa-spinner fa-spin text-[#fae100]"></i> โหลดข้อมูล...</div></div>
       </div>
-      <div class="glass-box rounded-xl border border-[#383d6a] flex flex-col h-[45vh]">
-          <h3 class="text-xs font-black text-gray-400 m-4 mb-2 uppercase tracking-widest"><i class="fas fa-comments"></i> ห้องแชทส่วนกลาง</h3>
-          <div id="globalChatBox" class="flex-1 overflow-y-auto px-4 space-y-2 slim-scroll"><p class="text-[10px] text-gray-500 text-center my-4">เริ่มพูดคุยกับเพื่อนร่วมทางได้เลย</p></div>
+  </div>
+
+  <div id="tab6-Community" class="hidden fixed top-16 bottom-[70px] w-full z-10 bg-[#1e234e] overflow-y-auto px-4 py-6 text-white">
+      <h2 class="text-xl font-black text-[#fae100] mb-4 tracking-wide"><i class="fas fa-comments"></i> แชทคอมมูนิตี้คนขับ</h2>
+      <div class="glass-box rounded-xl border border-[#383d6a] flex flex-col h-[65vh]">
+          <div id="globalChatBox" class="flex-1 overflow-y-auto px-4 pt-4 space-y-2 slim-scroll"><p class="text-[10px] text-gray-500 text-center my-4">เริ่มพูดคุยกับเพื่อนร่วมทางได้เลย</p></div>
           <div class="p-3 border-t border-[#383d6a] flex gap-2">
               <input type="text" id="globalChatInput" class="flex-1 bg-[#2a2f5c] text-white text-sm rounded-xl px-4 py-2.5 outline-none focus:border-[#fae100] border border-transparent shadow-inner" placeholder="พิมพ์ข้อความพูดคุย...">
               <button onclick="sendGlobalChat()" class="bg-[#fae100] text-[#1e234e] px-5 rounded-xl font-black shadow-md hover:bg-[#e5ce00] transition active:scale-95"><i class="fas fa-paper-plane"></i></button>
@@ -221,9 +210,10 @@
 
   <div id="bottomNav" class="fixed bottom-0 w-full h-[70px] bg-[#1e234e] border-t border-[#2a2f5c] flex items-center justify-around z-[100] pb-2 pt-1 shadow-[0_-5px_20px_rgba(0,0,0,0.5)] transition-transform duration-300">
       <button onclick="switchDriverTab(1)" id="navBtn1" class="flex-1 flex flex-col items-center justify-center text-[#fae100] transition-colors"><i class="fas fa-home text-[20px] mb-1"></i><span class="text-[10px] font-bold">หน้าแรก</span></button>
-      <button onclick="switchDriverTab(2)" id="navBtn2" class="flex-1 flex flex-col items-center justify-center text-gray-500 hover:text-[#fae100] transition-colors"><i id="navIconCar" class="fas fa-car-side text-[20px] mb-1 transition-all"></i><span class="text-[10px] font-bold">งานปัจจุบัน</span></button>
+      <button onclick="switchDriverTab(2)" id="navBtn2" class="flex-1 flex flex-col items-center justify-center text-gray-500 hover:text-[#fae100] transition-colors"><i id="navIconCar" class="fas fa-car-side text-[20px] mb-1 transition-all"></i><span class="text-[10px] font-bold">ปัจจุบัน</span></button>
       <button onclick="switchDriverTab(3)" id="navBtn3" class="flex-1 flex flex-col items-center justify-center text-gray-500 hover:text-[#fae100] transition-colors"><i class="fas fa-history text-[20px] mb-1"></i><span class="text-[10px] font-bold">ประวัติ</span></button>
-      <button onclick="switchDriverTab(5)" id="navBtn5" class="flex-1 flex flex-col items-center justify-center text-gray-500 hover:text-[#fae100] transition-colors"><i class="fas fa-users text-[20px] mb-1"></i><span class="text-[10px] font-bold">คอมมูนิตี้</span></button>
+      <button onclick="switchDriverTab(5)" id="navBtn5" class="flex-1 flex flex-col items-center justify-center text-gray-500 hover:text-[#fae100] transition-colors"><i class="fas fa-newspaper text-[20px] mb-1"></i><span class="text-[10px] font-bold">ข่าวสาร</span></button>
+      <button onclick="switchDriverTab(6)" id="navBtn6" class="flex-1 flex flex-col items-center justify-center text-gray-500 hover:text-[#fae100] transition-colors"><i class="fas fa-comments text-[20px] mb-1"></i><span class="text-[10px] font-bold">แชทรวม</span></button>
   </div>
 
   <div id="inAppChatModal" class="hidden fixed inset-0 z-[250] bg-[#1e234e] flex flex-col pointer-events-auto transition-transform"><div class="bg-[#2a2f5c] border-b border-[#383d6a] p-4 flex items-center gap-3 shadow-md shrink-0"><button onclick="closeInAppChatModal()" class="w-10 h-10 bg-[#383d6a] text-white rounded-full flex items-center justify-center hover:bg-[#4b507d]"><i class="fas fa-arrow-left"></i></button><h2 class="text-lg font-black text-white"><i class="fas fa-comments text-[#fae100] mr-2"></i>แชทกับผู้โดยสาร</h2></div><div id="inAppChatMessages" class="flex-1 overflow-y-auto p-4 space-y-3 bg-[#1e234e]/80 hide-scrollbar flex flex-col"><p class="text-center text-xs text-gray-500 my-4">เริ่มต้นการสนทนากับผู้โดยสารที่นี่</p></div><div class="bg-[#2a2f5c] p-3 flex gap-2 shrink-0 shadow-[0_-5px_15px_rgba(0,0,0,0.3)]"><input type="text" id="inAppChatInput" class="flex-1 rounded-xl bg-[#383d6a] text-white px-4 py-3 text-sm outline-none focus:border-[#fae100] border border-transparent transition" placeholder="พิมพ์ข้อความตอบกลับ..."><button onclick="sendInAppChatMessage()" class="bg-[#fae100] text-[#1e234e] font-black px-5 rounded-xl hover:bg-[#e5ce00] transition shadow-md"><i class="fas fa-paper-plane"></i></button></div></div>
@@ -248,35 +238,24 @@
     const db = firebase.database();
 
     const darkMapStyle = [
-        { elementType: "geometry", stylers: [{ color: "#242f3e" }] },
-        { elementType: "labels.text.stroke", stylers: [{ color: "#242f3e" }] },
-        { elementType: "labels.text.fill", stylers: [{ color: "#746855" }] },
-        { featureType: "administrative.locality", elementType: "labels.text.fill", stylers: [{ color: "#d59563" }] },
-        { featureType: "landscape.man_made", elementType: "geometry.fill", stylers: [{ color: "#364559" }] }, 
-        { featureType: "landscape.man_made", elementType: "geometry.stroke", stylers: [{ color: "#546a82" }] }, 
-        { featureType: "landscape.man_made.building", elementType: "geometry.fill", stylers: [{ color: "#506680" }] }, 
-        { featureType: "landscape.man_made.building", elementType: "geometry.stroke", stylers: [{ color: "#7089a6" }] },
-        { featureType: "landscape.natural", elementType: "geometry", stylers: [{ color: "#1e2836" }] }, 
-        { featureType: "poi", elementType: "labels.text.fill", stylers: [{ color: "#d59563" }] },
-        { featureType: "poi", elementType: "geometry", stylers: [{ color: "#283d3b" }] },
-        { featureType: "poi.park", elementType: "geometry", stylers: [{ color: "#263c3f" }] },
-        { featureType: "poi.park", elementType: "labels.text.fill", stylers: [{ color: "#6b9a76" }] },
-        { featureType: "road", elementType: "geometry", stylers: [{ color: "#111720" }] },
-        { featureType: "road", elementType: "geometry.stroke", stylers: [{ color: "#212a37" }] },
-        { featureType: "road", elementType: "labels.text.fill", stylers: [{ color: "#9ca5b3" }] },
-        { featureType: "road.highway", elementType: "geometry", stylers: [{ color: "#746855" }] },
-        { featureType: "road.highway", elementType: "geometry.stroke", stylers: [{ color: "#1f2835" }] },
-        { featureType: "road.highway", elementType: "labels.text.fill", stylers: [{ color: "#f3d19c" }] },
-        { featureType: "transit", elementType: "geometry", stylers: [{ color: "#2f3948" }] },
-        { featureType: "transit.station", elementType: "labels.text.fill", stylers: [{ color: "#d59563" }] },
-        { featureType: "water", elementType: "geometry", stylers: [{ color: "#17263c" }] },
-        { featureType: "water", elementType: "labels.text.fill", stylers: [{ color: "#515c6d" }] },
-        { featureType: "water", elementType: "labels.text.stroke", stylers: [{ color: "#17263c" }] }
+        { elementType: "geometry", stylers: [{ color: "#1e234e" }] },
+        { elementType: "labels.text.stroke", stylers: [{ color: "#1e234e" }] },
+        { elementType: "labels.text.fill", stylers: [{ color: "#8b93b5" }] },
+        { featureType: "administrative.locality", elementType: "labels.text.fill", stylers: [{ color: "#fae100" }] },
+        { featureType: "landscape.man_made", elementType: "geometry.fill", stylers: [{ color: "#2a2f5c" }] }, 
+        { featureType: "landscape.man_made", elementType: "geometry.stroke", stylers: [{ color: "#383d6a" }] }, 
+        { featureType: "landscape.natural", elementType: "geometry", stylers: [{ color: "#1e234e" }] }, 
+        { featureType: "poi", elementType: "labels.text.fill", stylers: [{ color: "#8b93b5" }] },
+        { featureType: "poi.park", elementType: "geometry", stylers: [{ color: "#252a55" }] },
+        { featureType: "road", elementType: "geometry", stylers: [{ color: "#2a2f5c" }] },
+        { featureType: "road", elementType: "geometry.stroke", stylers: [{ color: "#383d6a" }] },
+        { featureType: "road", elementType: "labels.text.fill", stylers: [{ color: "#8b93b5" }] },
+        { featureType: "water", elementType: "geometry", stylers: [{ color: "#16193b" }] },
+        { featureType: "water", elementType: "labels.text.fill", stylers: [{ color: "#4b507d" }] }
     ];
 
     window.toggleMapStyle = function() {
-        if(!map) return;
-        isSatelliteMode = !isSatelliteMode;
+        if(!map) return; isSatelliteMode = !isSatelliteMode;
         let btnMapStyle = document.getElementById('btnMapStyle');
         if(isSatelliteMode) { map.setMapTypeId('hybrid'); if(btnMapStyle) btnMapStyle.innerHTML = '<i class="fas fa-layer-group text-[18px]"></i>'; } 
         else { map.setMapTypeId('roadmap'); map.setOptions({ styles: darkMapStyle }); if(btnMapStyle) btnMapStyle.innerHTML = '<i class="fas fa-satellite text-[18px]"></i>'; }
@@ -395,25 +374,36 @@
     window.switchDriverTab = function(tabIndex) {
         if(isSelectingLocation) return; 
 
-        for(let i=1; i<=5; i++) {
+        // รีเซ็ตสีปุ่มด้านล่างทั้งหมด
+        for(let i=1; i<=6; i++) {
             let btn = document.getElementById('navBtn'+i);
             if(btn) btn.className = "flex-1 flex flex-col items-center justify-center text-gray-500 hover:text-[#fae100] transition-colors";
         }
         let activeNavBtn = document.getElementById('navBtn'+tabIndex);
         if(activeNavBtn) activeNavBtn.className = "flex-1 flex flex-col items-center justify-center text-[#fae100] transition-colors";
 
+        let topBarTitle = document.getElementById('topBarTitle');
         let topProfileBtn = document.getElementById('topProfileBtn');
-        if (topProfileBtn) {
-            if (tabIndex === 4) { topProfileBtn.className = "flex items-center justify-center w-10 h-10 bg-[#fae100]/20 rounded-full border border-[#fae100]/50 text-[#fae100] transition-colors shadow-sm active:scale-95"; } 
-            else { topProfileBtn.className = "flex items-center justify-center w-10 h-10 bg-[#2a2f5c] rounded-full border border-[#383d6a] text-gray-400 hover:text-[#fae100] hover:border-[#fae100]/50 transition-colors shadow-sm active:scale-95"; }
+        let topBackBtn = document.getElementById('topBackBtn');
+
+        // จัดการหน้าตา Top Bar
+        if(tabIndex === 4) {
+            topBarTitle.innerHTML = "โปรไฟล์ส่วนตัว";
+            if(topProfileBtn) topProfileBtn.classList.add('hidden');
+            if(topBackBtn) topBackBtn.classList.remove('hidden');
+        } else {
+            topBarTitle.innerHTML = `<i class="fas fa-car-side"></i> F1 Fast and Furious <span id="driverNameDisplay" class="text-xs text-gray-400 ml-2 font-normal ${currentDriverProfile ? '' : 'hidden'}">| ${currentDriverProfile ? currentDriverProfile.name : ''}</span>`;
+            if(topProfileBtn) topProfileBtn.classList.remove('hidden');
+            if(topBackBtn) topBackBtn.classList.add('hidden');
         }
 
         let idleP = document.getElementById('idlePanel'); let actP = document.getElementById('activeJobPanel'); let actContent = document.getElementById('activeJobContent');
-        let noActState = document.getElementById('noActiveJobState'); let tab3 = document.getElementById('tab3-History'); let tab4 = document.getElementById('tab4-Profile'); let tab5 = document.getElementById('tab5-Community');
+        let noActState = document.getElementById('noActiveJobState'); let tab3 = document.getElementById('tab3-History'); let tab4 = document.getElementById('tab4-Profile'); 
+        let tab5 = document.getElementById('tab5-News'); let tab6 = document.getElementById('tab6-Community');
         let floatStatus = document.getElementById('floatingStatusBox'); let floatGps = document.getElementById('floatingGpsBox'); let mapCtrl = document.getElementById('mapControls');
 
         if(idleP) idleP.classList.add('hidden'); if(actP) actP.classList.add('hidden'); if(noActState) noActState.classList.add('hidden');
-        if(tab3) tab3.classList.add('hidden'); if(tab4) tab4.classList.add('hidden'); if(tab5) tab5.classList.add('hidden');
+        if(tab3) tab3.classList.add('hidden'); if(tab4) tab4.classList.add('hidden'); if(tab5) tab5.classList.add('hidden'); if(tab6) tab6.classList.add('hidden');
         if(floatStatus) floatStatus.classList.add('hidden'); if(floatGps) floatGps.classList.add('hidden');
         if(mapCtrl) { mapCtrl.classList.remove('top-[170px]'); mapCtrl.classList.add('top-[76px]'); }
 
@@ -433,7 +423,8 @@
             }
         } else if (tabIndex === 3) { if(tab3) tab3.classList.remove('hidden'); window.renderHistory(); } 
         else if (tabIndex === 4) { if(tab4) tab4.classList.remove('hidden'); renderProfileData(); }
-        else if (tabIndex === 5) { if(tab5) tab5.classList.remove('hidden'); window.loadCommunityNews(); window.loadGlobalChat(); }
+        else if (tabIndex === 5) { if(tab5) tab5.classList.remove('hidden'); window.loadCommunityNews(); }
+        else if (tabIndex === 6) { if(tab6) tab6.classList.remove('hidden'); window.loadGlobalChat(); }
     }
 
     // ================= LOGIN & AUTH =================
@@ -505,7 +496,6 @@
         }
         return false;
     }
-    // ================= จบส่วนระบบแบล็กลิสต์ =================
 
     function checkLogin() {
         if (!driverPin) { document.getElementById('loginModal').classList.remove('hidden'); } 
@@ -533,6 +523,18 @@
     }
     window.logoutDriver = function() { window.showConfirm("ยืนยันออกจากระบบ", "คุณต้องการออกจากระบบใช่หรือไม่?", "red", "ออกจากระบบ", forceLogoutAction); }
 
+    function renderProfileData() {
+        if(currentDriverProfile) {
+            let n = document.getElementById('profName'); if(n) n.innerText = currentDriverProfile.name;
+            let p = document.getElementById('profPin'); if(p) p.innerText = "รหัส PIN: " + currentDriverProfile.pin;
+            let cb = document.getElementById('profBrand'); if(cb) cb.innerText = currentDriverProfile.brand || '-';
+            let cc = document.getElementById('profColor'); if(cc) cc.innerText = currentDriverProfile.color || '-';
+            let cp = document.getElementById('profPlate'); if(cp) cp.innerText = currentDriverProfile.plate || '-';
+            let ph = document.getElementById('profPhone'); if(ph) ph.innerText = currentDriverProfile.phone;
+        }
+        renderBlockedList();
+    }
+
     // ================= MAP & GPS =================
     window.initMap = function() {
       if (typeof google === 'undefined' || typeof google.maps === 'undefined') return;
@@ -547,7 +549,23 @@
       });
       directionsService = new google.maps.DirectionsService();
       directionsRenderer = new google.maps.DirectionsRenderer({ map: map, suppressMarkers: true, suppressPolylines: true, preserveViewport: true });
-      markerDriver = new google.maps.Marker({ map: isOnline ? map : null, position: {lat: driverLat, lng: driverLng}, icon: {url: "https://img.icons8.com/color/48/car-top-view.png", scaledSize: new google.maps.Size(44, 44), anchor: new google.maps.Point(22, 22)}, zIndex: 9999 });
+      
+      // เปลี่ยนเป็นรถสีเหลือง SVG
+      markerDriver = new google.maps.Marker({ 
+          map: isOnline ? map : null, 
+          position: {lat: driverLat, lng: driverLng}, 
+          icon: {
+            path: "M18.92 6.01C18.72 5.42 18.16 5 17.5 5h-11c-.66 0-1.21.42-1.42 1.01L3 12v8c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h12v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-8l-2.08-5.99zM6.5 16c-.83 0-1.5-.67-1.5-1.5S5.67 13 6.5 13s1.5.67 1.5 1.5S7.33 16 6.5 16zm11 0c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zM5 11l1.5-4.5h11L19 11H5z",
+            fillColor: '#fae100',
+            fillOpacity: 1,
+            strokeWeight: 1,
+            strokeColor: '#1e234e',
+            scale: 1.5,
+            anchor: new google.maps.Point(12, 12)
+          }, 
+          zIndex: 9999 
+      });
+
       let rerouteInput = document.getElementById('mapSelectSearch');
       if(rerouteInput && google.maps.places) {
           rerouteAutocomplete = new google.maps.places.Autocomplete(rerouteInput, { componentRestrictions: {country: 'th'} });
