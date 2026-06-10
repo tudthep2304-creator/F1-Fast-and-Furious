@@ -580,6 +580,23 @@
         { featureType: "water", elementType: "labels.text.fill", stylers: [{ color: "#515c6d" }] },
         { featureType: "water", elementType: "labels.text.stroke", stylers: [{ color: "#17263c" }] }
     ];
+        // 🌟 ฟังก์ชันสำหรับปุ่มสลับแผนที่ ดาวเทียม / โหมดมืด
+    window.toggleMapStyle = function() {
+        if(!map) return;
+        isSatelliteMode = !isSatelliteMode;
+        let btnMapStyle = document.getElementById('btnMapStyle');
+        
+        if(isSatelliteMode) {
+            // เปลี่ยนเป็นดาวเทียม (มีชื่อถนน)
+            map.setMapTypeId('hybrid');
+            if(btnMapStyle) btnMapStyle.innerHTML = '<i class="fas fa-layer-group text-[18px]"></i>';
+        } else {
+            // กลับไปเป็นโหมดมืดปกติ
+            map.setMapTypeId('roadmap');
+            map.setOptions({ styles: darkMapStyle });
+            if(btnMapStyle) btnMapStyle.innerHTML = '<i class="fas fa-satellite text-[18px]"></i>';
+        }
+    }
 
     window.toggleWpHighlight = function(element, lat, lng, elementId) {
         if(!map) return;
@@ -1156,7 +1173,7 @@
         });
     }
 
-    // 🌟 แก้ไขบั๊กหน้าจอหมุน / แผนที่ไม่โหลด
+    // 🌟 โค้ดชุดใหม่สำหรับจัดการ GPS และการออนไลน์
     window.toggleOnlineWithPermission = function() {
         let tg = document.getElementById('onlineToggle');
         if(!driverPin) {
@@ -1168,56 +1185,47 @@
         if (tg.checked) {
             let statusEl = document.getElementById('statusText');
             if(statusEl) {
-                statusEl.innerText = "⏳ กำลังทดสอบสัญญาณ GPS...";
+                statusEl.innerText = "⏳ กำลังจับสัญญาณ GPS...";
                 statusEl.className = "text-[11px] font-bold text-yellow-500";
             }
-            tg.disabled = true; // ล็อกปุ่มกันกดรัวๆ
+            tg.disabled = true; // ล็อกปุ่มไว้ก่อน
 
             if(navigator.geolocation) {
                 navigator.geolocation.getCurrentPosition(
                     (pos) => {
-                        // GPS ทำงานปกติ อนุญาตให้ออนไลน์
+                        // ดึง GPS สำเร็จ! ค่อยอนุญาตให้ออนไลน์
                         driverLat = pos.coords.latitude;
                         driverLng = pos.coords.longitude;
                         tg.disabled = false;
                         executeToggleOnline(true);
                     },
                     (err) => {
-                        // บังคับออฟไลน์ทันทีถ้า GPS มีปัญหา
+                        // ดึง GPS ไม่ได้ บังคับปิดสวิตช์
                         tg.checked = false;
                         tg.disabled = false;
                         
-                        let errorMsg = "กรุณาเปิด 'ตำแหน่งที่ตั้ง' (Location) บนมือถือ และอนุญาตให้แอปเข้าถึง GPS ของคุณก่อน";
-                        if(err.code === 1) errorMsg = "คุณปฏิเสธการเข้าถึง GPS กรุณาตั้งค่าอนุญาตในเบราว์เซอร์";
-                        else if(err.code === 2) errorMsg = "สัญญาณ GPS ขัดข้อง หรืออยู่ในจุดอับสัญญาณ";
-                        else if(err.code === 3) errorMsg = "ค้นหาสัญญาณ GPS นานเกินไป (Timeout) กรุณาลองใหม่";
-                        
-                        window.showAlert("ไม่สามารถออนไลน์ได้", errorMsg, "error");
+                        window.showAlert("ไม่สามารถออนไลน์ได้", "กรุณาเปิด 'ตำแหน่งที่ตั้ง' (Location) บนโทรศัพท์ และอนุญาตให้เบราว์เซอร์เข้าถึง GPS ของคุณ", "error");
                         if(statusEl) {
                             statusEl.innerText = "🔴 ออฟไลน์ (รอ GPS)";
                             statusEl.className = "text-[11px] font-bold text-red-500";
                         }
                     },
-                    { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 } // บังคับหาพิกัดใหม่ใน 10 วินาที
+                    { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
                 );
             } else {
                 tg.checked = false;
                 tg.disabled = false;
-                window.showAlert("ไม่รองรับ GPS", "อุปกรณ์ของคุณไม่รองรับการระบุตำแหน่ง", "error");
+                window.showAlert("ข้อผิดพลาด", "อุปกรณ์ของคุณไม่รองรับ GPS", "error");
             }
         } else {
             executeToggleOnline(false);
         }
     }
 
-
     function executeToggleOnline(state) {
         isOnline = state;
         const statusEl = document.getElementById('statusText');
         const gpsEl = document.getElementById('gpsStatus');
-        
-        let nav1 = document.getElementById('navBtn1');
-        let activeTab = (nav1 && nav1.classList.contains('text-green-400')) ? 1 : null;
         let floatGps = document.getElementById('floatingGpsBox');
 
         localStorage.setItem('isDriverOnline', isOnline);
@@ -1227,16 +1235,14 @@
                 statusEl.innerText = "🟢 ออนไลน์ (พร้อมรับงาน)";
                 statusEl.className = "text-[11px] font-bold text-green-400";
             }
-            if(gpsEl) gpsEl.innerText = "กำลังค้นหาพิกัด GPS ของคุณ...";
-            if(activeTab === 1 && floatGps) floatGps.classList.remove('hidden');
+            if(gpsEl) gpsEl.innerText = "จับพิกัด GPS สำเร็จ ระบบกำลังทำงาน";
+            if(floatGps) floatGps.classList.remove('hidden');
             
             if(markerDriver && map) markerDriver.setMap(map); 
-
             isFirstGps = true; 
-            window.requestWakeLock(); 
 
-            db.ref('driver/status').onDisconnect().set("ออฟไลน์");
-            db.ref('driver').update({ status: "ออนไลน์" });
+            // ส่งสถานะให้แอดมิน "ทันที" ที่ออนไลน์สำเร็จ
+            updateFirebaseLocation();
 
             if (navigator.geolocation) {
                 watchId = navigator.geolocation.watchPosition((pos) => {
@@ -1246,76 +1252,53 @@
                     let posObj = {lat: driverLat, lng: driverLng};
                     if(markerDriver) markerDriver.setPosition(posObj);
                     
-                    let actPanel = document.getElementById('activeJobPanel');
-                    let idlPanel = document.getElementById('idlePanel');
-                    let actVisible = actPanel && !actPanel.classList.contains('hidden');
-                    let idlVisible = idlPanel && !idlPanel.classList.contains('hidden');
-
-                    if(isTrackingMode && map && !selectedJobId && (actVisible || idlVisible)) {
+                    if(isTrackingMode && map && !selectedJobId) {
                         map.panTo(posObj);
                     }
                     
                     if(isFirstGps) {
                         if(!activeJobId && !selectedJobId && isTrackingMode && map) map.setZoom(18); 
-                        if(activeJobId && actVisible) updateRoute(true); 
+                        if(activeJobId) updateRoute(true); 
                         isFirstGps = false;
                     }
 
-                    if(activeJobId && (Date.now() - lastRouteUpdate > 8000) && actVisible) {
-                        lastRouteUpdate = Date.now();
-                        updateRoute(false); 
-                    }
-
-                    db.ref('driver').update({ 
-                        lat: driverLat, 
-                        lng: driverLng,
-                        driverPhone: currentDriverProfile ? currentDriverProfile.phone : "0946379669",
-                        pin: driverPin
-                    });
+                    // อัปเดตพิกัดใหม่ให้แอดมินเห็นแบบ Real-time
+                    updateFirebaseLocation();
                     
-                    db.ref('active_drivers/' + driverPin).update({
-                        pin: driverPin,
-                        driverPhone: currentDriverProfile ? currentDriverProfile.phone : "0946379669",
-                        status: "ออนไลน์",
-                        lat: driverLat,
-                        lng: driverLng,
-                        timestamp: firebase.database.ServerValue.TIMESTAMP
-                    });
-
                     if(gpsEl) gpsEl.innerText = `พิกัดอัปเดตล่าสุด: ${new Date().toLocaleTimeString('th-TH')}`;
-                    window.requestWakeLock();
                     
                 }, 
-                (err) => { if(gpsEl) gpsEl.innerText = "GPS Error: กรุณาเปิด Location (ตำแหน่งที่ตั้ง)"; }, 
+                (err) => { if(gpsEl) gpsEl.innerText = "⚠️ สัญญาณ GPS ขาดหาย"; }, 
                 { enableHighAccuracy: true, maximumAge: 0, timeout: 5000 });
             }
-            
-            let pBar = document.getElementById('searchProgressBar');
-            if(pBar && myActiveJobs.length === 0) pBar.classList.remove('hidden');
-
         } else {
             if(statusEl) {
                 statusEl.innerText = "🔴 ออฟไลน์";
                 statusEl.className = "text-[11px] font-bold text-red-500";
             }
-            if(gpsEl) gpsEl.innerText = "ระบบถูกปิดชั่วคราว";
             if(floatGps) floatGps.classList.add('hidden');
             
-            window.releaseWakeLock(); 
-            
-            db.ref('driver/status').onDisconnect().cancel();
-            db.ref('driver').update({ status: "ออฟไลน์" });
+            // ลบชื่อออกจากระบบ แอดมินจะไม่เห็นแล้ว
             db.ref('active_drivers/' + driverPin).remove();
             
             if(watchId) navigator.geolocation.clearWatch(watchId);
-            stopAlarm(); 
-            
-            let pBar = document.getElementById('searchProgressBar');
-            if(pBar) pBar.classList.add('hidden');
-            
             if(markerDriver) markerDriver.setMap(null); 
         }
         renderJobList();
+    }
+
+    // ฟังก์ชันย่อยสำหรับส่งข้อมูลให้แอดมินเห็น
+    function updateFirebaseLocation() {
+        if(!driverPin) return;
+        let phoneNum = currentDriverProfile ? currentDriverProfile.phone : "ไม่ระบุเบอร์";
+        db.ref('active_drivers/' + driverPin).update({
+            pin: driverPin,
+            driverPhone: phoneNum,
+            status: "ออนไลน์",
+            lat: driverLat,
+            lng: driverLng,
+            timestamp: firebase.database.ServerValue.TIMESTAMP
+        });
     }
 
     function processBookings() {
