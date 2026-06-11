@@ -122,7 +122,7 @@
 
   <div id="idlePanel" class="ui-panel text-gray-100 z-10">
     <div class="w-full">
-        <div class="w-full flex justify-center pb-3 cursor-pointer" onclick="togglePanel('idlePanel')"><div class="w-12 h-1.5 bg-[#4b507d] rounded-full opacity-50"></div></div>
+        <div class="w-full flex justify-center pb-3"><div class="w-12 h-1.5 bg-[#4b507d] rounded-full opacity-50"></div></div>
         <div class="flex justify-between items-center mb-3">
           <div><h2 class="font-black text-[15px] leading-tight text-white">กระดานรับงาน (Home)</h2><p class="text-[11px] font-bold mt-0.5 text-red-400" id="statusText">🔴 ออฟไลน์</p></div>
           <label class="relative inline-flex items-center cursor-pointer"><input type="checkbox" id="onlineToggle" class="sr-only peer" onchange="toggleOnlineWithPermission()"><div class="w-14 h-7 bg-[#383d6a] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-gray-200 after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-[#fae100] border border-[#4b507d]"></div></label>
@@ -401,14 +401,35 @@
         if(ed) ed.value = dateString;
     };
     
-    window.requestWakeLock = async function() {
+window.requestWakeLock = async function() {
         if ('wakeLock' in navigator) {
-            try { wakeLock = await navigator.wakeLock.request('screen'); document.getElementById('wakeLockStatus').classList.remove('hidden'); } catch (err) {}
+            try { 
+                wakeLock = await navigator.wakeLock.request('screen'); 
+                document.getElementById('wakeLockStatus').classList.remove('hidden'); 
+            } catch (err) {
+                // หากถูกมือถือบล็อก (เพราะตอนรีเฟรชไม่มีการกดจอ) ให้แอบขอสิทธิ์ใหม่ทันทีที่คนขับแตะจอครั้งแรก
+                document.addEventListener('click', async () => {
+                    if (wakeLock === null && isOnline) {
+                        try { 
+                            wakeLock = await navigator.wakeLock.request('screen'); 
+                            document.getElementById('wakeLockStatus').classList.remove('hidden'); 
+                        } catch (e) {}
+                    }
+                }, { once: true });
+            }
         }
     };
+    
     window.releaseWakeLock = function() {
         if (wakeLock !== null) { wakeLock.release().then(() => { wakeLock = null; document.getElementById('wakeLockStatus').classList.add('hidden'); }); }
     };
+
+    // ป้องกันจอดับเวลาคนขับสลับแอปไปไลน์แล้วกลับมา
+    document.addEventListener('visibilitychange', async () => {
+        if (document.visibilityState === 'visible' && isOnline) {
+            window.requestWakeLock();
+        }
+    });
     window.sendLineNotify = function(jobId, message, type='normal') {
         if(!APPS_SCRIPT_URL) return;
         fetch(`${APPS_SCRIPT_URL}?action=notify&type=${type}&jobId=${jobId}&msg=${encodeURIComponent(message)}`, {mode: 'no-cors'}).catch(e=>{});
@@ -787,20 +808,33 @@
     }
 
     // ================= JOB LOGIC =================
-    let pendingBookingsCache = {}; let myBookingsCache = {};
+let pendingBookingsCache = {}; let myBookingsCache = {};
+    let isPendingLoaded = false;
+    let isMyJobsLoaded = false;
+
     function initFirebaseListeners() {
         if(!driverPin) return; 
-        db.ref('bookings').orderByChild('status').equalTo('รอผู้ขับขี่ตอบรับ').on('value', snap => { mergeAndProcessBookings(snap.val() || {}, 'pending'); });
-        db.ref('bookings').orderByChild('driverPin').equalTo(driverPin).on('value', snap => { mergeAndProcessBookings(snap.val() || {}, 'myJobs'); });
+        db.ref('bookings').orderByChild('status').equalTo('รอผู้ขับขี่ตอบรับ').on('value', snap => { 
+            isPendingLoaded = true;
+            mergeAndProcessBookings(snap.val() || {}, 'pending'); 
+        });
+        db.ref('bookings').orderByChild('driverPin').equalTo(driverPin).on('value', snap => { 
+            isMyJobsLoaded = true;
+            mergeAndProcessBookings(snap.val() || {}, 'myJobs'); 
+        });
     }
+
     function mergeAndProcessBookings(newData, type) {
         if (type === 'pending') pendingBookingsCache = newData;
         if (type === 'myJobs') myBookingsCache = newData;
         allBookings = { ...pendingBookingsCache, ...myBookingsCache };
+        
+        // บังคับให้รอข้อมูลจากเซิร์ฟเวอร์มาครบทั้ง 2 ชุดก่อน ค่อยเปิดหน้างาน (แก้ปัญหาเด้งไปหน้าแรก)
+        if (!isPendingLoaded || !isMyJobsLoaded) return;
+        
         processBookings();
         let t3 = document.getElementById('tab3-History'); if(t3 && !t3.classList.contains('hidden')) { window.renderHistory(); }
     }
-
     function processBookings() {
         if(!driverPin) return; 
         myActiveJobs = []; let foundCurrentViewing = false;
