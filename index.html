@@ -775,13 +775,18 @@ window.requestWakeLock = async function() {
         } else { executeToggleOnline(false); }
     }
 
-    function executeToggleOnline(state) {
+function executeToggleOnline(state) {
         isOnline = state; const statusEl = document.getElementById('statusText'); const gpsEl = document.getElementById('gpsStatus'); let floatGps = document.getElementById('floatingGpsBox');
         localStorage.setItem('isDriverOnline', isOnline);
         if(isOnline) {
             if(statusEl) { statusEl.innerText = "🟢 ออนไลน์ (พร้อมรับงาน)"; statusEl.className = "text-[11px] font-bold text-green-400"; }
             if(gpsEl) gpsEl.innerText = "จับพิกัด GPS สำเร็จ ระบบกำลังทำงาน";
-            if(floatGps) floatGps.classList.remove('hidden');
+            
+            // ✅ แก้ไข: เช็กว่าอยู่หน้าแรก (Tab 1) หรือเปล่า ค่อยโชว์กล่อง GPS
+            let nav1 = document.getElementById('navBtn1');
+            let isTab1Active = nav1 && nav1.classList.contains('text-[#fae100]');
+            if(floatGps && isTab1Active) floatGps.classList.remove('hidden');
+            
             if(markerDriver && map) markerDriver.setMap(map); isFirstGps = true; window.requestWakeLock();
             updateFirebaseLocation();
             if (navigator.geolocation) {
