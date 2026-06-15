@@ -1384,7 +1384,22 @@ let pendingBookingsCache = {}; let myBookingsCache = {};
     }
     window.closeHistoryDetail = function() { document.getElementById('historyDetailModal').classList.add('hidden'); if(histDirectionsRenderer) histDirectionsRenderer.setDirections({routes: []}); histMapMarkers.forEach(m => m.setMap(null)); histMapMarkers = []; selectedHistoryJobForBlock = null; }
 
-    // ================= CHAT =================
+    
+        window.closeInAppChatModal = function() { document.getElementById('inAppChatModal').classList.add('hidden'); }
+    
+    window.sendInAppChatMessage = function() {
+        let inputEl = document.getElementById('inAppChatInput'); 
+        let textVal = inputEl.value.trim(); 
+        if(!textVal || !activeJobId) return;
+        
+        db.ref('bookings/' + activeJobId + '/chats').push({ 
+            sender: 'driver', 
+            text: textVal, 
+            timestamp: firebase.database.ServerValue.TIMESTAMP 
+        }).then(() => { inputEl.value = ''; });
+    }
+
+// ================= CHAT =================
     window.openInAppChatModal = function() {
         document.getElementById('inAppChatModal').classList.remove('hidden'); 
         const box = document.getElementById('inAppChatMessages');
@@ -1436,7 +1451,6 @@ let pendingBookingsCache = {}; let myBookingsCache = {};
             timestamp: firebase.database.ServerValue.TIMESTAMP 
         }).then(() => { inputEl.value = ''; });
     }
-
     // ================= COMMUNITY =================
     window.loadCommunityNews = function() {
         db.ref('news_promotions').once('value', snap => {
