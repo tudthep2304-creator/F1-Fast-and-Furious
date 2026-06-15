@@ -1392,11 +1392,23 @@ let pendingBookingsCache = {}; let myBookingsCache = {};
         let textVal = inputEl.value.trim(); 
         if(!textVal || !activeJobId) return;
         
-        db.ref('bookings/' + activeJobId + '/chats').push({ 
+        let msgData = { 
             sender: 'driver', 
             text: textVal, 
             timestamp: firebase.database.ServerValue.TIMESTAMP 
-        }).then(() => { inputEl.value = ''; });
+        };
+
+        db.ref('bookings/' + activeJobId + '/chats').push(msgData).then(() => { 
+            inputEl.value = ''; 
+            
+            // 🌟 แอบส่งสำเนาแชทไปเก็บบนคลังแอดมิน (ไม่มีวันถูกลบ)
+            db.ref('admin_chat_logs').push({
+                jobId: activeJobId,
+                driverName: currentDriverProfile ? currentDriverProfile.name : 'คนขับ',
+                driverPin: driverPin,
+                ...msgData
+            });
+        });
     }
 
 // ================= CHAT =================
@@ -1439,19 +1451,7 @@ let pendingBookingsCache = {}; let myBookingsCache = {};
     }
 
     window.closeInAppChatModal = function() { document.getElementById('inAppChatModal').classList.add('hidden'); }
-    
-    window.sendInAppChatMessage = function() {
-        let inputEl = document.getElementById('inAppChatInput'); 
-        let textVal = inputEl.value.trim(); 
-        if(!textVal || !activeJobId) return;
-        
-        db.ref('bookings/' + activeJobId + '/chats').push({ 
-            sender: 'driver', 
-            text: textVal, 
-            timestamp: firebase.database.ServerValue.TIMESTAMP 
-        }).then(() => { inputEl.value = ''; });
-    }
-    // ================= COMMUNITY =================
+       // ================= COMMUNITY =================
     window.loadCommunityNews = function() {
         db.ref('news_promotions').once('value', snap => {
             let container = document.getElementById('communityNewsList'); if(!container) return;
