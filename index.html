@@ -1177,7 +1177,12 @@ let pendingBookingsCache = {}; let myBookingsCache = {};
     }
 
     function resetToIdle() {
-        if(activeChatListenerRef && activeJobId) { db.ref('bookings/' + activeJobId + '/chats').off(); activeChatListenerRef = null; let chatBox = document.getElementById('inAppChatMessages'); if(chatBox) chatBox.innerHTML = '<p class="text-center text-xs text-gray-500 my-4">เริ่มต้นการสนทนากับผู้โดยสารที่นี่</p>'; }
+        if(activeChatListenerRef && activeJobId) { 
+            db.ref('bookings/' + activeJobId + '/chats').off(); 
+            activeChatListenerRef = null; 
+            let chatBox = document.getElementById('inAppChatMessages'); 
+            if(chatBox) chatBox.innerHTML = '<p class="text-center text-xs text-gray-500 my-4">เริ่มต้นการสนทนากับผู้โดยสารที่นี่</p>'; 
+        }
         localStorage.removeItem('activeJobId'); activeJobId = null; activeJobData = null; selectedJobId = null;
         let actP = document.getElementById('activeJobPanel'); if(actP) actP.classList.add('hidden');
         updateActiveJobUI(); 
@@ -1381,21 +1386,55 @@ let pendingBookingsCache = {}; let myBookingsCache = {};
 
     // ================= CHAT =================
     window.openInAppChatModal = function() {
-        document.getElementById('inAppChatModal').classList.remove('hidden'); const box = document.getElementById('inAppChatMessages');
+        document.getElementById('inAppChatModal').classList.remove('hidden'); 
+        const box = document.getElementById('inAppChatMessages');
         if(!activeJobId) return;
+
         if(!activeChatListenerRef) {
             activeChatListenerRef = db.ref('bookings/' + activeJobId + '/chats');
             activeChatListenerRef.on('child_added', snap => {
-                let messageData = snap.val(); let isSenderMe = messageData.sender === 'driver'; let align = isSenderMe ? 'justify-end' : 'justify-start'; let bg = isSenderMe ? 'bg-[#fae100] text-[#1e234e]' : 'bg-[#2a2f5c] border border-[#383d6a] text-white';
-                let messageDiv = document.createElement('div'); messageDiv.className = `flex w-full ${align} animate-fade-in`; messageDiv.innerHTML = `<div class="${bg} px-4 py-2.5 rounded-2xl max-w-[75%] text-[13px] font-bold shadow-sm">${messageData.text}</div>`;
-                box.appendChild(messageDiv); box.scrollTop = box.scrollHeight;
+                let messageData = snap.val(); 
+                if(!messageData) return;
+                
+                let isSenderMe = messageData.sender === 'driver'; 
+                let align = isSenderMe ? 'justify-end' : 'justify-start'; 
+                let bg = isSenderMe ? 'bg-[#fae100] text-[#1e234e]' : 'bg-[#2a2f5c] border border-[#383d6a] text-white';
+                
+                let timeStr = "";
+                if (messageData.timestamp) {
+                    let d = new Date(messageData.timestamp);
+                    let hrs = String(d.getHours()).padStart(2, '0');
+                    let mins = String(d.getMinutes()).padStart(2, '0');
+                    timeStr = `${hrs}:${mins}`;
+                }
+
+                let messageDiv = document.createElement('div'); 
+                messageDiv.className = `flex w-full ${align} animate-fade-in mb-3`; 
+                messageDiv.innerHTML = `
+                    <div class="flex flex-col ${isSenderMe ? 'items-end' : 'items-start'} max-w-[80%]">
+                        <div class="${bg} px-4 py-2.5 rounded-2xl text-[13px] font-medium shadow-sm break-words w-full">
+                            ${messageData.text}
+                        </div>
+                        <span class="text-[9px] text-gray-500 mt-1 ${isSenderMe ? 'mr-1' : 'ml-1'} font-normal">${timeStr}</span>
+                    </div>`;
+                box.appendChild(messageDiv); 
+                box.scrollTop = box.scrollHeight;
             });
         }
     }
+
     window.closeInAppChatModal = function() { document.getElementById('inAppChatModal').classList.add('hidden'); }
+    
     window.sendInAppChatMessage = function() {
-        let inputEl = document.getElementById('inAppChatInput'); let textVal = inputEl.value.trim(); if(!textVal || !activeJobId) return;
-        db.ref('bookings/' + activeJobId + '/chats').push({ sender: 'driver', text: textVal, timestamp: firebase.database.ServerValue.TIMESTAMP }).then(() => { inputEl.value = ''; });
+        let inputEl = document.getElementById('inAppChatInput'); 
+        let textVal = inputEl.value.trim(); 
+        if(!textVal || !activeJobId) return;
+        
+        db.ref('bookings/' + activeJobId + '/chats').push({ 
+            sender: 'driver', 
+            text: textVal, 
+            timestamp: firebase.database.ServerValue.TIMESTAMP 
+        }).then(() => { inputEl.value = ''; });
     }
 
     // ================= COMMUNITY =================
